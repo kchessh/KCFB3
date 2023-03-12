@@ -13,7 +13,7 @@ import pymysql
 from flask_migrate import Migrate
 pymysql.install_as_MySQLdb()
 
-test = True
+test = False
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
