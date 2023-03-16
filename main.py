@@ -13,7 +13,7 @@ import pymysql
 from flask_migrate import Migrate
 pymysql.install_as_MySQLdb()
 
-test = False
+test = True
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
@@ -21,15 +21,14 @@ app.config['SECRET_KEY'] = 'secret-key-goes-here'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 # New
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://username:password@localhost/db_name'
-if test:
-    import no_push
-    app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
+# if test:
+#     import no_push
+#     app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
 # Heroku SQL
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+migrate = Migrate(app, db, compare_type=True)
 Bootstrap(app)
 
 login_manager = LoginManager()
@@ -57,6 +56,7 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(100), nullable=False)
     name = db.Column(db.String(1000), nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+    leagues = db.relationship('League', backref='owner')
 
     @property
     def password(self):
@@ -71,6 +71,11 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return '<Name %r>' % self.name
+
+class League(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date_created = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+    league_owner = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
@@ -129,9 +134,8 @@ def login():
             if check_password_hash(user.password_hash, form.password.data):
                 login_user(user)
                 flash("Login Successful!")
-                return render_template('success.html')
-                # return render_template('Dashboard.html/league=1')
-                # return redirect(url_for('dashboard'))
+                # return render_template('success.html')
+                return redirect(url_for('UserDashboard'))
             else:
                 flash("That login combination is incorrect")
                 return render_template("denied.html")
@@ -221,9 +225,13 @@ week. It will have a link to display the weeks for someone to choose so they can
 """
 
 
-@app.route("/Dashboard/league=<league_number>")
-# @login_required
-def dashboard(league_number):
+@app.route("/UserDashboard", methods=['GET', 'POST'])
+@login_required
+def UserDashboard():
+    user_logging_in = current_user.id
+    print(user_logging_in)
+    league_number = 1
+    # Look up league number in the database by using the user_logging_in id
     data = pandas.read_csv("Team_points.csv", encoding='latin-1')
 
     with open("Teams.txt", encoding='ISO-8859-1') as file:
@@ -327,7 +335,7 @@ def dashboard(league_number):
 	team_data_dict is used to pass: a team's score, a team's last result, and what conference that team is in.
 	player_teams_final passes in what player owns the team (passes a blank result if unowned).
 	"""
-    return render_template("Dashboard.html", week_num=week, display_num=week, score_dict=current_week_score_dict,
+    return render_template("UserDashboard.html", week_num=week, display_num=week, score_dict=current_week_score_dict,
                            places=places, previous_score_dict=previous_week_score_dict, previous_places=previous_places,
                            team_data_dict=team_data_dict, player_teams_final=player_teams_final,
                            upcoming_team_games=upcoming_team_games, league_number=league_number)
@@ -340,7 +348,7 @@ input to get different standings
 """
 
 
-@app.route("/Dashboard/league=<league_number>&week=<number_from_website>")
+@app.route("/Dashboard/leagueID=<league_number>&weekID=<number_from_website>")
 def get_standings(league_number, number_from_website):
     team_data = pandas.read_csv("Team_points.csv", encoding='latin-1')
 
