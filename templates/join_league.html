@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Join League</h2>
+<br/><br/>
+
+<div class="shadow-lg p-3 mb-5 bg-white rounded">
+
+	<form method="POST">
+		{{ form.hidden_tag() }}
+
+		{{ form.league_name.label(class="form-label") }}
+
+		{{ form.league_name(class="form-control") }}
+		<br/>
+
+		{{ form.submit(class="btn btn-secondary") }}
+
+	</form>
+
+</div>
+
+<br/><br/><br/>
+<table class="table table-hover table-bordered table-striped">
+	{% for league in all_leagues %}
+	<tr>
+  	<td>
+  		{{ league.id }}. {{ league.league_name }} - {{ league.date_created }} - {{ league.league_owner }}
+    </td>
+	</tr>
+	{% endfor %}
+</table>
+
+{% endblock %}

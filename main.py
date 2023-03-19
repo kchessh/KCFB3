@@ -56,7 +56,8 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(100), nullable=False)
     name = db.Column(db.String(1000), nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.datetime.utcnow())
-    leagues = db.relationship('League', backref='owner')
+    league_manager = db.relationship('League', backref='manager')
+    leagues = db.relationship('List_of_leagues', backref='member')
 
     @property
     def password(self):
@@ -74,8 +75,19 @@ class User(db.Model, UserMixin):
 
 class League(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    league_name = db.Column(db.String(100), nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.datetime.utcnow())
-    league_owner = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league_manager = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league_id_for_list_of_leagues = db.relationship('List_of_leagues', backref='league_id')
+    league_members = db.relationship('League_members', backref='members')
+
+class League_members(db.Model):
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), primary_key=True)
+    member = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+class List_of_leagues(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
 
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
@@ -88,6 +100,10 @@ class UserForm(FlaskForm):
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class LeagueForm(FlaskForm):
+    league_name = StringField("League Name", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
 with app.app_context():
@@ -134,7 +150,6 @@ def login():
             if check_password_hash(user.password_hash, form.password.data):
                 login_user(user)
                 flash("Login Successful!")
-                # return render_template('success.html')
                 return redirect(url_for('UserDashboard'))
             else:
                 flash("That login combination is incorrect")
@@ -208,6 +223,60 @@ def delete(id):
     except:
         flash("Error!")
         return render_template("add_user.html", form=form, name=name, our_users=our_users)
+
+@app.route("/create_league", methods=['GET', 'POST'])
+@login_required
+def create_league():
+    form = LeagueForm()
+    if form.validate_on_submit():
+        #Create league and make the current user the league manager
+        league = League(league_name=form.league_name.data, league_manager=current_user.id)
+        db.session.add(league)
+        db.session.commit()
+
+        #Make the current user a member of the league
+        league_member = League_members(league_id=league.id, member=current_user.id)
+        db.session.add(league_member)
+        db.session.commit()
+
+        #Add this league to the list of leagues for the current user
+        league_to_add = List_of_leagues(user_id=current_user.id, league=league.id)
+        db.session.add(league_to_add)
+        db.session.commit()
+    form.league_name.data = ''
+    all_leagues = League.query.order_by(League.date_created)
+    league_members = League_members.query.order_by(League_members.league_id)
+    for member in league_members:
+        print(f"league_id: {member.league_id}")
+        print(f"member_id: {member.member}")
+    return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
+
+@app.route("/delete_league/<int:id>", methods=['GET', 'POST'])
+def delete_league(id):
+    league_to_delete = League.query.get(id)
+    form = LeagueForm()
+    try:
+        db.session.delete(league_to_delete)
+        db.session.commit()
+        flash("User deleted")
+        all_leagues = League.query.order_by(League.date_created)
+        league_members = League_members.query.order_by(League_members.league_id)
+        return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
+    except:
+        flash("Error!")
+        all_leagues = League.query.order_by(League.date_created)
+        league_members = League_members.query.order_by(League_members.league_id)
+        return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
+
+@app.route("/join_league", methods=['GET', 'POST'])
+@login_required
+def join_league():
+    return render_template("join_league.html")
+
+@app.route("/league_dashboard", methods=['GET', 'POST'])
+@login_required
+def league_dashboard():
+    return render_template("league_dashboard.html")
 
 # Invalid URL
 @app.errorhandler(404)
