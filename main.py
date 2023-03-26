@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 from sqlalchemy import select, delete, update, inspect
 from flask_migrate import Migrate
+import time
 
 test = True
 app = Flask(__name__)
@@ -81,6 +82,7 @@ class League(db.Model):
     league_id_for_list_of_leagues = db.relationship('List_of_leagues_update1', backref='league_id', cascade="all, delete-orphan")
     league_members = db.relationship('League_members_update1', backref='members', cascade="all, delete-orphan")
     league_password = db.Column(db.String(100))
+    draft_complete = db.Column(db.Boolean, default=False)
 
 class League_members_update1(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -286,17 +288,30 @@ def join_league(league_id):
     form = JoinLeagueForm()
     if form.validate_on_submit():
         league_password = League.query.get(league_id).league_password
-        if form.league_password.data == league_password:
-            # Make the current user a member of the league
-            league_member = League_members_update1(league_id=league_id, member=current_user.id)
-            db.session.add(league_member)
-            db.session.commit()
 
-            # Add this league to the list of leagues for the current user
-            league_to_add = List_of_leagues_update1(user_id=current_user.id, league=league_id)
-            db.session.add(league_to_add)
-            db.session.commit()
-            flash("You have been added to the league!")
+        if form.league_password.data == league_password:
+            league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+            league_member_ids = []
+            for member in league_members:
+                if member.league_id == league_id:
+                    name = User.query.filter_by(id=member.member).first().id
+                    league_member_ids.append(name)
+
+            if current_user.id not in league_member_ids:
+                # Make the current user a member of the league
+                league_member = League_members_update1(league_id=league_id, member=current_user.id)
+                db.session.add(league_member)
+                db.session.commit()
+
+                # Add this league to the list of leagues for the current user
+                league_to_add = List_of_leagues_update1(user_id=current_user.id, league=league_id)
+                db.session.add(league_to_add)
+                db.session.commit()
+                flash("You have been added to the league!")
+            else:
+                flash("You're already in the league! You will be redirected to the league page")
+                time.sleep(3)
+                return redirect(url_for('league_dashboard', league_id=league_id))
 
             return redirect(url_for('league_dashboard', league_id=league_id))
         else:
@@ -313,10 +328,8 @@ def league_dashboard(league_id):
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     league_member_names = []
     for member in league_members:
-        print(member)
         if member.league_id == league_id:
             name = User.query.filter_by(id=member.member).first().name
-            print(name)
             league_member_names.append(name)
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
                            league_member_names=league_member_names)

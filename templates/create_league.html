@@ -6,6 +6,15 @@
 <h2>Create League</h2>
 <br/><br/>
 
+{% for message in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+	{{ message }}
+	<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+		<span aria-hidden="true">&times;</span>
+	</button>
+</div>
+{% endfor %}
+
 <div class="shadow-lg p-3 mb-5 bg-white rounded">
 
 	<form method="POST">
@@ -32,7 +41,7 @@
 	{% for league in all_leagues %}
 	<tr>
   	<td>
-  		{{ league.id }}. {{ league.league_name }} - {{ league.date_created }} - {{ league.league_manager }} - {{ league.league_password }} -
+  		{{ league.id }}. {{ league.league_name }} - {{ league.date_created }} - {{ league.league_manager }} - {{ league.league_password }} - {{ league.draft_complete }} - 
 			{% for member in league_members %}
 				{% if member.league_id == league.id %}
 					{{ member.member }},
