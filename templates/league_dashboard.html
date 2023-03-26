@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+{% extends "base.html" %}
+
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>League Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="{{ url_for('static', filename='js/serve.js') }}" type="module"></script>
+
+</head>
+
+<h2>League Dashboard</h2>
+<br/><br/>
+
+<div class="container">
+  <div class="input-group">
+    <span class="input-group-addon hidden-xs linkname">
+      <strong>League link</strong>
+    </span>
+    <span id="copyButton" class="input-group-addon btn" title="Click to copy">
+      <i class="fa fa-clipboard" aria-hidden="true"></i>
+    </span>
+    <input type="text" id="copyTarget" class="form-control" value="https://kcfb12.herokuapp.com{{ url_for('join_league', league_id=league_id) }}">
+    <!-- <span class="copied">Copied !</span> -->
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    {{ current_user.name }}
+  </div>
+  <div class="card-body">
+    <h5 class="card-title">Special title treatment</h5>
+    <p class="card-text">
+      {% for name in league_member_names %}
+        <strong>Name: </strong>{{ name }}<br/>
+      {% endfor %}
+    </p>
+    <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-small">Logout</a>
+  </div>
+</div>
+
+
+<br/><br/>
+
+
+{% endblock %}
