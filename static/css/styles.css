@@ -1,190 +1,37 @@
-
-body {
-  font-family: Montserrat;
-}
-
-#title {
-    background-color: #20b2aa;
-}
-
-#features {
-    padding: 7% 15%;
-    background-color: #fff;
-    position: relative;
-    z-index: 1;
-}
-
-h2 {
-  font-family: Montserrat;
-  font-weight: bold;
-  font-size: 3rem;
-  line-height: 1.5;
-}
-
-.container-fluid{
-    padding: 0% 12%;
-}
-
-.navbar-brand{
-    font-family: Ubuntu;
-    font-size: 2.5rem;
-}
-
-.navbar{
-    padding-bottom: 1rem;
-}
-
-.nav-item {
-    padding: 0 18px;
-}
-
-.nav-link {
-  font-size: 1rem;
-  font-family: Montserrat;
-  color: white;
-}
-
-.rotate {
-  -webkit-transform: rotate(22deg);
-  -moz-transform: rotate(22deg);
-  -o-transform: rotate(22deg);
-  -ms-transform: rotate(22deg);
-  transform: rotate(22deg);
-}
-
-.symbol {
-    display: block;
-    text-align: center;
-    margin-left: auto;
-    margin-right: auto;
-    color: #ef8172;
-    padding-bottom: 1rem;
-}
-
-.symbol:hover {
-    color: #ff4c68;
-}
-
-@media (max-width: 1028px) {
-
-  #title {
-    text-align: center;
-  }
-}
-
-/* DASHBOARD */
-
-#games {
-  padding-top: 3rem;
-}
-
-#standings {
-  padding: 5rem 0;
-  height: 150px;
-}
-
-.first-item {
-  background-color: #20b2aa;
-  color: #fff;
-  padding: 1% 1%;
-  font-family: Montserrat;
-  font-weight: normal;
-}
-
-.every-other-row {
-  background-color: #F5F5F5;
-}
-
-.dropbtn1 {
-  background-color: #20b2aa;
-  color: white;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  padding: 8px 8px;
-}
-
-.dropbtn2 {
-  background-color: #fff;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  padding: 8px 8px;
-}
-
-/* The container <div> - needed to position the dropdown content */
-.dropdown {
+.input-group {
+  margin-top: 30px;
   position: relative;
-  display: inline-block;
 }
 
-.dropdown-align {
+.input-group {
   position: relative;
-  left: 11.5%;
 }
 
-/* Dropdown Content (Hidden by Default) */
-.dropdown-content {
+.input-group-addon {
+  border: none;
+}
+
+.linkname {
   display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-  height: 150px;
-  overflow: auto;
 }
 
-/* Links inside the dropdown */
-.dropdown-content a {
-  color: black;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
+#copyButton {
+  cursor: pointer;
+  background: #f1bb3a;
 }
 
-/* Change color of dropdown links on hover */
-.dropdown-content a:hover {background-color: #D3D3D3}
-
-/* Show the dropdown menu on hover */
-.dropdown:hover .dropdown-content {
-  display: block;
+#copyTarget {
+  border-left: none;
 }
 
-/* Change the background color of the dropdown button when the dropdown content is shown */
-.dropdown:hover .dropbtn {
-  /* background-color: #20b2aa; */
-}
+@media (min-width: 768px) {
+  .copied {
+    left: 135px;
+  }
 
-.live-games {
-  height: 250px;
-  overflow: auto;
-}
-
-.upcoming-games {
-  height: 250px;
-  overflow: auto;
-}
-
-.league-standings {
-  height: 250px;
-  overflow: auto;
-}
-
-.team-standings {
-  height: 250px;
-  overflow: auto;
-}
-
-th {
-  font-weight: normal;
-  position: sticky;
-}
-
-table {
-  position: relative;
-}
-
-.font-slightly-heavy {
-  font-weight: 600;
+  .linkname {
+    display: block;
+    background: #3b3e45;
+    color: #fff;
+  }
 }

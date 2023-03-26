@@ -9,9 +9,8 @@ from flask_bootstrap import Bootstrap
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
-import pymysql
+from sqlalchemy import select, delete, update, inspect
 from flask_migrate import Migrate
-pymysql.install_as_MySQLdb()
 
 test = True
 app = Flask(__name__)
@@ -25,7 +24,8 @@ app.config['SECRET_KEY'] = 'secret-key-goes-here'
 #     import no_push
 #     app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
 # Heroku SQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jecfvnqncxqxup:af1dd7dc452cacbea264d7aaee8f0c0e3800c97f40524130f22fe27a0f530260@ec2-44-215-22-37.compute-1.amazonaws.com:5432/das2i8qcpbctqg'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, compare_type=True)
@@ -56,8 +56,8 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(100), nullable=False)
     name = db.Column(db.String(1000), nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.datetime.utcnow())
-    league_manager = db.relationship('League', backref='manager')
-    leagues = db.relationship('List_of_leagues', backref='member')
+    league_manager = db.relationship('League', backref='manager', cascade="all, delete-orphan")
+    leagues = db.relationship('List_of_leagues_update1', backref='member', cascade="all, delete-orphan")
 
     @property
     def password(self):
@@ -78,15 +78,18 @@ class League(db.Model):
     league_name = db.Column(db.String(100), nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.datetime.utcnow())
     league_manager = db.Column(db.Integer, db.ForeignKey('user.id'))
-    league_id_for_list_of_leagues = db.relationship('List_of_leagues', backref='league_id')
-    league_members = db.relationship('League_members', backref='members')
+    league_id_for_list_of_leagues = db.relationship('List_of_leagues_update1', backref='league_id', cascade="all, delete-orphan")
+    league_members = db.relationship('League_members_update1', backref='members', cascade="all, delete-orphan")
+    league_password = db.Column(db.String(100))
 
-class League_members(db.Model):
-    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), primary_key=True)
+class League_members_update1(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'))
     member = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-class List_of_leagues(db.Model):
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+class List_of_leagues_update1(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     league = db.Column(db.Integer, db.ForeignKey('league.id'))
 
 class UserForm(FlaskForm):
@@ -104,10 +107,17 @@ class LoginForm(FlaskForm):
 
 class LeagueForm(FlaskForm):
     league_name = StringField("League Name", validators=[DataRequired()])
+    league_password = StringField("League Password", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
+class JoinLeagueForm(FlaskForm):
+    league_password = StringField("League Password", validators=[DataRequired()])
+    submit = SubmitField("Join!")
+
 
 with app.app_context():
     db.create_all()
+
 
 """
 This loop replaces all teams that have an '&' in their name to '%26' because the API won't find it if an '&' is passed
@@ -149,11 +159,10 @@ def login():
         if user:
             if check_password_hash(user.password_hash, form.password.data):
                 login_user(user)
-                flash("Login Successful!")
                 return redirect(url_for('UserDashboard'))
             else:
                 flash("That login combination is incorrect")
-                return render_template("denied.html")
+                return render_template("login.html", form=form)
         else:
             flash("That user doesn't exist!")
             print(f'{form.email.data} user doesnt exist')
@@ -185,6 +194,8 @@ def add_user():
         form.password_hash.data = ''
         form.username.data = ''
         flash("User Added Successfully!")
+    else:
+        flash("Not committed")
     our_users = User.query.order_by(User.date_added)
     return render_template("add_user.html", form=form, name=name, our_users=our_users)
 
@@ -192,25 +203,24 @@ def add_user():
 def update(id):
     form = UserForm()
     name_to_update = User.query.get(id)
-    if request.method == "POST":
+    if request.method == "POST" and form.password_hash.data == form.password_hash2.data:
         name_to_update.name = request.form['name']
         name_to_update.email = request.form['email']
-        name_to_update.password_hash = request.form['password']
+        name_to_update.password_hash = generate_password_hash(request.form['password_hash'], method="pbkdf2:sha256", salt_length=8)
         name_to_update.username = request.form['username']
         try:
             db.session.commit()
             flash("User Updated Successfully!")
             return render_template("update.html", form=form, name_to_update=name_to_update)
         except:
-            db.session.commit()
             flash("Error!")
-            return render_template("update.html", form=form, name_to_update=name_to_update)
+            return render_template("update.html", form=form, name_to_update=name_to_update, id=id)
     else:
         flash("Error!")
         return render_template("update.html", form=form, name_to_update=name_to_update, id=id)
 
 @app.route('/delete/<int:id>', methods=['GET', 'POST'])
-def delete(id):
+def delete_user(id):
     user_to_delete = User.query.get(id)
     form = UserForm()
     name = None
@@ -230,25 +240,26 @@ def create_league():
     form = LeagueForm()
     if form.validate_on_submit():
         #Create league and make the current user the league manager
-        league = League(league_name=form.league_name.data, league_manager=current_user.id)
+        league = League(league_name=form.league_name.data, league_manager=current_user.id,
+                        league_password=form.league_password.data)
         db.session.add(league)
         db.session.commit()
 
         #Make the current user a member of the league
-        league_member = League_members(league_id=league.id, member=current_user.id)
+        league_member = League_members_update1(league_id=league.id, member=current_user.id)
         db.session.add(league_member)
         db.session.commit()
 
         #Add this league to the list of leagues for the current user
-        league_to_add = List_of_leagues(user_id=current_user.id, league=league.id)
+        league_to_add = List_of_leagues_update1(user_id=current_user.id, league=league.id)
         db.session.add(league_to_add)
         db.session.commit()
+
+        return redirect(url_for('league_dashboard', league_id=league.id))
+
     form.league_name.data = ''
     all_leagues = League.query.order_by(League.date_created)
-    league_members = League_members.query.order_by(League_members.league_id)
-    for member in league_members:
-        print(f"league_id: {member.league_id}")
-        print(f"member_id: {member.member}")
+    league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
 
 @app.route("/delete_league/<int:id>", methods=['GET', 'POST'])
@@ -258,25 +269,57 @@ def delete_league(id):
     try:
         db.session.delete(league_to_delete)
         db.session.commit()
-        flash("User deleted")
+        flash("League deleted")
         all_leagues = League.query.order_by(League.date_created)
-        league_members = League_members.query.order_by(League_members.league_id)
+        league_members = League_members_update1.query.order_by(League_members_update1.league_id)
         return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
     except:
+        db.session.rollback()
         flash("Error!")
         all_leagues = League.query.order_by(League.date_created)
-        league_members = League_members.query.order_by(League_members.league_id)
+        league_members = League_members_update1.query.order_by(League_members_update1.league_id)
         return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
 
-@app.route("/join_league", methods=['GET', 'POST'])
+@app.route("/join_league/<int:league_id>", methods=['GET', 'POST'])
 @login_required
-def join_league():
-    return render_template("join_league.html")
+def join_league(league_id):
+    form = JoinLeagueForm()
+    if form.validate_on_submit():
+        league_password = League.query.get(league_id).league_password
+        if form.league_password.data == league_password:
+            # Make the current user a member of the league
+            league_member = League_members_update1(league_id=league_id, member=current_user.id)
+            db.session.add(league_member)
+            db.session.commit()
 
-@app.route("/league_dashboard", methods=['GET', 'POST'])
+            # Add this league to the list of leagues for the current user
+            league_to_add = List_of_leagues_update1(user_id=current_user.id, league=league_id)
+            db.session.add(league_to_add)
+            db.session.commit()
+            flash("You have been added to the league!")
+
+            return redirect(url_for('league_dashboard', league_id=league_id))
+        else:
+            flash("That password is not correct. Please try again")
+            form.league_password.data = ''
+            return render_template("join_league.html", form=form)
+
+    form.league_password.data = ''
+    return render_template("join_league.html", form=form)
+
+@app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
-def league_dashboard():
-    return render_template("league_dashboard.html")
+def league_dashboard(league_id):
+    league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+    league_member_names = []
+    for member in league_members:
+        print(member)
+        if member.league_id == league_id:
+            name = User.query.filter_by(id=member.member).first().name
+            print(name)
+            league_member_names.append(name)
+    return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
+                           league_member_names=league_member_names)
 
 # Invalid URL
 @app.errorhandler(404)
@@ -346,7 +389,7 @@ def UserDashboard():
     """
 	The dictionaries generated previously are sorted by score and the places are determined for both the current week
 	and the previous week. Everything is then returned to be rendered by the html doc. Point totals are only generated
-	for the current weak for the teams but not the people. Then a new dictionary is made that has multiple dictionaries
+	for the current week for the teams but not the people. Then a new dictionary is made that has multiple dictionaries
 	for each team (rank, points, last result, player, and conference)
 	"""
     current_week_score_dict = dict(
