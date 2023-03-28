@@ -24,6 +24,21 @@
   </div>
 </div>
 
+{% for league in user_leagues %}
+  <div class="card">
+    <div class="card-header">
+      {{ league.league_name }}
+    </div>
+    <div class="card-body">
+      <h5 class="card-title">Special title treatment</h5>
+      <p class="card-text">
+        <strong>Name: </strong>{{ current_user.name }}<br/>
+        <strong>Username: </strong>{{ current_user.username }}<br/>
+      </p>
+      <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-small">Logout</a>
+    </div>
+  </div>
+{% endfor %}
 
 <br/><br/>
 

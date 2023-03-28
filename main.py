@@ -275,12 +275,14 @@ def delete_league(id):
         all_leagues = League.query.order_by(League.date_created)
         league_members = League_members_update1.query.order_by(League_members_update1.league_id)
         return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
+        # return redirect(url_for('create_league', form=form, all_leagues=all_leagues, league_members=league_members))
     except:
         db.session.rollback()
         flash("Error!")
         all_leagues = League.query.order_by(League.date_created)
         league_members = League_members_update1.query.order_by(League_members_update1.league_id)
         return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
+
 
 @app.route("/join_league/<int:league_id>", methods=['GET', 'POST'])
 @login_required
@@ -326,11 +328,8 @@ def join_league(league_id):
 @login_required
 def league_dashboard(league_id):
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
-    league_member_names = []
-    for member in league_members:
-        if member.league_id == league_id:
-            name = User.query.filter_by(id=member.member).first().name
-            league_member_names.append(name)
+    league_member_names = [User.query.filter_by(id=member.member).first().name for member in league_members
+                           if member.league_id == league_id]
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
                            league_member_names=league_member_names)
 
@@ -353,10 +352,9 @@ week. It will have a link to display the weeks for someone to choose so they can
 @app.route("/UserDashboard", methods=['GET', 'POST'])
 @login_required
 def UserDashboard():
-    user_logging_in = current_user.id
-    print(user_logging_in)
+    user_list_of_leagues = [league.league_id for league in List_of_leagues_update1.query.filter_by(user_id=current_user.id)]
     league_number = 1
-    # Look up league number in the database by using the user_logging_in id
+
     data = pandas.read_csv("Team_points.csv", encoding='latin-1')
 
     with open("Teams.txt", encoding='ISO-8859-1') as file:
@@ -463,7 +461,7 @@ def UserDashboard():
     return render_template("UserDashboard.html", week_num=week, display_num=week, score_dict=current_week_score_dict,
                            places=places, previous_score_dict=previous_week_score_dict, previous_places=previous_places,
                            team_data_dict=team_data_dict, player_teams_final=player_teams_final,
-                           upcoming_team_games=upcoming_team_games, league_number=league_number)
+                           upcoming_team_games=upcoming_team_games, league_number=league_number, user_leagues=user_list_of_leagues)
 
 
 """
