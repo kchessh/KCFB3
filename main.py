@@ -353,6 +353,16 @@ week. It will have a link to display the weeks for someone to choose so they can
 @login_required
 def UserDashboard():
     user_list_of_leagues = [league.league_id for league in List_of_leagues_update1.query.filter_by(user_id=current_user.id)]
+    print(user_list_of_leagues)
+    user_list_of_league_members = {}
+    counter = 0
+    for list_of_members in user_list_of_leagues:
+        temporary_list = []
+        for item in list_of_members.league_members:
+            temporary_list.append(User.query.filter_by(id=item.member).first().name)
+        user_list_of_league_members[counter] = temporary_list
+        counter += 1
+    print(user_list_of_league_members)
     league_number = 1
 
     data = pandas.read_csv("Team_points.csv", encoding='latin-1')
@@ -461,7 +471,8 @@ def UserDashboard():
     return render_template("UserDashboard.html", week_num=week, display_num=week, score_dict=current_week_score_dict,
                            places=places, previous_score_dict=previous_week_score_dict, previous_places=previous_places,
                            team_data_dict=team_data_dict, player_teams_final=player_teams_final,
-                           upcoming_team_games=upcoming_team_games, league_number=league_number, user_leagues=user_list_of_leagues)
+                           upcoming_team_games=upcoming_team_games, league_number=league_number, user_leagues=user_list_of_leagues,
+                           user_list_of_league_members=user_list_of_league_members)
 
 
 """

@@ -32,10 +32,16 @@
     <div class="card-body">
       <h5 class="card-title">Special title treatment</h5>
       <p class="card-text">
-        <strong>Name: </strong>{{ current_user.name }}<br/>
-        <strong>Username: </strong>{{ current_user.username }}<br/>
+        <strong>Members: </strong>
+          {% for member in user_list_of_league_members[user_leagues.index(league)] %}
+            {% if user_list_of_league_members[user_leagues.index(league)].index(member) + 1 == user_list_of_league_members[user_leagues.index(league)]|length %}
+              {{ member }}
+            {% else %}
+              {{ member }},
+            {% endif %}
+          {% endfor %}
+        <br/>
       </p>
-      <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-small">Logout</a>
     </div>
   </div>
 {% endfor %}
