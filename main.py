@@ -3,7 +3,8 @@ from flask_wtf import FlaskForm
 import pandas
 import datetime
 import my_functions
-from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, EmailField
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, EmailField, IntegerField, \
+    SelectField
 from wtforms.validators import DataRequired, EqualTo, Length, InputRequired
 from flask_bootstrap import Bootstrap
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -26,7 +27,8 @@ app.config['SECRET_KEY'] = 'secret-key-goes-here'
 #     app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
 # Heroku SQL
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jecfvnqncxqxup:af1dd7dc452cacbea264d7aaee8f0c0e3800c97f40524130f22fe27a0f530260@ec2-44-215-22-37.compute-1.amazonaws.com:5432/das2i8qcpbctqg'
+app.config[
+    'SQLALCHEMY_DATABASE_URI'] = 'postgresql://jecfvnqncxqxup:af1dd7dc452cacbea264d7aaee8f0c0e3800c97f40524130f22fe27a0f530260@ec2-44-215-22-37.compute-1.amazonaws.com:5432/das2i8qcpbctqg'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, compare_type=True)
@@ -36,7 +38,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-
 year = 2022
 weeks = [num for num in range(1, 15)]
 week_choices = {number: str(number) for number in range(1, 16)}
@@ -45,10 +46,13 @@ week_choices = {number: str(number) for number in range(1, 16)}
 get_data = False
 ""
 get_upcoming_games = False
+updated_users_with_teams = {}
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -59,6 +63,7 @@ class User(db.Model, UserMixin):
     date_added = db.Column(db.DateTime, default=datetime.datetime.utcnow())
     league_manager = db.relationship('League', backref='manager', cascade="all, delete-orphan")
     leagues = db.relationship('List_of_leagues_update1', backref='member', cascade="all, delete-orphan")
+    player_teams = db.relationship('Player_weekly_info', backref='player_teams', cascade="all, delete-orphan")
 
     @property
     def password(self):
@@ -74,58 +79,114 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return '<Name %r>' % self.name
 
+
 class League(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     league_name = db.Column(db.String(100), nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.datetime.utcnow())
     league_manager = db.Column(db.Integer, db.ForeignKey('user.id'))
-    league_id_for_list_of_leagues = db.relationship('List_of_leagues_update1', backref='league_id', cascade="all, delete-orphan")
+    league_id_for_list_of_leagues = db.relationship('List_of_leagues_update1', backref='league_id',
+                                                    cascade="all, delete-orphan")
     league_members = db.relationship('League_members_update1', backref='members', cascade="all, delete-orphan")
+    players_teams = db.relationship('Player_weekly_info', backref='players_teams', cascade="all, delete-orphan")
     league_password = db.Column(db.String(100))
     draft_complete = db.Column(db.Boolean, default=False)
+    draft_date = db.Column(db.DateTime, nullable=True)
+
 
 class League_members_update1(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'))
     member = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+
 class List_of_leagues_update1(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     league = db.Column(db.Integer, db.ForeignKey('league.id'))
 
+
+class Player_weekly_info(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    week = db.Column(db.Integer, default=1)
+    faab = db.Column(db.Integer, default=100)
+    previous_weeks_score = db.Column(db.Integer, default=0)
+    this_weeks_score = db.Column(db.Integer, default=0)
+    team_1 = db.Column(db.String(100), nullable=True, default=None)
+    team_2 = db.Column(db.String(100), nullable=True, default=None)
+    team_3 = db.Column(db.String(100), nullable=True, default=None)
+    team_4 = db.Column(db.String(100), nullable=True, default=None)
+
+class Football_Teams(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    team = db.Column(db.String(100), nullable=True)
+    week0_score = db.Column(db.Integer, default=0)
+    week1_score = db.Column(db.Integer, default=0)
+    week2_score = db.Column(db.Integer, default=0)
+    week3_score = db.Column(db.Integer, default=0)
+    week4_score = db.Column(db.Integer, default=0)
+    week5_score = db.Column(db.Integer, default=0)
+    week6_score = db.Column(db.Integer, default=0)
+    week7_score = db.Column(db.Integer, default=0)
+    week8_score = db.Column(db.Integer, default=0)
+    week9_score = db.Column(db.Integer, default=0)
+    week10_score = db.Column(db.Integer, default=0)
+    week11_score = db.Column(db.Integer, default=0)
+    week12_score = db.Column(db.Integer, default=0)
+    week13_score = db.Column(db.Integer, default=0)
+    week14_score = db.Column(db.Integer, default=0)
+    week15_score = db.Column(db.Integer, default=0)
+
+
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
     username = StringField("Username", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired()])
-    password_hash = PasswordField("Password", validators=[DataRequired(), EqualTo('password_hash2', message='Passwords must match')])
+    password_hash = PasswordField("Password", validators=[DataRequired(),
+                                                          EqualTo('password_hash2', message='Passwords must match')])
     password_hash2 = PasswordField("Confirm Password", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
 
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
+
 class LeagueForm(FlaskForm):
     league_name = StringField("League Name", validators=[DataRequired()])
     league_password = StringField("League Password", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
 
 class JoinLeagueForm(FlaskForm):
     league_password = StringField("League Password", validators=[DataRequired()])
     submit = SubmitField("Join!")
 
 
+class LeagueSetup(FlaskForm):
+    user = SelectField("Player", coerce=int)
+    team1 = SelectField("Team 1", coerce=int)
+    team2 = SelectField("Team 2", coerce=int)
+    team3 = SelectField("Team 3", coerce=int)
+    team4 = SelectField("Team 4", coerce=int)
+    faab = IntegerField("faab", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+
 with app.app_context():
     db.create_all()
-
 
 """
 This loop replaces all teams that have an '&' in their name to '%26' because the API won't find it if an '&' is passed
 in. Teams_dict is then made to pass into the save_to_spreadsheet function. A dictionary is made so it can be saved to a
 csv with a list of 0s and 1s (1s representing a win, 0s representing a loss or no game played)
 """
+
+
 
 new_teams = []
 with open("Teams.txt", encoding='ISO-8859-1') as file:
@@ -136,7 +197,6 @@ with open("Teams.txt", encoding='ISO-8859-1') as file:
         new_teams.append(new_team)
 
 teams_dict = {team: [] for team in teams}
-
 
 if get_upcoming_games:
     my_functions.upcoming_games_master(teams_dict=teams_dict, year=year)
@@ -170,12 +230,14 @@ def login():
             print(f'{form.email.data} user doesnt exist')
     return render_template("login.html", form=form)
 
+
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
     logout_user()
     flash("You have been logged out!")
     return redirect(url_for('login'))
+
 
 @app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
@@ -185,7 +247,8 @@ def add_user():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user is None:
-            salted_and_hashed_pw = generate_password_hash(form.password_hash.data, method="pbkdf2:sha256", salt_length=8)
+            salted_and_hashed_pw = generate_password_hash(form.password_hash.data, method="pbkdf2:sha256",
+                                                          salt_length=8)
             user = User(name=form.name.data, email=form.email.data, password_hash=salted_and_hashed_pw,
                         username=form.username.data)
             db.session.add(user)
@@ -201,6 +264,7 @@ def add_user():
     our_users = User.query.order_by(User.date_added)
     return render_template("add_user.html", form=form, name=name, our_users=our_users)
 
+
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update(id):
     form = UserForm()
@@ -208,7 +272,8 @@ def update(id):
     if request.method == "POST" and form.password_hash.data == form.password_hash2.data:
         name_to_update.name = request.form['name']
         name_to_update.email = request.form['email']
-        name_to_update.password_hash = generate_password_hash(request.form['password_hash'], method="pbkdf2:sha256", salt_length=8)
+        name_to_update.password_hash = generate_password_hash(request.form['password_hash'], method="pbkdf2:sha256",
+                                                              salt_length=8)
         name_to_update.username = request.form['username']
         try:
             db.session.commit()
@@ -220,6 +285,7 @@ def update(id):
     else:
         flash("Error!")
         return render_template("update.html", form=form, name_to_update=name_to_update, id=id)
+
 
 @app.route('/delete/<int:id>', methods=['GET', 'POST'])
 def delete_user(id):
@@ -236,25 +302,31 @@ def delete_user(id):
         flash("Error!")
         return render_template("add_user.html", form=form, name=name, our_users=our_users)
 
+
 @app.route("/create_league", methods=['GET', 'POST'])
 @login_required
 def create_league():
     form = LeagueForm()
     if form.validate_on_submit():
-        #Create league and make the current user the league manager
+        # Create league and make the current user the league manager
         league = League(league_name=form.league_name.data, league_manager=current_user.id,
                         league_password=form.league_password.data)
         db.session.add(league)
         db.session.commit()
 
-        #Make the current user a member of the league
+        # Make the current user a member of the league
         league_member = League_members_update1(league_id=league.id, member=current_user.id)
         db.session.add(league_member)
         db.session.commit()
 
-        #Add this league to the list of leagues for the current user
+        # Add this league to the list of leagues for the current user
         league_to_add = List_of_leagues_update1(user_id=current_user.id, league=league.id)
         db.session.add(league_to_add)
+        db.session.commit()
+
+        # Setup player's weekly info table (assign 4 teams as none, give faab of $100)
+        initial_player_setup = Player_weekly_info(user_id=current_user.id, league=league.id)
+        db.session.add(initial_player_setup)
         db.session.commit()
 
         return redirect(url_for('league_dashboard', league_id=league.id))
@@ -263,6 +335,7 @@ def create_league():
     all_leagues = League.query.order_by(League.date_created)
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
+
 
 @app.route("/delete_league/<int:id>", methods=['GET', 'POST'])
 def delete_league(id):
@@ -309,6 +382,12 @@ def join_league(league_id):
                 league_to_add = List_of_leagues_update1(user_id=current_user.id, league=league_id)
                 db.session.add(league_to_add)
                 db.session.commit()
+
+                # Setup player's weekly info table (assign 4 teams as none, give faab of $100)
+                initial_player_setup = Player_weekly_info(user_id=current_user.id, league=league_id)
+                db.session.add(initial_player_setup)
+                db.session.commit()
+
                 flash("You have been added to the league!")
             else:
                 flash("You're already in the league! You will be redirected to the league page")
@@ -324,24 +403,122 @@ def join_league(league_id):
     form.league_password.data = ''
     return render_template("join_league.html", form=form)
 
+
 @app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def league_dashboard(league_id):
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     league_member_names = [User.query.filter_by(id=member.member).first().name for member in league_members
                            if member.league_id == league_id]
+    if not League.query.filter_by(id=league_id).first().draft_complete:
+        league_manager = League.query.filter_by(id=league_id).first().league_manager
+
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
-                           league_member_names=league_member_names)
+                           league_member_names=league_member_names, league_manager=league_manager)
+
+
+@app.route("/league_setup/league=<int:league_id>", methods=['GET', 'POST'])
+@login_required
+def league_setup(league_id):
+    form = LeagueSetup()
+    league_manager = League.query.filter_by(id=league_id).first().league_manager
+    league_name = League.query.filter_by(id=league_id).first().league_name
+
+    if current_user.id == league_manager:
+
+        # Setup all_teams to pass into the form
+        all_teams = Football_Teams.query.order_by(Football_Teams.id)
+        eligible_teams = [(team.id, team.team) for team in all_teams]
+
+        # Figure out which members still need to be updated and pass in Player option to the form
+        league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+        league_member_names = [User.query.filter_by(id=member.member).first().name for member in league_members
+                               if member.league_id == league_id]
+        users_to_update_as_objects = Player_weekly_info.query.filter_by(league=league_id)
+        users_to_update = [(user.user_id, User.query.filter_by(id=user.user_id).first().name)
+                           for user in users_to_update_as_objects if user.team_1 is None]
+
+        # Get updated members and pass their teams (and faab) in as dicts so user can see who has what teams
+        updated_user_ids = [user.user_id for user in users_to_update_as_objects if user.team_1 is not None]
+        for user in updated_user_ids:
+            team1 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().team_1)).first().team
+            team2 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().team_2)).first().team
+            team3 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().team_3)).first().team
+            team4 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().team_4)).first().team
+            faab = Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().faab
+            updated_users_with_teams[User.query.filter_by(id=user).first().name] = [[team1, team2, team3, team4], faab]
+
+        # Choices will be all teams
+        form.user.choices = [(object.user_id, User.query.filter_by(id=object.user_id).first().name)
+                             for object in users_to_update_as_objects]
+        form.team1.choices = eligible_teams
+        form.team2.choices = eligible_teams
+        form.team3.choices = eligible_teams
+        form.team4.choices = eligible_teams
+
+        # Update Player_weekly_info table to go from the user having 'None' teams and 100 faab to 4 teams and user-entered faab
+        if form.validate_on_submit():
+            player_user_id = form.user.data
+            faab = form.faab.data
+            player_name = User.query.filter_by(id=player_user_id).first().name
+
+            db.session.query(Player_weekly_info).filter(Player_weekly_info.user_id == player_user_id).update(
+                {"faab": faab, "team_1": form.team1.data, "team_2": form.team2.data, "team_3": form.team3.data,
+                 "team_4": form.team4.data})
+            db.session.commit()
+            flash(f"Teams for {player_name} have been updated!")
+
+            # Get updated members and pass their teams (and faab) in as dicts so user can see who has what teams
+            updated_user_ids = [user.user_id for user in users_to_update_as_objects if user.team_1 is not None]
+            for user in updated_user_ids:
+                team1 = Football_Teams.query.filter_by(id=int(
+                    Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().team_1)).first().team
+                team2 = Football_Teams.query.filter_by(id=int(
+                    Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().team_2)).first().team
+                team3 = Football_Teams.query.filter_by(id=int(
+                    Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().team_3)).first().team
+                team4 = Football_Teams.query.filter_by(id=int(
+                    Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().team_4)).first().team
+                faab = Player_weekly_info.query.filter_by(league=league_id, user_id=user).first().faab
+                updated_users_with_teams[User.query.filter_by(id=user).first().name] = [[team1, team2, team3, team4],
+                                                                                        faab]
+
+    else:
+        flash("You must be the league manager to perform this operation!")
+        return redirect(url_for('league_dashboard', league_id=league_id))
+
+    return render_template("league_setup.html", league_members=league_members, league_id=league_id,
+                           league_member_names=league_member_names, league_manager=league_manager,
+                           users_to_update=users_to_update, league_name=league_name, form=form,
+                           eligible_teams=eligible_teams, updated_users_with_teams=updated_users_with_teams)
+
 
 # Invalid URL
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html"), 404
 
+
 # Server Error
 @app.errorhandler(500)
 def page_not_found(e):
     return render_template("500.html"), 500
+
+
+@app.route("/schedule_draft/league=<int:league_id>", methods=['GET', 'POST'])
+@login_required
+def schedule_draft(league_id):
+    print(league_id)
+    # nothing below this line has been updated
+    league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+    league_member_names = [User.query.filter_by(id=member.member).first().name for member in league_members
+                           if member.league_id == league_id]
+    if not League.query.filter_by(id=league_id).first().draft_complete:
+        league_manager = League.query.filter_by(id=league_id).first().league_manager
+
+    return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
+                           league_member_names=league_member_names, league_manager=league_manager)
+
 
 """
 This route will be the main link to see a person's dashboard. It will automatically show the standings for the current
@@ -352,19 +529,22 @@ week. It will have a link to display the weeks for someone to choose so they can
 @app.route("/UserDashboard", methods=['GET', 'POST'])
 @login_required
 def UserDashboard():
-    user_list_of_leagues = [league.league_id for league in List_of_leagues_update1.query.filter_by(user_id=current_user.id)]
-    print(user_list_of_leagues)
+    user_list_of_leagues = [league.league_id for league in
+                            List_of_leagues_update1.query.filter_by(user_id=current_user.id)]
     user_list_of_league_members = {}
+    league_managers_dict = {}
     counter = 0
-    for list_of_members in user_list_of_leagues:
-        temporary_list = []
-        for item in list_of_members.league_members:
-            temporary_list.append(User.query.filter_by(id=item.member).first().name)
-        user_list_of_league_members[counter] = temporary_list
-        counter += 1
-    print(user_list_of_league_members)
-    league_number = 1
+    print(user_list_of_leagues)
 
+    for list_of_members in user_list_of_leagues:
+        temporary_list1 = []
+        for item in list_of_members.league_members:
+            temporary_list1.append(User.query.filter_by(id=item.member).first().name)
+        user_list_of_league_members[counter] = temporary_list1
+        league_managers_dict[counter] = League.query.filter_by(id=item.league_id).first().league_manager
+        counter += 1
+
+    league_number = 1
     data = pandas.read_csv("Team_points.csv", encoding='latin-1')
 
     with open("Teams.txt", encoding='ISO-8859-1') as file:
@@ -417,8 +597,9 @@ def UserDashboard():
         sorted(my_functions.determine_scores(points_dict=current_week_points_dict, league_number=league_number).items(),
                key=lambda kv: kv[1], reverse=True))
     previous_week_score_dict = dict(
-        sorted(my_functions.determine_scores(points_dict=previous_week_points_dict, league_number=league_number).items(),
-               key=lambda kv: kv[1], reverse=True))
+        sorted(
+            my_functions.determine_scores(points_dict=previous_week_points_dict, league_number=league_number).items(),
+            key=lambda kv: kv[1], reverse=True))
     team_score_dict_sorted = dict(sorted(team_score_dict.items(), key=lambda kv: kv[1], reverse=True))
     team_data_dict = {team: {"points": ""} for team in team_score_dict_sorted}
 
@@ -471,8 +652,10 @@ def UserDashboard():
     return render_template("UserDashboard.html", week_num=week, display_num=week, score_dict=current_week_score_dict,
                            places=places, previous_score_dict=previous_week_score_dict, previous_places=previous_places,
                            team_data_dict=team_data_dict, player_teams_final=player_teams_final,
-                           upcoming_team_games=upcoming_team_games, league_number=league_number, user_leagues=user_list_of_leagues,
-                           user_list_of_league_members=user_list_of_league_members)
+                           upcoming_team_games=upcoming_team_games, league_number=league_number,
+                           user_leagues=user_list_of_leagues,
+                           user_list_of_league_members=user_list_of_league_members,
+                           league_managers_dict=league_managers_dict)
 
 
 """
@@ -536,8 +719,9 @@ def get_standings(league_number, number_from_website):
         sorted(my_functions.determine_scores(points_dict=current_week_points_dict, league_number=league_number).items(),
                key=lambda kv: kv[1], reverse=True))
     previous_week_score_dict = dict(
-        sorted(my_functions.determine_scores(points_dict=previous_week_points_dict, league_number=league_number).items(),
-               key=lambda kv: kv[1], reverse=True))
+        sorted(
+            my_functions.determine_scores(points_dict=previous_week_points_dict, league_number=league_number).items(),
+            key=lambda kv: kv[1], reverse=True))
     team_score_dict_sorted = dict(sorted(team_score_dict.items(), key=lambda kv: kv[1], reverse=True))
     team_data_dict = {team: {"points": ""} for team in team_score_dict_sorted}
 

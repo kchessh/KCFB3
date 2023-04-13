@@ -36,11 +36,19 @@
           {% for member in user_list_of_league_members[user_leagues.index(league)] %}
             {% if user_list_of_league_members[user_leagues.index(league)].index(member) + 1 == user_list_of_league_members[user_leagues.index(league)]|length %}
               {{ member }}
+              {% if league_managers_dict[user_leagues.index(league)] == current_user.id %}
+                <br/><br/>
+                <a href="{{ url_for('schedule_draft', league_id=league.id) }}" class="btn btn-secondary btn-small">Schedule Draft</a>
+              {% endif %}
             {% else %}
               {{ member }},
             {% endif %}
           {% endfor %}
-        <br/>
+      </p>
+      <p class="card-text">
+        {% if current_user.id == league_manager %}
+          <strong>Schedule Draft</strong>
+        {% endif %}
       </p>
     </div>
   </div>

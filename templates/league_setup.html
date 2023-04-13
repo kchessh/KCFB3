@@ -5,14 +5,22 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>League Dashboard</title>
+    <title>League Setup</title>
     <link rel="stylesheet" href="/static/css/styles.css">
     <script src="{{ url_for('static', filename='js/serve.js') }}" type="module"></script>
-
 </head>
 
-<h2>League Dashboard</h2>
+<h2>League Setup</h2>
 <br/><br/>
+
+{% for message in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+	{{ message }}
+	<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+		<span aria-hidden="true">&times;</span>
+	</button>
+</div>
+{% endfor %}
 
 <div class="container">
   <div class="input-group">
@@ -31,22 +39,65 @@
 
 <div class="card">
   <div class="card-header">
-    {{ current_user.name }}
+    {{ league_name }}
   </div>
   <div class="card-body">
-    <h5 class="card-title">Special title treatment</h5>
+    <h5 class="card-title">Players to Update</h5>
     <p class="card-text">
-      {% for name in league_member_names %}
-        <strong>Name: </strong>{{ name }}<br/>
+      {% for user in users_to_update %}
+        <strong>Name: </strong>
+        {{ user[1] }}<br/>
+      {% endfor %}
+    </p>
+    <h5 class="card-title">Updated Players</h5>
+    <p class="card-text">
+      {% for user in updated_users_with_teams %}
+        <strong>Name: </strong>
+        {{ user }}      <strong>Teams: </strong>{{ updated_users_with_teams[user][0] }}      <strong>Faab: </strong>{{ updated_users_with_teams[user][1] }}<br/>
       {% endfor %}
     </p>
     <p class="card-text">
       {% if current_user.id == league_manager %}
         <a href="{{ url_for('schedule_draft', league_id=league_id) }}" class="btn btn-secondary btn-small">Schedule Draft</a>
-        <a href="{{ url_for('league_setup', league_id=league_id) }}" class="btn btn-secondary btn-small">League Setup</a>
       {% endif %}
     </p>
   </div>
+  <form method="POST">
+		{{ form.hidden_tag() }}
+
+		{{ form.user.label(class="form-label") }}
+
+		{{ form.user(class="form-control") }}
+		<br/>
+
+		{{ form.team1.label(class="form-label") }}
+
+		{{ form.team1(class="form-control") }}
+		<br/>
+
+		{{ form.team2.label(class="form-label") }}
+
+		{{ form.team2(class="form-control") }}
+		<br/>
+
+		{{ form.team3.label(class="form-label") }}
+
+		{{ form.team3(class="form-control") }}
+		<br/>
+
+		{{ form.team4.label(class="form-label") }}
+
+		{{ form.team4(class="form-control") }}
+		<br/>
+
+    {{ form.faab.label(class="form-label") }}
+
+		{{ form.faab(class="form-control") }}
+		<br/>
+
+		{{ form.submit(class="btn btn-secondary") }}
+
+	</form>
 </div>
 
 
