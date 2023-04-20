@@ -122,22 +122,27 @@ class Player_weekly_info(db.Model):
 class Football_Teams(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team = db.Column(db.String(100), nullable=True)
-    week0_score = db.Column(db.Integer, default=0)
-    week1_score = db.Column(db.Integer, default=0)
-    week2_score = db.Column(db.Integer, default=0)
-    week3_score = db.Column(db.Integer, default=0)
-    week4_score = db.Column(db.Integer, default=0)
-    week5_score = db.Column(db.Integer, default=0)
-    week6_score = db.Column(db.Integer, default=0)
-    week7_score = db.Column(db.Integer, default=0)
-    week8_score = db.Column(db.Integer, default=0)
-    week9_score = db.Column(db.Integer, default=0)
-    week10_score = db.Column(db.Integer, default=0)
-    week11_score = db.Column(db.Integer, default=0)
-    week12_score = db.Column(db.Integer, default=0)
-    week13_score = db.Column(db.Integer, default=0)
-    week14_score = db.Column(db.Integer, default=0)
-    week15_score = db.Column(db.Integer, default=0)
+    updated_this_week = db.Column(db.Boolean, default=False)
+    playing_now = db.Column(db.Boolean, default=False)
+    upcoming_opponent = db.Column(db.String(100), nullable=True)
+    date_and_time_of_game = db.Column(db.DateTime)
+    current_score = db.Column(db.Integer, default=0)
+    week0_score = db.Column(db.Integer)
+    week1_score = db.Column(db.Integer)
+    week2_score = db.Column(db.Integer)
+    week3_score = db.Column(db.Integer)
+    week4_score = db.Column(db.Integer)
+    week5_score = db.Column(db.Integer)
+    week6_score = db.Column(db.Integer)
+    week7_score = db.Column(db.Integer)
+    week8_score = db.Column(db.Integer)
+    week9_score = db.Column(db.Integer)
+    week10_score = db.Column(db.Integer)
+    week11_score = db.Column(db.Integer)
+    week12_score = db.Column(db.Integer)
+    week13_score = db.Column(db.Integer)
+    week14_score = db.Column(db.Integer)
+    week15_score = db.Column(db.Integer)
 
 
 class UserForm(FlaskForm):
@@ -174,6 +179,11 @@ class LeagueSetup(FlaskForm):
     team3 = SelectField("Team 3", coerce=int)
     team4 = SelectField("Team 4", coerce=int)
     faab = IntegerField("faab", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class Add_Drop_Form(FlaskForm):
+    team_to_add = SelectField("Team_to_add", coerce=int)
+    team_to_drop = SelectField("Team_to_drop", coerce=int)
     submit = SubmitField("Submit")
 
 
@@ -412,9 +422,60 @@ def league_dashboard(league_id):
                            if member.league_id == league_id]
     if not League.query.filter_by(id=league_id).first().draft_complete:
         league_manager = League.query.filter_by(id=league_id).first().league_manager
+    league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
+                           if member.league_id == league_id]
+    week = my_functions.determine_week_number()
+
+    # Gets all teams that the user can't pickup due to being owned by the user or another user
+    ineligible_teams = []
+    for member in league_member_ids:
+        ineligible_teams.append(Football_Teams.query.filter_by(
+            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_1)).first().team)
+        ineligible_teams.append(Football_Teams.query.filter_by(
+            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_2)).first().team)
+        ineligible_teams.append(Football_Teams.query.filter_by(
+            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_3)).first().team)
+        ineligible_teams.append(Football_Teams.query.filter_by(
+            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
+
+    user_teams = []
+    user_teams.append(Football_Teams.query.filter_by(
+        id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team)
+    user_teams.append(Football_Teams.query.filter_by(
+        id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_2)).first().team)
+    user_teams.append(Football_Teams.query.filter_by(
+        id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_3)).first().team)
+    user_teams.append(Football_Teams.query.filter_by(
+        id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_4)).first().team)
+
+    all_teams = Football_Teams.query.order_by(Football_Teams.id)
+    for team in all_teams:
+        eligible_teams = [team.team for team in all_teams if team.team not in ineligible_teams]
+        eligible_teams_dict = {team.team: team.current_score for team in all_teams if team.team not in ineligible_teams}
+        user_teams_dict = {team.team: team.current_score for team in all_teams if team.team in user_teams}
+        try:
+            eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
+            user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
+        except TypeError:
+            eligible_teams_dict_sorted = eligible_teams_dict
+            user_teams_dict_sorted = user_teams_dict
+
+    current_user_team_1 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
+        league=league_id, user_id=current_user.id).first().team_1)).first()
+    current_user_team_2 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
+        league=league_id, user_id=current_user.id).first().team_2)).first()
+    current_user_team_3 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
+        league=league_id, user_id=current_user.id).first().team_3)).first()
+    current_user_team_4 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
+        league=league_id, user_id=current_user.id).first().team_4)).first()
+
+
+    current_user_teams = [current_user_team_1.team, current_user_team_2.team, current_user_team_3.team, current_user_team_4.team]
 
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
-                           league_member_names=league_member_names, league_manager=league_manager)
+                           league_member_names=league_member_names, league_manager=league_manager,
+                           eligible_teams=eligible_teams, current_user_teams=current_user_teams,
+                           eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted)
 
 
 @app.route("/league_setup/league=<int:league_id>", methods=['GET', 'POST'])

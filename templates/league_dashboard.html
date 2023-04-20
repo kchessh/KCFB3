@@ -48,6 +48,51 @@
     </p>
   </div>
 </div>
+<br>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Team</th>
+        <th scope="col">Team Points</th>
+        <th scope="col">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for team in current_user_teams %}
+        <tr>
+          <th scope="row">{{ current_user_teams.index(team) + 1 }}</th>
+          <td>{{ team }}</td>
+          <td>{{ user_teams_dict_sorted[team] }}</td>
+          <td>Drop</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Current Team</th>
+        <th scope="col">Team Points</th>
+        <th scope="col">Add</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for team in eligible_teams %}
+        <tr>
+          <th scope="row">{{ eligible_teams.index(team) + 1 }}</th>
+          <td>{{ team }}</td>
+          <td>{{ eligible_teams_dict_sorted[team] }}</td>
+          <td>Add</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
 
 <br/><br/>

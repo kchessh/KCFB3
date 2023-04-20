@@ -1,4 +1,4 @@
-import datetime
+from datetime import date, datetime
 import pandas
 import requests
 import os, os.path
@@ -10,36 +10,31 @@ Functions for the KCFB website
 
 
 """
-This function is used to determine which week number it is in the season. It will look through the cutoffs (dates) and
-compare it to the datetime's current date. It's used to set the default week number from the dropdown for the standings
+This function is used to determine which week number it is in the season. It returns the week number and postseason as 
+False. After conference championships, it will return week 1 and postseason as True. The API puts all playoff games
+into week 1 of the postseason
 """
 
 def determine_week_number():
-    var = datetime.datetime.now()
-    day = var.day
-    month = var.month
-    # month = 12
+    week_cutoffs = [date(2023, 8, 28), date(2023, 9, 3), date(2023, 9, 10), date(2023, 9, 17), date(2023, 9, 24),
+                    date(2023, 10, 1), date(2023, 10, 8), date(2023, 10, 15), date(2023, 10, 22), date(2023, 10, 29),
+                    date(2023, 11, 5), date(2023, 11, 12), date(2023, 11, 19), date(2023, 11, 26), date(2023, 12, 3)]
+    today = date.today()
+    week = ""
+    postseason = False
 
-    cutoffs = [[9, 11], [9, 18], [9, 25], [10, 2], [10, 9], [10, 16], [10, 23], [10, 30], [11, 6], [11, 13],
-               [11, 20], [11, 27], [12, 4]]
-    list = []
-    second_list = []
+    for item in week_cutoffs:
+        if today < item:
+            week = week_cutoffs.index(item)
+            if week == 0:
+                week = 1
+            break
 
-    for item in cutoffs:
-        if month >= item[0]:
-            list.append(item)
-
-    for item in list:
-        if day >= item[1] or month > item[0]:
-            second_list.append(item)
-
-    if len(second_list) == 0:
+    if week == "":
         week = 1
-    else:
-        week = len(second_list) + 1
-        if week > 14:
-            week = 14
-    return week
+        postseason = True
+
+    return week, postseason
 
 
 """
@@ -114,8 +109,8 @@ def upcoming_games_master(teams_dict, year):
         week = 14
         day_of_week = 1
     else:
-        var = datetime.datetime.now()
-        day_of_week = datetime.date.weekday(var)
+        var = datetime.now()
+        day_of_week = datetime.weekday(var)
         week = determine_week_number() + 1
 
     if day_of_week == 1:
@@ -129,7 +124,7 @@ def upcoming_games_master(teams_dict, year):
                     start_date = game[i]["start_date"].split("T")[0].split("-")
                     start_day_as_input = [int(item) for item in start_date]
                     date = datetime.date(start_day_as_input[0], start_day_as_input[1], start_day_as_input[2])
-                    start_day_as_output = datetime.date.weekday(date)
+                    start_day_as_output = datetime.weekday(date)
                     start_day = weekDays[start_day_as_output]
                     games[team] = {"opponent": game[i]["away_team"], "start_day": start_day}
                 else:
@@ -137,7 +132,7 @@ def upcoming_games_master(teams_dict, year):
                     start_date = game[i]["start_date"].split("T")[0].split("-")
                     start_day_as_input = [int(item) for item in start_date]
                     date = datetime.date(start_day_as_input[0], start_day_as_input[1], start_day_as_input[2])
-                    start_day_as_output = datetime.date.weekday(date)
+                    start_day_as_output = datetime.weekday(date)
                     start_day = weekDays[start_day_as_output]
                     games[home_team] = {"opponent": team, "start_day": start_day}
             except KeyError:
@@ -186,7 +181,6 @@ This function also saves the previous results for every team to a txt file. Each
 def save_data(league_number, new_teams, year, teams_dict):
     data = pandas.read_csv(f"Leagues/League{league_number}.csv", encoding='latin-1')
     initial_dict = data.to_dict()
-    player_teams = convert_dict_to_simple_dict(initial_dict)
     week = 14
     for team in new_teams:
         print(team)
@@ -246,6 +240,3 @@ def save_data(league_number, new_teams, year, teams_dict):
 
             i += 1
         teams_dict[team.replace("%26", "&")].append(score)
-
-    write_data = pandas.DataFrame(teams_dict)
-    write_data.to_csv(f"Team_points.csv", mode='a', header=False)
