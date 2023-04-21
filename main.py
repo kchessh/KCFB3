@@ -127,6 +127,7 @@ class Football_Teams(db.Model):
     upcoming_opponent = db.Column(db.String(100), nullable=True)
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
+    conference = db.Column(db.String(30), nullable=True)
     week0_score = db.Column(db.Integer)
     week1_score = db.Column(db.Integer)
     week2_score = db.Column(db.Integer)
@@ -461,8 +462,8 @@ def league_dashboard(league_id):
                                                          user_id=current_user.id).first().team_4)).first().team]
 
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
-    eligible_teams_dict = {team.team: team.current_score for team in all_teams if team.team not in ineligible_teams}
-    user_teams_dict = {team.team: team.current_score for team in all_teams if team.team in user_teams}
+    eligible_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if team.team not in ineligible_teams}
+    user_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if team.team in user_teams}
     try:
         eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
         user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))

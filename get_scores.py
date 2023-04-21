@@ -91,6 +91,7 @@ class Football_Teams(db.Model):
     upcoming_opponent = db.Column(db.String(100), nullable=True)
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
+    conference = db.Column(db.String(30), nullable=True)
     week0_score = db.Column(db.Integer)
     week1_score = db.Column(db.Integer)
     week2_score = db.Column(db.Integer)
@@ -201,6 +202,36 @@ scores_2022 = {"Clemson": 11, "Florida State": 10, "Syracuse": 7, "Louisville": 
                "Tennessee": 11, "South Carolina": 8, "Kentucky": 7, "Florida": 6, "Missouri": 6, "Vanderbilt": 5,
                "LSU": 10,
                "Alabama": 11, "Mississippi State": 9, "Ole Miss": 8, "Arkansas": 7, "Auburn": 5, "Texas A&M": 5}
+
+conferences_2023 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC", "Louisville": "ACC",
+                        "NC State": "ACC", "Wake Forest": "ACC",
+                        "Boston College": "ACC", "North Carolina": "ACC", "Pittsburgh": "ACC", "Duke": "ACC",
+                        "Georgia Tech": "ACC", "Miami": "ACC",
+                        "Virginia": "ACC", "Virginia Tech": "ACC", "TCU": "Big 12", "Kansas State": "Big 12",
+                        "Texas": "Big 12", "Texas Tech": "Big 12",
+                        "Oklahoma State": "Big 12", "Baylor": "Big 12", "Oklahoma": "Big 12", "Kansas": "Big 12",
+                        "West Virginia": "Big 12", "Iowa State": "Big 12",
+                        "Michigan": "Big 10", "Ohio State": "Big 10", "Penn State": "Big 10", "Maryland": "Big 10",
+                        "Michigan State": "Big 10", "Indiana": "Big 10",
+                        "Rutgers": "Big 10", "Purdue": "Big 10", "Illinois": "Big 10", "Iowa": "Big 10",
+                        "Minnesota": "Big 10", "Wisconsin": "Big 10", "Nebraska": "Big 10",
+                        "Northwestern": "Big 10", "Notre Dame": "Independent", "BYU": "Big 12", "UCF": "Big 12",
+                        "Cincinnati": "Big 12", "Houston": "Big 12", "USC": "PAC 12",
+                        "Washington": "PAC 12", "Oregon": "PAC 12", "Utah": "PAC 12", "Oregon State": "PAC 12",
+                        "UCLA": "PAC 12", "Washington State": "PAC 12",
+                        "Arizona": "PAC 12", "California": "PAC 12", "Arizona State": "PAC 12", "Stanford": "PAC 12",
+                        "Colorado": "PAC 12", "Georgia": "SEC",
+                        "Tennessee": "SEC", "South Carolina": "SEC", "Kentucky": "SEC", "Florida": "SEC",
+                        "Missouri": "SEC", "Vanderbilt": "SEC",
+                        "LSU": "SEC", "Alabama": "SEC", "Mississippi State": "SEC", "Ole Miss": "SEC",
+                        "Arkansas": "SEC", "Auburn": "SEC", "Texas A&M": "SEC"}
+
+    # for every_team in all_teams:
+    #     print(every_team.id)
+    #     db.session.query(Football_Teams).filter(Football_Teams.id == every_team.id).update(
+    #         {"conference": conferences_2023[every_team.team]})
+    #     print(f"{every_team.team} is in {every_team.conference}")
+    # db.session.commit()
 
 
 
