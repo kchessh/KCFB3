@@ -217,6 +217,16 @@ final_team_games = my_functions.convert_dict_to_simple_dict(team_games)
 if get_data:
     my_functions.save_data(league_number=1, new_teams=new_teams, year=year, teams_dict=teams_dict)
 
+# Invalid URL
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html"), 404
+
+
+# Server Error
+@app.errorhandler(500)
+def page_not_found(e):
+    return render_template("500.html"), 500
 
 @app.route("/")
 def home():
@@ -424,7 +434,7 @@ def league_dashboard(league_id):
         league_manager = League.query.filter_by(id=league_id).first().league_manager
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                            if member.league_id == league_id]
-    week = my_functions.determine_week_number()
+    week, preseason = my_functions.determine_week_number()
 
     # Gets all teams that the user can't pickup due to being owned by the user or another user
     ineligible_teams = []
@@ -438,27 +448,28 @@ def league_dashboard(league_id):
         ineligible_teams.append(Football_Teams.query.filter_by(
             id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
 
-    user_teams = []
-    user_teams.append(Football_Teams.query.filter_by(
-        id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team)
-    user_teams.append(Football_Teams.query.filter_by(
-        id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_2)).first().team)
-    user_teams.append(Football_Teams.query.filter_by(
-        id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_3)).first().team)
-    user_teams.append(Football_Teams.query.filter_by(
-        id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_4)).first().team)
+    user_teams = [Football_Teams.query.filter_by(id=int(
+        Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_2)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_3)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_4)).first().team]
 
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
-    for team in all_teams:
-        eligible_teams = [team.team for team in all_teams if team.team not in ineligible_teams]
-        eligible_teams_dict = {team.team: team.current_score for team in all_teams if team.team not in ineligible_teams}
-        user_teams_dict = {team.team: team.current_score for team in all_teams if team.team in user_teams}
-        try:
-            eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
-            user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
-        except TypeError:
-            eligible_teams_dict_sorted = eligible_teams_dict
-            user_teams_dict_sorted = user_teams_dict
+    eligible_teams_dict = {team.team: team.current_score for team in all_teams if team.team not in ineligible_teams}
+    user_teams_dict = {team.team: team.current_score for team in all_teams if team.team in user_teams}
+    try:
+        eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
+        user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
+    except TypeError:
+        eligible_teams_dict_sorted = eligible_teams_dict
+        user_teams_dict_sorted = user_teams_dict
+    eligible_teams = list(eligible_teams_dict_sorted)
 
     current_user_team_1 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
         league=league_id, user_id=current_user.id).first().team_1)).first()
@@ -554,18 +565,6 @@ def league_setup(league_id):
                            eligible_teams=eligible_teams, updated_users_with_teams=updated_users_with_teams)
 
 
-# Invalid URL
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template("404.html"), 404
-
-
-# Server Error
-@app.errorhandler(500)
-def page_not_found(e):
-    return render_template("500.html"), 500
-
-
 @app.route("/schedule_draft/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def schedule_draft(league_id):
@@ -613,7 +612,7 @@ def UserDashboard():
         teams = text.split(",")
 
     "Determine current week and previous week to calculate standings and previous standings"
-    week = my_functions.determine_week_number()
+    week, postseason = my_functions.determine_week_number()
     if week == 1:
         previous_week = 1
     else:
