@@ -45,6 +45,7 @@
         <a href="{{ url_for('schedule_draft', league_id=league_id) }}" class="btn btn-secondary btn-small">Schedule Draft</a>
         <a href="{{ url_for('league_setup', league_id=league_id) }}" class="btn btn-secondary btn-small">League Setup</a>
       {% endif %}
+        <a href="{{ url_for('add_team', league_id=league_id) }}" class="btn btn-secondary btn-small">Add Team</a>
     </p>
   </div>
 </div>
@@ -58,7 +59,6 @@
         <th scope="col">Team</th>
         <th scope="col">Team Points</th>
         <th scope="col">Conference</th>
-        <th scope="col">Action</th>
       </tr>
     </thead>
     <tbody>
@@ -68,12 +68,11 @@
           <td>{{ team }}</td>
           <td>{{ user_teams_dict_sorted[team][0] }}</td>
           <td>{{ user_teams_dict_sorted[team][1] }}</td>
-          <td>Drop</td>
         </tr>
       {% endfor %}
+      <br/><br/>
     </tbody>
 
-    
 
 <div class="card">
   <table class="table">
@@ -83,7 +82,6 @@
         <th scope="col">Team</th>
         <th scope="col">Team Points</th>
         <th scope="col">Conference</th>
-        <th scope="col">Add</th>
       </tr>
     </thead>
     <tbody>
@@ -93,7 +91,6 @@
           <td>{{ team }}</td>
           <td>{{ eligible_teams_dict_sorted[team][0] }}</td>
           <td>{{ eligible_teams_dict_sorted[team][1] }}</td>
-          <td>Add</td>
         </tr>
       {% endfor %}
     </tbody>

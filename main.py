@@ -489,6 +489,67 @@ def league_dashboard(league_id):
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
                            eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted)
 
+@app.route("/league_dashboard/league=<int:league_id>/add_drop", methods=['GET', 'POST'])
+@login_required
+def add_drop(league_id):
+    league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+    league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
+                         if member.league_id == league_id]
+    # Gets all teams that the user can't pickup due to being owned by the user or another user
+    ineligible_teams = []
+    for member in league_member_ids:
+        ineligible_teams.append(Football_Teams.query.filter_by(
+            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_1)).first().team)
+        ineligible_teams.append(Football_Teams.query.filter_by(
+            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_2)).first().team)
+        ineligible_teams.append(Football_Teams.query.filter_by(
+            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_3)).first().team)
+        ineligible_teams.append(Football_Teams.query.filter_by(
+            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
+
+    user_teams = [Football_Teams.query.filter_by(id=int(
+        Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_2)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_3)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_4)).first().team]
+
+    all_teams = Football_Teams.query.order_by(Football_Teams.id)
+    eligible_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if
+                           team.team not in ineligible_teams}
+    user_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if
+                       team.team in user_teams}
+    try:
+        eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
+        user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
+    except TypeError:
+        eligible_teams_dict_sorted = eligible_teams_dict
+        user_teams_dict_sorted = user_teams_dict
+    eligible_teams = list(eligible_teams_dict_sorted)
+
+    current_user_team_1 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
+        league=league_id, user_id=current_user.id).first().team_1)).first()
+    current_user_team_2 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
+        league=league_id, user_id=current_user.id).first().team_2)).first()
+    current_user_team_3 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
+        league=league_id, user_id=current_user.id).first().team_3)).first()
+    current_user_team_4 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
+        league=league_id, user_id=current_user.id).first().team_4)).first()
+
+    current_user_teams = [current_user_team_1.team, current_user_team_2.team, current_user_team_3.team,
+                          current_user_team_4.team]
+    league_name = League.query.filter_by(id=league_id).first().league_name
+
+    return render_template("add_team.html", league_members=league_members, league_id=league_id,
+                           eligible_teams=eligible_teams, current_user_teams=current_user_teams,
+                           eligible_teams_dict_sorted=eligible_teams_dict_sorted,
+                           user_teams_dict_sorted=user_teams_dict_sorted, league_name=league_name)
+
 
 @app.route("/league_setup/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required

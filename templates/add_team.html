@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+{% extends "base.html" %}
+
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Add/Drop</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+</head>
+
+<h2>League {{ league_name }}</h2>
+<br/><br/>
+
+<div class="card">
+  <div class="card-header">
+    Add/Drop
+  </div>
+</div>
+<br>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Current Team</th>
+        <th scope="col">Team Points</th>
+        <th scope="col">Conference</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for team in current_user_teams %}
+        <tr>
+          <th scope="row">{{ current_user_teams.index(team) + 1 }}</th>
+          <td>{{ team }}</td>
+          <td>{{ user_teams_dict_sorted[team][0] }}</td>
+          <td>{{ user_teams_dict_sorted[team][1] }}</td>
+        </tr>
+      {% endfor %}
+      <br/><br/>
+    </tbody>
+
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Potential Team</th>
+        <th scope="col">Team Points</th>
+        <th scope="col">Conference</th>
+        <th scope="col">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for team in eligible_teams %}
+        <tr>
+          <th scope="row">{{ eligible_teams.index(team) + 1 }}</th>
+          <td>{{ team }}</td>
+          <td>{{ eligible_teams_dict_sorted[team][0] }}</td>
+          <td>{{ eligible_teams_dict_sorted[team][1] }}</td>
+          <td><a href="#" class="btn btn-outline-success">Add</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+<br/><br/>
+
+
+{% endblock %}
