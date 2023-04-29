@@ -489,9 +489,9 @@ def league_dashboard(league_id):
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
                            eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted)
 
-@app.route("/league_dashboard/league=<int:league_id>/add_drop", methods=['GET', 'POST'])
+@app.route("/league_dashboard/league=<int:league_id>/add_team", methods=['GET', 'POST'])
 @login_required
-def add_drop(league_id):
+def add_team(league_id):
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                          if member.league_id == league_id]
