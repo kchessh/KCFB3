@@ -1,0 +1,80 @@
+<!DOCTYPE HTML>
+{% extends "base.html" %}
+
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Confirm</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+</head>
+
+<h2>League {{ league_name }}</h2>
+<br/><br/>
+
+<div class="card">
+  <div class="card-header">
+    Confirm
+  </div>
+</div>
+<br>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">New Team</th>
+        <th scope="col">Team Points</th>
+        <th scope="col">Conference</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">1</th>
+        <td>{{ team_to_add_list[0] }}</td>
+        <td>{{ team_to_add_list[1] }}</td>
+        <td>{{ team_to_add_list[2] }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<br>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Old Team</th>
+        <th scope="col">Team Points</th>
+        <th scope="col">Conference</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">1</th>
+        <td>{{ team_to_drop_list[0] }}</td>
+        <td>{{ team_to_drop_list[1] }}</td>
+        <td>{{ team_to_drop_list[2] }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<br><br>
+
+<form method="POST">
+  {{ form.hidden_tag() }}
+
+  {{ form.faab.label(class="form-label") }}
+
+  {{ form.faab(class="form-control") }}
+  <br>
+
+  {{ form.submit(class="btn btn-secondary") }}
+</form>
+<br/>
+
+
+{% endblock %}

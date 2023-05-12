@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Confirm Delete Waiver
+{% endblock %}
+
+{% block content %}
+
+<h1>Confirm Deletion of Waiver:</h1>
+<br/>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Added Team</th>
+        <th scope="col">Dropped Team</th>
+        <th scope="col">Faab</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ team_to_add }}</td>
+        <td>{{ team_to_drop }}</td>
+        <td>{{ faab }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<a href="{{ url_for('delete_waiver', league_id=league_id, id=waiver_id) }}"
+	class="btn btn-danger">Confirm</a>
+
+<br/><br/><br/>
+{% endblock %}

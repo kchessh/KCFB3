@@ -34,7 +34,7 @@
     {{ current_user.name }}
   </div>
   <div class="card-body">
-    <h5 class="card-title">Special title treatment</h5>
+    <h5 class="card-title">Members</h5>
     <p class="card-text">
       {% for name in league_member_names %}
         <strong>Name: </strong>{{ name }}<br/>
@@ -45,15 +45,89 @@
         <a href="{{ url_for('schedule_draft', league_id=league_id) }}" class="btn btn-secondary btn-small">Schedule Draft</a>
         <a href="{{ url_for('league_setup', league_id=league_id) }}" class="btn btn-secondary btn-small">League Setup</a>
       {% endif %}
-        <a href="{{ url_for('add_team', league_id=league_id) }}" class="btn btn-secondary btn-small">Add Team</a>
+      <h5 class="card-title">Info</h5>
+      <strong>Faab: </strong>${{ faab }}
+      <br/><br/>
+      <a href="{{ url_for('add_team', league_id=league_id) }}" class="btn btn-secondary btn-small">Add Team</a>
     </p>
   </div>
 </div>
 <br>
 
 <div class="card">
-  <table class="table">
+  <table class="table table-striped">
     <thead>
+      <tr>
+        <th colspan="7" style="text-align:center">Standings</th>
+      </tr>
+      <tr>
+        <th scope="col">Place</th>
+        <th scope="col">Person</th>
+        <th scope="col">Points</th>
+        <th scope="col">Team 1</th>
+        <th scope="col">Team 2</th>
+        <th scope="col">Team 3</th>
+        <th scope="col">Team 4</th>
+      </tr>
+    </thead>
+    <tbody class="table-group-divider">
+      {% for person in league_scores_with_names %}
+        <tr>
+          <th scope="row">{{ league_scores_with_names.index(person) + 1 }}</th>
+          <td>{{ person[0] }}</td>
+          <td>{{ person[1] }}</td>
+          <td>{{ person[3] }}</td>
+          <td>{{ person[4] }}</td>
+          <td>{{ person[5] }}</td>
+          <td>{{ person[6] }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<br>
+
+{% if user_waivers_list|length > 0 %}
+  <div class="card">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th colspan="6" style="text-align:center">Current Waivers</th>
+        </tr>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Add Team</th>
+          <th scope="col">Drop Team</th>
+          <th scope="col">Faab</th>
+          <th scope="col">Delete</th>
+          <th scope="col">Update Faab</th>
+        </tr>
+      </thead>
+      <tbody class="table-group-divider">
+        {% for waiver in user_waivers_list %}
+          <tr>
+            <th scope="row">{{ user_waivers_list.index(waiver) + 1 }}</th>
+            <th scope="col">{{ waiver[0] }}</th>
+            <th scope="col">{{ waiver[1] }}</th>
+            <th scope="col">${{ waiver[2] }}</th>
+            <td><a href="{{ url_for('confirm_delete_waiver', league_id=league_id, id=waiver[3]) }}"
+              class="btn btn-danger btn-small">Delete</a></td>
+            <td><a href="{{ url_for('update_faab', league_id=league_id, id=waiver[3]) }}"
+              class="btn btn-secondary btn-small">Update</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <br>
+{% endif %}
+
+<div class="card">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th colspan="4" style="text-align:center">Your Teams</th>
+      </tr>
       <tr>
         <th scope="col">#</th>
         <th scope="col">Team</th>
@@ -61,7 +135,7 @@
         <th scope="col">Conference</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody class="table-group-divider">
       {% for team in current_user_teams %}
         <tr>
           <th scope="row">{{ current_user_teams.index(team) + 1 }}</th>
@@ -70,13 +144,18 @@
           <td>{{ user_teams_dict_sorted[team][1] }}</td>
         </tr>
       {% endfor %}
-      <br/><br/>
     </tbody>
+  </table>
+</div>
+<br/>
 
 
 <div class="card">
-  <table class="table">
+  <table class="table table-striped">
     <thead>
+      <tr>
+        <th colspan="4" style="text-align:center">Available Teams</th>
+      </tr>
       <tr>
         <th scope="col">#</th>
         <th scope="col">Team</th>
@@ -84,7 +163,7 @@
         <th scope="col">Conference</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody class="table-group-divider">
       {% for team in eligible_teams %}
         <tr>
           <th scope="row">{{ eligible_teams.index(team) + 1 }}</th>

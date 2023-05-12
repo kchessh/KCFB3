@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+{% extends "base.html" %}
+
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Drop Team</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+</head>
+
+<h2>League {{ league_name }}</h2>
+<br/><br/>
+
+<div class="card">
+  <div class="card-header">
+    Drop Team
+  </div>
+</div>
+<br>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">New Team</th>
+        <th scope="col">Team Points</th>
+        <th scope="col">Conference</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">1</th>
+        <td>{{ team_to_add_list[0] }}</td>
+        <td>{{ team_to_add_list[1] }}</td>
+        <td>{{ team_to_add_list[2] }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<br>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Current Teams</th>
+        <th scope="col">Team Points</th>
+        <th scope="col">Conference</th>
+        <th scope="col">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for team in current_user_teams %}
+        <tr>
+          <th scope="row">{{ current_user_teams.index(team) + 1 }}</th>
+          <td>{{ team }}</td>
+          <td>{{ user_teams_dict_sorted[team][0] }}</td>
+          <td>{{ user_teams_dict_sorted[team][1] }}</td>
+          <td><a href="{{ url_for('confirm_drop', league_id=league_id,
+            addteam_id=team_to_add_list[3],
+            dropteam_id=user_teams_dict_sorted[team][2]) }}"
+            class="btn btn-outline-danger">Drop</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+
+
+{% endblock %}

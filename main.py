@@ -53,6 +53,13 @@ updated_users_with_teams = {}
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Pass stuff to Navbar
+@app.context_processor
+def base():
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in leagues]
+    return dict(leagues_list=leagues_list)
+
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -64,6 +71,7 @@ class User(db.Model, UserMixin):
     league_manager = db.relationship('League', backref='manager', cascade="all, delete-orphan")
     leagues = db.relationship('List_of_leagues_update1', backref='member', cascade="all, delete-orphan")
     player_teams = db.relationship('Player_weekly_info', backref='player_teams', cascade="all, delete-orphan")
+    waiver_info = db.relationship('Waiver_Info', backref='user_waiver_info', cascade="all, delete-orphan")
 
     @property
     def password(self):
@@ -89,6 +97,7 @@ class League(db.Model):
                                                     cascade="all, delete-orphan")
     league_members = db.relationship('League_members_update1', backref='members', cascade="all, delete-orphan")
     players_teams = db.relationship('Player_weekly_info', backref='players_teams', cascade="all, delete-orphan")
+    waiver_info = db.relationship('Waiver_Info', backref='league_waiver_info', cascade="all, delete-orphan")
     league_password = db.Column(db.String(100))
     draft_complete = db.Column(db.Boolean, default=False)
     draft_date = db.Column(db.DateTime, nullable=True)
@@ -145,6 +154,15 @@ class Football_Teams(db.Model):
     week14_score = db.Column(db.Integer)
     week15_score = db.Column(db.Integer)
 
+class Waiver_Info(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    team_to_add_id = db.Column(db.Integer, nullable=False)
+    team_to_drop_id = db.Column(db.Integer, nullable=False)
+    faab_submitted = db.Column(db.Integer, nullable=False)
+    priority = db.Column(db.Integer, nullable=False)
+
 
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
@@ -182,9 +200,13 @@ class LeagueSetup(FlaskForm):
     faab = IntegerField("faab", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
-class Add_Drop_Form(FlaskForm):
-    team_to_add = SelectField("Team_to_add", coerce=int)
-    team_to_drop = SelectField("Team_to_drop", coerce=int)
+
+class DropComplete(FlaskForm):
+    faab = IntegerField("faab", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class UpdateFaab(FlaskForm):
+    faab = IntegerField("faab", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
 
@@ -428,7 +450,23 @@ def join_league(league_id):
 @app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def league_dashboard(league_id):
+    waivers = Waiver_Info.query.order_by(Waiver_Info.id)
+    user_waivers = Waiver_Info.query.filter_by(user_id=current_user.id).all()
+    user_waivers_list = [(Football_Teams.query.filter_by(id=waiver.team_to_add_id).first().team,
+                          Football_Teams.query.filter_by(id=waiver.team_to_drop_id).first().team,
+                          waiver.faab_submitted, waiver.id) for waiver in user_waivers]
+    faab = Player_weekly_info.query.filter_by(user_id=current_user.id).first().faab
+
+    for waiver in waivers:
+        print(f"{waiver.user_id}: {waiver.league}: {waiver.team_to_add_id}: {waiver.team_to_drop_id}")
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+    league_members_weekly_info = Player_weekly_info.query.filter_by(league=league_id).all()
+    league_scores_with_names = [(User.query.filter_by(id=member.user_id).first().name, member.this_weeks_score,
+                                member.previous_weeks_score, Football_Teams.query.filter_by(id=member.team_1).first().team,
+                                Football_Teams.query.filter_by(id=member.team_2).first().team,
+                                Football_Teams.query.filter_by(id=member.team_3).first().team,
+                                Football_Teams.query.filter_by(id=member.team_4).first().team)
+                                for member in league_members_weekly_info]
     league_member_names = [User.query.filter_by(id=member.member).first().name for member in league_members
                            if member.league_id == league_id]
     if not League.query.filter_by(id=league_id).first().draft_complete:
@@ -487,9 +525,10 @@ def league_dashboard(league_id):
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
                            league_member_names=league_member_names, league_manager=league_manager,
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
-                           eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted)
+                           eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted,
+                           user_waivers_list=user_waivers_list, faab=faab, league_scores_with_names=league_scores_with_names)
 
-@app.route("/league_dashboard/league=<int:league_id>/add_team", methods=['GET', 'POST'])
+@app.route("/add_team/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def add_team(league_id):
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
@@ -520,7 +559,7 @@ def add_team(league_id):
                                                          user_id=current_user.id).first().team_4)).first().team]
 
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
-    eligible_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if
+    eligible_teams_dict = {team.team: [team.current_score, team.conference, team.id] for team in all_teams if
                            team.team not in ineligible_teams}
     user_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if
                        team.team in user_teams}
@@ -530,25 +569,138 @@ def add_team(league_id):
     except TypeError:
         eligible_teams_dict_sorted = eligible_teams_dict
         user_teams_dict_sorted = user_teams_dict
+
     eligible_teams = list(eligible_teams_dict_sorted)
-
-    current_user_team_1 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
-        league=league_id, user_id=current_user.id).first().team_1)).first()
-    current_user_team_2 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
-        league=league_id, user_id=current_user.id).first().team_2)).first()
-    current_user_team_3 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
-        league=league_id, user_id=current_user.id).first().team_3)).first()
-    current_user_team_4 = Football_Teams.query.filter_by(id=int(Player_weekly_info.query.filter_by(
-        league=league_id, user_id=current_user.id).first().team_4)).first()
-
-    current_user_teams = [current_user_team_1.team, current_user_team_2.team, current_user_team_3.team,
-                          current_user_team_4.team]
+    current_user_teams = list(user_teams_dict_sorted.keys())
     league_name = League.query.filter_by(id=league_id).first().league_name
 
     return render_template("add_team.html", league_members=league_members, league_id=league_id,
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
                            eligible_teams_dict_sorted=eligible_teams_dict_sorted,
                            user_teams_dict_sorted=user_teams_dict_sorted, league_name=league_name)
+
+@app.route("/drop_team/league=<int:league_id>/team_selected=<int:team_id>", methods=['GET', 'POST'])
+@login_required
+def drop_team(league_id, team_id):
+    league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+    team_to_add = Football_Teams.query.filter_by(id=int(team_id)).first()
+    team_to_add_list = [team_to_add.team, team_to_add.current_score, team_to_add.conference, team_to_add.id]
+    print(team_to_add_list)
+    # Gets all teams that the user can't pickup due to being owned by the user or another user
+
+    user_teams = [Football_Teams.query.filter_by(id=int(
+        Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_2)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_3)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_4)).first().team]
+
+    all_teams = Football_Teams.query.order_by(Football_Teams.id)
+    user_teams_dict = {team.team: [team.current_score, team.conference, team.id] for team in all_teams if
+                       team.team in user_teams}
+    try:
+        user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
+    except TypeError:
+        user_teams_dict_sorted = user_teams_dict
+
+    current_user_teams = list(user_teams_dict_sorted.keys())
+    league_name = League.query.filter_by(id=league_id).first().league_name
+
+    return render_template("drop_team.html", league_members=league_members, league_id=league_id,
+                           current_user_teams=current_user_teams, user_teams_dict_sorted=user_teams_dict_sorted,
+                           league_name=league_name, team_to_add_list=team_to_add_list)
+
+@app.route("/confirm_drop/league=<int:league_id>/drop_team=<int:dropteam_id>/add_team=<int:addteam_id>", methods=['GET', 'POST'])
+@login_required
+def confirm_drop(league_id, dropteam_id, addteam_id):
+    form = DropComplete()
+    if form.validate_on_submit():
+        team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first().id
+        team_to_drop = Football_Teams.query.filter_by(id=int(dropteam_id)).first().id
+        user_faab = Player_weekly_info.query.filter_by(user_id=current_user.id, league=league_id).first().faab
+        submitted_faab = form.faab.data
+
+        if submitted_faab < user_faab:
+            all_waivers = Waiver_Info.query.filter_by(user_id=current_user.id, league=league_id).all()
+            print(all_waivers)
+            number_of_waivers = len(all_waivers)
+            if number_of_waivers == 0:
+                waiver_info = Waiver_Info(user_id=current_user.id, league=league_id, team_to_add_id=team_to_add,
+                                          team_to_drop_id=team_to_drop, faab_submitted=submitted_faab,
+                                          priority=number_of_waivers + 1)
+                db.session.add(waiver_info)
+                db.session.commit()
+                return redirect(url_for('league_dashboard', league_id=league_id))
+
+            for waiver in all_waivers:
+                if waiver.team_to_add_id == team_to_add and waiver.team_to_drop_id == team_to_drop:
+                    flash(f"You already have a bid to drop {team_to_drop} and add {team_to_add}. Update the waiver instead")
+                    break
+                if all_waivers.index(waiver) == number_of_waivers - 1:
+                    waiver_info = Waiver_Info(user_id=current_user.id, league=league_id, team_to_add_id=team_to_add,
+                                         team_to_drop_id=team_to_drop, faab_submitted=submitted_faab, priority=number_of_waivers + 1)
+                    db.session.add(waiver_info)
+                    db.session.commit()
+                    return redirect(url_for('league_dashboard', league_id=league_id))
+
+
+    team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first()
+    team_to_drop = Football_Teams.query.filter_by(id=int(dropteam_id)).first()
+    team_to_add_list = [team_to_add.team, team_to_add.current_score, team_to_add.conference, team_to_add.id]
+    team_to_drop_list = [team_to_drop.team, team_to_drop.current_score, team_to_add.conference, team_to_drop.id]
+    league_name = League.query.filter_by(id=league_id).first().league_name
+
+    return render_template("confirm_drop.html", form=form, league_id=league_id, league_name=league_name,
+                           team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list)
+
+@app.route("/confirm_delete_waiver/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
+def confirm_delete_waiver(id, league_id):
+    waiver_to_delete = Waiver_Info.query.get(id)
+    team_to_add = Football_Teams.query.filter_by(id=waiver_to_delete.team_to_add_id).first().team
+    team_to_drop = Football_Teams.query.filter_by(id=waiver_to_delete.team_to_drop_id).first().team
+    faab = waiver_to_delete.faab_submitted
+    return render_template("confirm_delete_waiver.html", team_to_add=team_to_add, team_to_drop=team_to_drop, league_id=league_id, faab=faab, waiver_id=id)
+
+@app.route("/delete_waiver/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
+def delete_waiver(id, league_id):
+    waiver_to_delete = Waiver_Info.query.get(id)
+    try:
+        db.session.delete(waiver_to_delete)
+        db.session.commit()
+        flash("Waiver deleted")
+        return redirect(url_for('league_dashboard', league_id=league_id))
+    except:
+        db.session.rollback()
+        flash("Error!")
+        return redirect(url_for('league_dashboard', league_id=league_id))
+
+
+@app.route("/update_faab/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
+def update_faab(id, league_id):
+    form = UpdateFaab()
+    current_waiver = Waiver_Info.query.get(id)
+    faab = current_waiver.faab_submitted
+    team_to_add = Football_Teams.query.filter_by(id=current_waiver.team_to_add_id).first().team
+    team_to_drop = Football_Teams.query.filter_by(id=current_waiver.team_to_drop_id).first().team
+    if form.validate_on_submit():
+        try:
+            updated_faab = form.faab.data
+            db.session.query(Waiver_Info).filter(Waiver_Info.id == id).update({"faab_submitted": updated_faab})
+            db.session.commit()
+            flash("Faab updated")
+            return redirect(url_for('league_dashboard', league_id=league_id))
+        except:
+            db.session.rollback()
+            flash("Error!")
+            return redirect(url_for('league_dashboard', league_id=league_id))
+
+    return render_template("update_faab.html", league_id=league_id, team_to_add=team_to_add, team_to_drop=team_to_drop,
+                           form=form, faab=faab)
 
 
 @app.route("/league_setup/league=<int:league_id>", methods=['GET', 'POST'])
