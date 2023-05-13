@@ -54,11 +54,14 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Pass stuff to Navbar
-@app.context_processor
-def base():
-    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
-    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in leagues]
-    return dict(leagues_list=leagues_list)
+# @app.context_processor
+# def base():
+#     try:
+#         leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+#         leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in leagues]
+#         return dict(leagues_list=leagues_list)
+#     except AttributeError:
+#         pass
 
 
 class User(db.Model, UserMixin):
@@ -456,6 +459,8 @@ def league_dashboard(league_id):
                           Football_Teams.query.filter_by(id=waiver.team_to_drop_id).first().team,
                           waiver.faab_submitted, waiver.id) for waiver in user_waivers]
     faab = Player_weekly_info.query.filter_by(user_id=current_user.id).first().faab
+    sorted_user_waivers_list = sorted(user_waivers_list, key=lambda waiver: waiver[2], reverse=True)
+    print(sorted_user_waivers_list)
 
     for waiver in waivers:
         print(f"{waiver.user_id}: {waiver.league}: {waiver.team_to_add_id}: {waiver.team_to_drop_id}")
@@ -526,7 +531,7 @@ def league_dashboard(league_id):
                            league_member_names=league_member_names, league_manager=league_manager,
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
                            eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted,
-                           user_waivers_list=user_waivers_list, faab=faab, league_scores_with_names=league_scores_with_names)
+                           user_waivers_list=sorted_user_waivers_list, faab=faab, league_scores_with_names=league_scores_with_names)
 
 @app.route("/add_team/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required

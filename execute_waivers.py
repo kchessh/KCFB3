@@ -81,7 +81,7 @@ class Player_weekly_info(db.Model):
     team_2 = db.Column(db.String(100), nullable=True, default=None)
     team_3 = db.Column(db.String(100), nullable=True, default=None)
     team_4 = db.Column(db.String(100), nullable=True, default=None)
-    
+
 
 class Football_Teams(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -117,3 +117,4 @@ class Waiver_Info(db.Model):
     team_to_add_id = db.Column(db.Integer, nullable=False)
     team_to_drop_id = db.Column(db.Integer, nullable=False)
     faab_submitted = db.Column(db.Integer, nullable=False)
+
