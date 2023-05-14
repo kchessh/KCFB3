@@ -3,6 +3,15 @@
 
 {% block content %}
 
+{% for message in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+	{{ message }}
+	<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+		<span aria-hidden="true">&times;</span>
+	</button>
+</div>
+{% endfor %}
+
 <head>
     <meta charset="UTF-8">
     <title>Confirm</title>
@@ -67,7 +76,7 @@
 <form method="POST">
   {{ form.hidden_tag() }}
 
-  {{ form.faab.label(class="form-label") }}
+  {{ form.faab.label(class="form-label") }} (${{ available_faab }} available)
 
   {{ form.faab(class="form-control") }}
   <br>
