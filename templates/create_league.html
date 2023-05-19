@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-{% extends "base.html" %}
+{% extends "logged_in_base.html" %}
 
 {% block content %}
 
@@ -41,7 +41,7 @@
 	{% for league in all_leagues %}
 	<tr>
   	<td>
-  		{{ league.id }}. {{ league.league_name }} - {{ league.date_created }} - {{ league.league_manager }} - {{ league.league_password }} - {{ league.draft_complete }} - 
+  		{{ league.id }}. {{ league.league_name }} - {{ league.date_created }} - {{ league.league_manager }} - {{ league.league_password }} - {{ league.draft_complete }} -
 			{% for member in league_members %}
 				{% if member.league_id == league.id %}
 					{{ member.member }},

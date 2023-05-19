@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-{% extends "base.html" %}
+{% extends "logged_in_base.html" %}
 
 {% block content %}
 
@@ -53,7 +53,7 @@
     <p class="card-text">
       {% for user in updated_users_with_teams %}
         <strong>Name: </strong>
-        {{ user }}      <strong>Teams: </strong>{{ updated_users_with_teams[user][0] }}      <strong>Faab: </strong>{{ updated_users_with_teams[user][1] }}<br/>
+        {{ user }}      <strong>Teams: </strong>{{ updated_users_with_teams[user][0] }}      <strong>Faab: </strong>${{ updated_users_with_teams[user][1] }}<br/>
       {% endfor %}
     </p>
     <p class="card-text">

@@ -53,16 +53,6 @@ updated_users_with_teams = {}
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Pass stuff to Navbar
-# @app.context_processor
-# def base():
-#     try:
-#         leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
-#         leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in leagues]
-#         return dict(leagues_list=leagues_list)
-#     except AttributeError:
-#         pass
-
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -353,6 +343,9 @@ def delete_user(id):
 @login_required
 def create_league():
     form = LeagueForm()
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
     if form.validate_on_submit():
         # Create league and make the current user the league manager
         league = League(league_name=form.league_name.data, league_manager=current_user.id,
@@ -375,38 +368,43 @@ def create_league():
         db.session.add(initial_player_setup)
         db.session.commit()
 
-        return redirect(url_for('league_dashboard', league_id=league.id))
+        return redirect(url_for('league_dashboard', league_id=league.id, leagues_list=leagues_list))
 
     form.league_name.data = ''
     all_leagues = League.query.order_by(League.date_created)
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
-    return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
+    return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members, leagues_list=leagues_list)
 
 
 @app.route("/delete_league/<int:id>", methods=['GET', 'POST'])
 def delete_league(id):
     league_to_delete = League.query.get(id)
     form = LeagueForm()
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
     try:
         db.session.delete(league_to_delete)
         db.session.commit()
         flash("League deleted")
         all_leagues = League.query.order_by(League.date_created)
         league_members = League_members_update1.query.order_by(League_members_update1.league_id)
-        return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
-        # return redirect(url_for('create_league', form=form, all_leagues=all_leagues, league_members=league_members))
+        return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members, leagues_list=leagues_list)
     except:
         db.session.rollback()
         flash("Error!")
         all_leagues = League.query.order_by(League.date_created)
         league_members = League_members_update1.query.order_by(League_members_update1.league_id)
-        return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members)
+        return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members, leagues_list=leagues_list)
 
 
 @app.route("/join_league/<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def join_league(league_id):
     form = JoinLeagueForm()
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
     if form.validate_on_submit():
         league_password = League.query.get(league_id).league_password
 
@@ -438,16 +436,16 @@ def join_league(league_id):
             else:
                 flash("You're already in the league! You will be redirected to the league page")
                 time.sleep(3)
-                return redirect(url_for('league_dashboard', league_id=league_id))
+                return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
 
-            return redirect(url_for('league_dashboard', league_id=league_id))
+            return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
         else:
             flash("That password is not correct. Please try again")
             form.league_password.data = ''
-            return render_template("join_league.html", form=form)
+            return render_template("join_league.html", form=form, leagues_list=leagues_list)
 
     form.league_password.data = ''
-    return render_template("join_league.html", form=form)
+    return render_template("join_league.html", form=form, leagues_list=leagues_list)
 
 
 @app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
@@ -525,11 +523,16 @@ def league_dashboard(league_id):
     current_user_teams = list(user_teams_dict_sorted.keys())
     print(user_teams_dict_sorted)
 
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
+
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
                            league_member_names=league_member_names, league_manager=league_manager,
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
                            eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted,
-                           user_waivers_list=sorted_user_waivers_list, faab=faab, league_scores_with_names=league_scores_with_names)
+                           user_waivers_list=sorted_user_waivers_list, faab=faab, league_scores_with_names=league_scores_with_names,
+                           leagues_list = leagues_list)
 
 
 @app.route("/add_team/league=<int:league_id>", methods=['GET', 'POST'])
@@ -578,10 +581,14 @@ def add_team(league_id):
     current_user_teams = list(user_teams_dict_sorted.keys())
     league_name = League.query.filter_by(id=league_id).first().league_name
 
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
+
     return render_template("add_team.html", league_members=league_members, league_id=league_id,
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
                            eligible_teams_dict_sorted=eligible_teams_dict_sorted,
-                           user_teams_dict_sorted=user_teams_dict_sorted, league_name=league_name)
+                           user_teams_dict_sorted=user_teams_dict_sorted, league_name=league_name, leagues_list=leagues_list)
 
 @app.route("/drop_team/league=<int:league_id>/team_selected=<int:team_id>", methods=['GET', 'POST'])
 @login_required
@@ -615,9 +622,13 @@ def drop_team(league_id, team_id):
     current_user_teams = list(user_teams_dict_sorted.keys())
     league_name = League.query.filter_by(id=league_id).first().league_name
 
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
+
     return render_template("drop_team.html", league_members=league_members, league_id=league_id,
                            current_user_teams=current_user_teams, user_teams_dict_sorted=user_teams_dict_sorted,
-                           league_name=league_name, team_to_add_list=team_to_add_list)
+                           league_name=league_name, team_to_add_list=team_to_add_list, leagues_list=leagues_list)
 
 @app.route("/confirm_drop/league=<int:league_id>/drop_team=<int:dropteam_id>/add_team=<int:addteam_id>", methods=['GET', 'POST'])
 @login_required
@@ -629,6 +640,9 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
     team_to_add_list = [team_to_add.team, team_to_add.current_score, team_to_add.conference, team_to_add.id]
     team_to_drop_list = [team_to_drop.team, team_to_drop.current_score, team_to_add.conference, team_to_drop.id]
     league_name = League.query.filter_by(id=league_id).first().league_name
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
 
     if form.validate_on_submit():
         team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first().id
@@ -645,30 +659,31 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
                                           priority=number_of_waivers + 1)
                 db.session.add(waiver_info)
                 db.session.commit()
-                return redirect(url_for('league_dashboard', league_id=league_id))
+                return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
 
             for waiver in all_waivers:
                 if waiver.team_to_add_id == team_to_add and waiver.team_to_drop_id == team_to_drop:
                     flash(f"You already have a bid to drop {team_to_drop} and add {team_to_add}. Update the waiver instead")
                     return render_template("confirm_drop.html", form=form, league_id=league_id, league_name=league_name,
                                            team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list,
-                                           available_faab=user_faab)
+                                           available_faab=user_faab, leagues_list=leagues_list)
 
                 if all_waivers.index(waiver) == number_of_waivers - 1:
                     waiver_info = Waiver_Info(user_id=current_user.id, league=league_id, team_to_add_id=team_to_add,
                                          team_to_drop_id=team_to_drop, faab_submitted=submitted_faab, priority=number_of_waivers + 1)
                     db.session.add(waiver_info)
                     db.session.commit()
-                    return redirect(url_for('league_dashboard', league_id=league_id))
+                    return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
 
         else:
             flash("You don't have enough Faab to make that waiver request. Please update the faab!")
             return render_template("confirm_drop.html", form=form, league_id=league_id, league_name=league_name,
                                    team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list,
-                                   available_faab=user_faab)
+                                   available_faab=user_faab, leagues_list=leagues_list)
 
     return render_template("confirm_drop.html", form=form, league_id=league_id, league_name=league_name,
-                           team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list, available_faab=user_faab)
+                           team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list,
+                           available_faab=user_faab, leagues_list=leagues_list)
 
 @app.route("/confirm_delete_waiver/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
 def confirm_delete_waiver(id, league_id):
@@ -676,20 +691,27 @@ def confirm_delete_waiver(id, league_id):
     team_to_add = Football_Teams.query.filter_by(id=waiver_to_delete.team_to_add_id).first().team
     team_to_drop = Football_Teams.query.filter_by(id=waiver_to_delete.team_to_drop_id).first().team
     faab = waiver_to_delete.faab_submitted
-    return render_template("confirm_delete_waiver.html", team_to_add=team_to_add, team_to_drop=team_to_drop, league_id=league_id, faab=faab, waiver_id=id)
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
+    return render_template("confirm_delete_waiver.html", team_to_add=team_to_add, team_to_drop=team_to_drop,
+                           league_id=league_id, faab=faab, waiver_id=id, leagues_list=leagues_list)
 
 @app.route("/delete_waiver/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
 def delete_waiver(id, league_id):
     waiver_to_delete = Waiver_Info.query.get(id)
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
     try:
         db.session.delete(waiver_to_delete)
         db.session.commit()
         flash("Waiver deleted")
-        return redirect(url_for('league_dashboard', league_id=league_id))
+        return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
     except:
         db.session.rollback()
         flash("Error!")
-        return redirect(url_for('league_dashboard', league_id=league_id))
+        return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
 
 
 @app.route("/update_faab/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
@@ -699,20 +721,23 @@ def update_faab(id, league_id):
     faab = current_waiver.faab_submitted
     team_to_add = Football_Teams.query.filter_by(id=current_waiver.team_to_add_id).first().team
     team_to_drop = Football_Teams.query.filter_by(id=current_waiver.team_to_drop_id).first().team
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
     if form.validate_on_submit():
         try:
             updated_faab = form.faab.data
             db.session.query(Waiver_Info).filter(Waiver_Info.id == id).update({"faab_submitted": updated_faab})
             db.session.commit()
             flash("Faab updated")
-            return redirect(url_for('league_dashboard', league_id=league_id))
+            return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
         except:
             db.session.rollback()
             flash("Error!")
-            return redirect(url_for('league_dashboard', league_id=league_id))
+            return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
 
     return render_template("update_faab.html", league_id=league_id, team_to_add=team_to_add, team_to_drop=team_to_drop,
-                           form=form, faab=faab)
+                           form=form, faab=faab, leagues_list=leagues_list)
 
 
 @app.route("/league_setup/league=<int:league_id>", methods=['GET', 'POST'])
@@ -721,6 +746,9 @@ def league_setup(league_id):
     form = LeagueSetup()
     league_manager = League.query.filter_by(id=league_id).first().league_manager
     league_name = League.query.filter_by(id=league_id).first().league_name
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
 
     if current_user.id == league_manager:
 
@@ -784,12 +812,13 @@ def league_setup(league_id):
 
     else:
         flash("You must be the league manager to perform this operation!")
-        return redirect(url_for('league_dashboard', league_id=league_id))
+        return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
 
     return render_template("league_setup.html", league_members=league_members, league_id=league_id,
                            league_member_names=league_member_names, league_manager=league_manager,
                            users_to_update=users_to_update, league_name=league_name, form=form,
-                           eligible_teams=eligible_teams, updated_users_with_teams=updated_users_with_teams)
+                           eligible_teams=eligible_teams, updated_users_with_teams=updated_users_with_teams,
+                           leagues_list=leagues_list)
 
 
 @app.route("/schedule_draft/league=<int:league_id>", methods=['GET', 'POST'])
@@ -802,8 +831,11 @@ def schedule_draft(league_id):
     if not League.query.filter_by(id=league_id).first().draft_complete:
         league_manager = League.query.filter_by(id=league_id).first().league_manager
 
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
-                           league_member_names=league_member_names, league_manager=league_manager)
+                           league_member_names=league_member_names, league_manager=league_manager, leagues_list=leagues_list)
 
 
 """
@@ -821,6 +853,9 @@ def UserDashboard():
     league_managers_dict = {}
     counter = 0
     print(user_list_of_leagues)
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
 
     for list_of_members in user_list_of_leagues:
         temporary_list1 = []
@@ -941,7 +976,7 @@ def UserDashboard():
                            upcoming_team_games=upcoming_team_games, league_number=league_number,
                            user_leagues=user_list_of_leagues,
                            user_list_of_league_members=user_list_of_league_members,
-                           league_managers_dict=league_managers_dict)
+                           league_managers_dict=league_managers_dict, leagues_list=leagues_list)
 
 
 """
