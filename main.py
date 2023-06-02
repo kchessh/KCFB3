@@ -252,12 +252,16 @@ def home():
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     form = LoginForm()
+    next_url = request.form.get("next")
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user:
             if check_password_hash(user.password_hash, form.password.data):
                 login_user(user)
-                return redirect(url_for('UserDashboard'))
+                if next_url:
+                    return redirect(next_url)
+                else:
+                    return redirect(url_for('UserDashboard'))
             else:
                 flash("That login combination is incorrect")
                 return render_template("login.html", form=form)
@@ -399,53 +403,56 @@ def delete_league(id):
 
 
 @app.route("/join_league/<int:league_id>", methods=['GET', 'POST'])
-@login_required
+@login_manager.unauthorized_handler
 def join_league(league_id):
-    form = JoinLeagueForm()
-    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
-    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
-                    leagues]
-    if form.validate_on_submit():
-        league_password = League.query.get(league_id).league_password
+    if current_user is None:
+        return redirect(url_for('login', next=request.endpoint))
+    else:
+        form = JoinLeagueForm()
+        leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+        leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                        leagues]
+        if form.validate_on_submit():
+            league_password = League.query.get(league_id).league_password
 
-        if form.league_password.data == league_password:
-            league_members = League_members_update1.query.order_by(League_members_update1.league_id)
-            league_member_ids = []
-            for member in league_members:
-                if member.league_id == league_id:
-                    name = User.query.filter_by(id=member.member).first().id
-                    league_member_ids.append(name)
+            if form.league_password.data == league_password:
+                league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+                league_member_ids = []
+                for member in league_members:
+                    if member.league_id == league_id:
+                        name = User.query.filter_by(id=member.member).first().id
+                        league_member_ids.append(name)
 
-            if current_user.id not in league_member_ids:
-                # Make the current user a member of the league
-                league_member = League_members_update1(league_id=league_id, member=current_user.id)
-                db.session.add(league_member)
-                db.session.commit()
+                if current_user.id not in league_member_ids:
+                    # Make the current user a member of the league
+                    league_member = League_members_update1(league_id=league_id, member=current_user.id)
+                    db.session.add(league_member)
+                    db.session.commit()
 
-                # Add this league to the list of leagues for the current user
-                league_to_add = List_of_leagues_update1(user_id=current_user.id, league=league_id)
-                db.session.add(league_to_add)
-                db.session.commit()
+                    # Add this league to the list of leagues for the current user
+                    league_to_add = List_of_leagues_update1(user_id=current_user.id, league=league_id)
+                    db.session.add(league_to_add)
+                    db.session.commit()
 
-                # Setup player's weekly info table (assign 4 teams as none, give faab of $100)
-                initial_player_setup = Player_weekly_info(user_id=current_user.id, league=league_id)
-                db.session.add(initial_player_setup)
-                db.session.commit()
+                    # Setup player's weekly info table (assign 4 teams as none, give faab of $100)
+                    initial_player_setup = Player_weekly_info(user_id=current_user.id, league=league_id)
+                    db.session.add(initial_player_setup)
+                    db.session.commit()
 
-                flash("You have been added to the league!")
-            else:
-                flash("You're already in the league! You will be redirected to the league page")
-                time.sleep(3)
+                    flash("You have been added to the league!")
+                else:
+                    flash("You're already in the league! You will be redirected to the league page")
+                    time.sleep(3)
+                    return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
+
                 return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
+            else:
+                flash("That password is not correct. Please try again")
+                form.league_password.data = ''
+                return render_template("join_league.html", form=form, leagues_list=leagues_list)
 
-            return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
-        else:
-            flash("That password is not correct. Please try again")
-            form.league_password.data = ''
-            return render_template("join_league.html", form=form, leagues_list=leagues_list)
-
-    form.league_password.data = ''
-    return render_template("join_league.html", form=form, leagues_list=leagues_list)
+        form.league_password.data = ''
+        return render_template("join_league.html", form=form, leagues_list=leagues_list)
 
 
 @app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
