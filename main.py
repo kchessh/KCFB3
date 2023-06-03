@@ -402,12 +402,10 @@ def delete_league(id):
         return render_template("create_league.html", form=form, all_leagues=all_leagues, league_members=league_members, leagues_list=leagues_list)
 
 
-@app.route("/join_league/<int:league_id>", methods=['GET', 'POST'])
+@app.route("/join_league/league_id=<int:league_id>", methods=['GET', 'POST'])
 @login_manager.unauthorized_handler
 def join_league(league_id):
-    if current_user is None:
-        return redirect(url_for('login', next=request.endpoint))
-    else:
+    try:
         form = JoinLeagueForm()
         leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
         leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
@@ -453,6 +451,8 @@ def join_league(league_id):
 
         form.league_password.data = ''
         return render_template("join_league.html", form=form, leagues_list=leagues_list)
+    except AttributeError:
+        return redirect(url_for('login', next=request.endpoint, league_id=league_id))
 
 
 @app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
