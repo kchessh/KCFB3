@@ -8,6 +8,7 @@ from wtforms import StringField, SubmitField, PasswordField, BooleanField, Valid
 from wtforms.validators import DataRequired, EqualTo, Length, InputRequired
 from flask_bootstrap import Bootstrap
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.test import create_environ
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 from sqlalchemy import select, delete, update, inspect
@@ -94,6 +95,7 @@ class League(db.Model):
     league_password = db.Column(db.String(100))
     draft_complete = db.Column(db.Boolean, default=False)
     draft_date = db.Column(db.DateTime, nullable=True)
+    waivers_already_executed = db.Column(db.Boolean, default=False)
 
 
 class League_members_update1(db.Model):
@@ -248,6 +250,18 @@ def page_not_found(e):
 def home():
     return render_template("index.html")
 
+def redirect_dest(fallback):
+    dest_url = request.args.get('next')
+    print(dest_url)
+    if not dest_url:
+        dest_url = url_for(fallback)
+    return redirect(dest_url)
+
+@login_manager.unauthorized_handler
+def handle_needs_login():
+    flash("You have to be logged in to access this page.")
+    next = url_for(request.endpoint,**request.view_args)
+    return redirect(url_for('login', next=next))
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -560,6 +574,7 @@ def add_team(league_id):
         ineligible_teams.append(Football_Teams.query.filter_by(
             id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
 
+    # Displays the user's current teams that they can choose to drop from
     user_teams = [Football_Teams.query.filter_by(id=int(
         Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
                   Football_Teams.query.filter_by(id=int(
@@ -591,6 +606,8 @@ def add_team(league_id):
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
                     leagues]
+
+
 
     return render_template("add_team.html", league_members=league_members, league_id=league_id,
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
@@ -656,7 +673,7 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
         team_to_drop = Football_Teams.query.filter_by(id=int(dropteam_id)).first().id
         submitted_faab = form.faab.data
 
-        if submitted_faab < user_faab:
+        if submitted_faab <= user_faab:
             all_waivers = Waiver_Info.query.filter_by(user_id=current_user.id, league=league_id).all()
             print(all_waivers)
             number_of_waivers = len(all_waivers)

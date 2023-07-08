@@ -16,7 +16,7 @@ from flask_migrate import Migrate
 import time
 # from main import User, League, League_members_update1, List_of_leagues_update1, Player_weekly_info, Football_Teams
 
-test = True
+scores_test = True
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
@@ -117,114 +117,130 @@ year = 2023
 week, postseason = my_functions.determine_week_number()
 today = date.today()
 now = datetime.now()
+week = 1
+time_delta = timedelta(hours=2)
 
-# if today.weekday() == 6:
-#     teams_to_update_for_upcoming_games = session.query(Football_Teams).all()
-#     time_delta = 0
-#     for result in teams_to_update_for_upcoming_games:
-#         print(result.team)
-#         team_to_query = result.team.replace("&", "%26")
-#         game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
-#         number_of_games = len(game)
-#         home_team = game[0]['home_team']
-#         away_team = game[0]['away_team']
-#         game_time = game[0]['start_date']
-#         print(game_time)
-#         print(type(game_time))
-#         if team_to_query == home_team:
-#             upcoming_opponent = away_team
-#         else:
-#             upcoming_opponent = home_team
-#         session.query(Football_Teams).filter_by(team=team_to_query).update({"upcoming_opponent": upcoming_opponent,
-#             "date_and_time_of_game": game_time})
-#         time.sleep(2)
-#
-#     session.commit()
-#
-# cutoff_for_querying_games = datetime.now()
-# # teams_to_update = session.query(Football_Teams).filter_by(updated_this_week=False or None).all()
-# teams_to_update = session.query(Football_Teams).all()
-# print(len(teams_to_update))
-# print(teams_to_update)
-# for result in teams_to_update:
-#     print(result.team)
-#     if cutoff_for_querying_games < now:
-#         print(cutoff_for_querying_games)
-#         print(now)
-#         team_to_query = result.team.replace("&", "%26")
-#         game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
-#         print(game)
-#         try:
-#             home_team = game[0]['home_team']
-#             away_team = game[0]['away_team']
-#             home_score = game[0]['home_points']
-#             away_score = game[0]['away_points']
-#             if home_score > away_score:
-#                 winning_team = home_team.replace("%26", "&")
-#                 losing_team = away_team.replace("%26", "&")
-#             elif away_score > home_score:
-#                 winning_team = away_team.replace("%26", "&")
-#                 losing_team = home_team.replace("%26", "&")
-#
-#             session.query(Football_Teams).filter(Football_Teams.team == home_team).update({"current_score": home_score})
-#             session.query(Football_Teams).filter(Football_Teams.team == away_team).update({"current_score": away_score})
-#
-#             # Update the week's score and updated_this_week variables for both teams if the game is over
-#             if game[0]['completed'] == True:
-#                 session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
-#                     {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False})
-#                 session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
-#                     {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False})
-#
-#         except IndexError:
-#             # If IndexError, then the team doesn't have a game so assign it 0 and mark it as updated. It needs to be
-#             # Saturday before updating so someone can still drop this team and add another one
-#             if today.weekday() == 5:
-#                 session.query(Football_Teams).filter(Football_Teams.team == team_to_query.replace("%26", "&")).update(
-#                     {f"week{week}_score": 0, "updated_this_week": True})
-#
-#     time.sleep(2)
-# session.commit()
-#
-# new_results = session.query(Football_Teams).all()
-# for result in new_results:
-#     print(result.week2_score)
+def get_upcoming_games():
+    all_teams = session.query(Football_Teams).all()
+    for item in all_teams:
+        print(item.team)
+        team_to_query = item.team.replace("&", "%26")
+        game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
+        team_to_query = team_to_query.replace("%26", "&")
+        number_of_games = len(game)
+        if number_of_games > 1 and datetime.now() > datetime.combine(date(2023, 8, 28), datetime.min.time()):
+            home_team = game[1]['home_team']
+            away_team = game[1]['away_team']
+            game_time = game[1]['start_date']
+            if team_to_query == home_team:
+                upcoming_opponent = away_team
+            else:
+                upcoming_opponent = home_team
+        else:
+            home_team = game[0]['home_team']
+            away_team = game[0]['away_team']
+            game_time = game[0]['start_date']
+            if team_to_query == home_team:
+                upcoming_opponent = away_team
+            else:
+                upcoming_opponent = home_team
 
-scores_2022 = {"Clemson": 11, "Florida State": 10, "Syracuse": 7, "Louisville": 8, "NC State": 8, "Wake Forest": 8,
-               "Boston College": 3, "North Carolina": 9, "Pittsburgh": 9, "Duke": 9, "Georgia Tech": 5, "Miami": 5,
-               "Virginia": 3, "Virginia Tech": 3, "TCU": 12, "Kansas State": 10, "Texas": 8, "Texas Tech": 9,
-               "Oklahoma State": 7, "Baylor": 6, "Oklahoma": 6, "Kansas": 6, "West Virginia": 5, "Iowa State": 4,
-               "Michigan": 13, "Ohio State": 11, "Penn State": 11, "Maryland": 8, "Michigan State": 5, "Indiana": 4,
-               "Rutgers": 4, "Purdue": 8, "Illinois": 8, "Iowa": 8, "Minnesota": 9, "Wisconsin": 7, "Nebraska": 4,
-               "Northwestern": 1, "Notre Dame": 9, "BYU": 8, "UCF": 9, "Cincinnati": 9, "Houston": 8, "USC": 11,
-               "Washington": 11, "Oregon": 10, "Utah": 10, "Oregon State": 10, "UCLA": 9, "Washington State": 7,
-               "Arizona": 5, "California": 4, "Arizona State": 3, "Stanford": 3, "Colorado": 1, "Georgia": 13,
-               "Tennessee": 11, "South Carolina": 8, "Kentucky": 7, "Florida": 6, "Missouri": 6, "Vanderbilt": 5,
-               "LSU": 10,
-               "Alabama": 11, "Mississippi State": 9, "Ole Miss": 8, "Arkansas": 7, "Auburn": 5, "Texas A&M": 5}
+        session.query(Football_Teams).filter_by(team=team_to_query).update({"upcoming_opponent": upcoming_opponent,
+            "date_and_time_of_game": game_time, "updated_this_week": False})
+        time.sleep(2)
 
-conferences_2023 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC", "Louisville": "ACC",
-                        "NC State": "ACC", "Wake Forest": "ACC",
-                        "Boston College": "ACC", "North Carolina": "ACC", "Pittsburgh": "ACC", "Duke": "ACC",
-                        "Georgia Tech": "ACC", "Miami": "ACC",
-                        "Virginia": "ACC", "Virginia Tech": "ACC", "TCU": "Big 12", "Kansas State": "Big 12",
-                        "Texas": "Big 12", "Texas Tech": "Big 12",
-                        "Oklahoma State": "Big 12", "Baylor": "Big 12", "Oklahoma": "Big 12", "Kansas": "Big 12",
-                        "West Virginia": "Big 12", "Iowa State": "Big 12",
-                        "Michigan": "Big 10", "Ohio State": "Big 10", "Penn State": "Big 10", "Maryland": "Big 10",
-                        "Michigan State": "Big 10", "Indiana": "Big 10",
-                        "Rutgers": "Big 10", "Purdue": "Big 10", "Illinois": "Big 10", "Iowa": "Big 10",
-                        "Minnesota": "Big 10", "Wisconsin": "Big 10", "Nebraska": "Big 10",
-                        "Northwestern": "Big 10", "Notre Dame": "Independent", "BYU": "Big 12", "UCF": "Big 12",
-                        "Cincinnati": "Big 12", "Houston": "Big 12", "USC": "PAC 12",
-                        "Washington": "PAC 12", "Oregon": "PAC 12", "Utah": "PAC 12", "Oregon State": "PAC 12",
-                        "UCLA": "PAC 12", "Washington State": "PAC 12",
-                        "Arizona": "PAC 12", "California": "PAC 12", "Arizona State": "PAC 12", "Stanford": "PAC 12",
-                        "Colorado": "PAC 12", "Georgia": "SEC",
-                        "Tennessee": "SEC", "South Carolina": "SEC", "Kentucky": "SEC", "Florida": "SEC",
-                        "Missouri": "SEC", "Vanderbilt": "SEC",
-                        "LSU": "SEC", "Alabama": "SEC", "Mississippi State": "SEC", "Ole Miss": "SEC",
-                        "Arkansas": "SEC", "Auburn": "SEC", "Texas A&M": "SEC"}
+        session.commit()
+
+cutoff_for_querying_games = datetime.now() + time_delta
+print(cutoff_for_querying_games)
+teams_to_update = session.query(Football_Teams).filter_by(updated_this_week=False).all()
+print(len(teams_to_update))
+def get_scores():
+    for item in teams_to_update:
+        print(item.team)
+        print(item.date_and_time_of_game)
+        if cutoff_for_querying_games > item.date_and_time_of_game or scores_test is True:
+            team_to_query = item.team.replace("&", "%26")
+            game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
+            print(game)
+            try:
+                home_team = game[0]['home_team']
+                away_team = game[0]['away_team']
+                home_score = game[0]['home_points']
+                away_score = game[0]['away_points']
+                try:
+                    if home_score > away_score:
+                        winning_team = home_team.replace("%26", "&")
+                        losing_team = away_team.replace("%26", "&")
+                    elif away_score > home_score:
+                        winning_team = away_team.replace("%26", "&")
+                        losing_team = home_team.replace("%26", "&")
+                    session.query(Football_Teams).filter(Football_Teams.team == home_team).update(
+                        {"playing_now": True, "current_score": home_score})
+                    session.query(Football_Teams).filter(Football_Teams.team == away_team).update(
+                        {"playing_now": True, "current_score": away_score})
+                # TypeError is due to there not being a score yet, so operand is not supported for NoneType. Instead,
+                #
+                except TypeError:
+                    pass
+
+                # Update the week's score and updated_this_week variables for both teams if the game is over
+                if game[0]['completed'] == True:
+                    new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + 1
+                    session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
+                        {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score})
+                    session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
+                        {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False})
+
+            except IndexError:
+                # If IndexError, then the team doesn't have a game so assign it 0 and mark it as updated. It needs to be
+                # Saturday before updating so someone can still drop this team and add another one
+                if today.weekday() == 5:
+                    session.query(Football_Teams).filter(Football_Teams.team == team_to_query.replace("%26", "&")).update(
+                        {f"week{week}_score": 0, "updated_this_week": True})
+
+        time.sleep(2)
+    # session.commit()
+
+new_results = session.query(Football_Teams).all()
+for item in new_results:
+    print(item.week2_score)
+
+# scores_2022 = {"Clemson": 11, "Florida State": 10, "Syracuse": 7, "Louisville": 8, "NC State": 8, "Wake Forest": 8,
+#                "Boston College": 3, "North Carolina": 9, "Pittsburgh": 9, "Duke": 9, "Georgia Tech": 5, "Miami": 5,
+#                "Virginia": 3, "Virginia Tech": 3, "TCU": 12, "Kansas State": 10, "Texas": 8, "Texas Tech": 9,
+#                "Oklahoma State": 7, "Baylor": 6, "Oklahoma": 6, "Kansas": 6, "West Virginia": 5, "Iowa State": 4,
+#                "Michigan": 13, "Ohio State": 11, "Penn State": 11, "Maryland": 8, "Michigan State": 5, "Indiana": 4,
+#                "Rutgers": 4, "Purdue": 8, "Illinois": 8, "Iowa": 8, "Minnesota": 9, "Wisconsin": 7, "Nebraska": 4,
+#                "Northwestern": 1, "Notre Dame": 9, "BYU": 8, "UCF": 9, "Cincinnati": 9, "Houston": 8, "USC": 11,
+#                "Washington": 11, "Oregon": 10, "Utah": 10, "Oregon State": 10, "UCLA": 9, "Washington State": 7,
+#                "Arizona": 5, "California": 4, "Arizona State": 3, "Stanford": 3, "Colorado": 1, "Georgia": 13,
+#                "Tennessee": 11, "South Carolina": 8, "Kentucky": 7, "Florida": 6, "Missouri": 6, "Vanderbilt": 5,
+#                "LSU": 10,
+#                "Alabama": 11, "Mississippi State": 9, "Ole Miss": 8, "Arkansas": 7, "Auburn": 5, "Texas A&M": 5}
+#
+# conferences_2023 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC", "Louisville": "ACC",
+#                         "NC State": "ACC", "Wake Forest": "ACC",
+#                         "Boston College": "ACC", "North Carolina": "ACC", "Pittsburgh": "ACC", "Duke": "ACC",
+#                         "Georgia Tech": "ACC", "Miami": "ACC",
+#                         "Virginia": "ACC", "Virginia Tech": "ACC", "TCU": "Big 12", "Kansas State": "Big 12",
+#                         "Texas": "Big 12", "Texas Tech": "Big 12",
+#                         "Oklahoma State": "Big 12", "Baylor": "Big 12", "Oklahoma": "Big 12", "Kansas": "Big 12",
+#                         "West Virginia": "Big 12", "Iowa State": "Big 12",
+#                         "Michigan": "Big 10", "Ohio State": "Big 10", "Penn State": "Big 10", "Maryland": "Big 10",
+#                         "Michigan State": "Big 10", "Indiana": "Big 10",
+#                         "Rutgers": "Big 10", "Purdue": "Big 10", "Illinois": "Big 10", "Iowa": "Big 10",
+#                         "Minnesota": "Big 10", "Wisconsin": "Big 10", "Nebraska": "Big 10",
+#                         "Northwestern": "Big 10", "Notre Dame": "Independent", "BYU": "Big 12", "UCF": "Big 12",
+#                         "Cincinnati": "Big 12", "Houston": "Big 12", "USC": "PAC 12",
+#                         "Washington": "PAC 12", "Oregon": "PAC 12", "Utah": "PAC 12", "Oregon State": "PAC 12",
+#                         "UCLA": "PAC 12", "Washington State": "PAC 12",
+#                         "Arizona": "PAC 12", "California": "PAC 12", "Arizona State": "PAC 12", "Stanford": "PAC 12",
+#                         "Colorado": "PAC 12", "Georgia": "SEC",
+#                         "Tennessee": "SEC", "South Carolina": "SEC", "Kentucky": "SEC", "Florida": "SEC",
+#                         "Missouri": "SEC", "Vanderbilt": "SEC",
+#                         "LSU": "SEC", "Alabama": "SEC", "Mississippi State": "SEC", "Ole Miss": "SEC",
+#                         "Arkansas": "SEC", "Auburn": "SEC", "Texas A&M": "SEC"}
 
 # for every_team in all_teams:
 #     print(every_team.id)
@@ -233,5 +249,12 @@ conferences_2023 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC",
 #     print(f"{every_team.team} is in {every_team.conference}")
 # db.session.commit()
 
+#Update this to == 6
+if today.weekday() == 8:
+    get_upcoming_games()
+
+#Update this to == 3
+if today.weekday() != 8:
+    get_scores()
 
 session.commit()

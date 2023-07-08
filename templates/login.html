@@ -10,6 +10,7 @@ Login
     name="next"
     value="{{ request.args.get('next', '') }}"
 />
+
 <div class="shadow-lg p-3 mb-5 bg-white rounded">
 	{% for message in get_flashed_messages() %}
 	<div class="alert alert-warning alert-dismissible fade show" role="alert">
