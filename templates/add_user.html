@@ -59,7 +59,7 @@ Sign up
 	{% for our_user in our_users %}
 	<tr>
 	<td>
-		{{ our_user.id }}. <a href="{{ url_for('update', id=our_user.id) }}">{{ our_user.name }}</a> - {{ our_user.username }} - {{ our_user.email }} - {{ our_user.password_hash }} - <a href="{{ url_for('delete_user', id=our_user.id) }}">Delete</a></td>
+		{{ our_user.id }}. <a href="{{ url_for('update', id=our_user.id) }}">{{ our_user.name }}</a> - {{ our_user.username }} - {{ our_user.email }} - <a href="{{ url_for('delete_user', id=our_user.id) }}">Delete</a></td>
 	</tr>
 	{% endfor %}
 </table>

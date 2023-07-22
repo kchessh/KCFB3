@@ -331,17 +331,8 @@ def add_user():
     name = None
     passwords = my_functions.get_password_list()
     passwords2 = [(str(word), word) for word in passwords]
-    print(passwords2)
     form.password.choices = passwords2
     form.password_confirm.choices = passwords2
-    print(passwords)
-    print(form.name.data)
-    print(form.username.data)
-    print(form.email.data)
-    print(form.password.data)
-    print(form.password_confirm.data)
-    print(form.validate_on_submit())
-    print(form.errors)
 
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
