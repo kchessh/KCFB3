@@ -73,16 +73,26 @@
 </div>
 <br><br>
 
-<form method="POST">
-  {{ form.hidden_tag() }}
+{% if already_updated is not true %}
+	<form method="POST">
+	  {{ form.hidden_tag() }}
 
-  {{ form.faab.label(class="form-label") }} (${{ available_faab }} available)
+	  {{ form.faab.label(class="form-label") }} (${{ available_faab }} available)
 
-  {{ form.faab(class="form-control") }}
-  <br>
+	  {{ form.faab(class="form-control") }}
+	  <br>
 
-  {{ form.submit(class="btn btn-secondary") }}
-</form>
+	  {{ form.submit(class="btn btn-secondary") }}
+	</form>
+{% else %}
+	<form method="POST">
+		{{ form.hidden_tag() }}
+
+		{{ form.submit(class="btn btn-secondary") }}
+	</form>
+{% endif %}
+
+
 <br/>
 
 

@@ -3,6 +3,7 @@ import pandas
 import requests
 import os, os.path
 import time
+import random
 
 """
 Functions for the KCFB website
@@ -240,3 +241,29 @@ def save_data(league_number, new_teams, year, teams_dict):
 
             i += 1
         teams_dict[team.replace("%26", "&")].append(score)
+
+def get_password_list():
+    words = pandas.read_csv("List of words.csv", header=None)
+    words_dict = words.to_dict()
+    passwords = []
+    counter = 0
+    all_words = []
+    words_dict_refined = words_dict[0]
+    while counter < len(words_dict_refined):
+        all_words.append(words_dict_refined[counter])
+        counter += 1
+
+    i = 0
+    while i < 20:
+        word = random.choice(words_dict_refined)
+        numbers = random.randint(10000, 99999)
+        prefix_or_suffix = random.randint(0, 1)
+        if prefix_or_suffix == 0:
+            password = f"{numbers}{word}"
+        else:
+            password = f"{word}{numbers}"
+        passwords.append(password)
+        i += 1
+    return passwords
+
+get_password_list()

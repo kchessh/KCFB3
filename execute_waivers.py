@@ -56,6 +56,7 @@ class League(db.Model):
     league_password = db.Column(db.String(100))
     draft_complete = db.Column(db.Boolean, default=False)
     draft_date = db.Column(db.DateTime, nullable=True)
+    waivers_already_executed = db.Column(db.Boolean, default=False)
 
 
 class League_members_update1(db.Model):
@@ -119,6 +120,16 @@ class Waiver_Info(db.Model):
     team_to_drop_id = db.Column(db.Integer, nullable=False)
     faab_submitted = db.Column(db.Integer, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
+
+
+class Executed_Waivers_update1(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    added_team = db.Column(db.Integer, nullable=False)
+    dropped_team = db.Column(db.Integer, nullable=False)
+    faab_used = db.Column(db.Integer, nullable=False)
+    date_and_time_added = db.Column(db.DateTime, default=datetime.utcnow())
 
 reset = False
 if reset:
@@ -185,11 +196,13 @@ else:
                 winner_teams_dict = {int(winner_teams.team_1): "team_1", int(winner_teams.team_2): "team_2", int(winner_teams.team_3): "team_3", int(winner_teams.team_4): "team_4"}
 
                 current_faab = faabs_dict[highest_bidder]
-                # Update the new Player_weekly_info table with the new team replacing the old team and the submitted faab subtracted fro the original faab
+                # Update the new Player_weekly_info table with the new team replacing the old team and the submitted faab subtracted from the original faab
                 # KeyError should be due to waiver being deleted due to someone somehow placing a bid with more faab than they had available
                 if current_faab - faab_submitted >= 0:
                     try:
                         session.query(Player_weekly_info).filter(Player_weekly_info.user_id == highest_bidder, Player_weekly_info.league == league.id).update({str(winner_teams_dict[team_to_drop_id]): team_to_add_id, "faab": current_faab - faab_submitted})
+                        executed_waiver = Executed_Waivers_update1(user_id=highest_bidder, league=league.id, added_team=team_to_add_id, dropped_team=team_to_drop_id, faab_used=faab_submitted)
+                        session.add(executed_waiver)
                         faabs_dict[highest_bidder] -= faab_submitted
                         print(f"new faabs_dict: {faabs_dict}")
                         completed_waiver_list.append(highest_bid)
@@ -198,7 +211,7 @@ else:
 
             print(waiver_list_sorted)
             print(completed_waiver_list)
-        session.commit()
+    session.commit()
 
 player_11 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 11, Player_weekly_info.league == 48).first()
 player_13 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 13, Player_weekly_info.league == 48).first()
@@ -206,3 +219,8 @@ player_7 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id =
 print(f"player_11: {player_11.team_1}, {player_11.team_2}, {player_11.team_3}, {player_11.team_4}, {player_11.faab}")
 print(f"player_13: {player_13.team_1}, {player_13.team_2}, {player_13.team_3}, {player_13.team_4}, {player_13.faab}")
 print(f"player_7: {player_7.team_1}, {player_7.team_2}, {player_7.team_3}, {player_7.team_4}, {player_7.faab}")
+
+executed_waivers = session.query(Executed_Waivers_update1).all()
+for waiver in executed_waivers:
+    print(f"user_id: {waiver.user_id}, league: {waiver.league}, added_team: {waiver.added_team}, "
+          f"dropped_team: {waiver.dropped_team}, faab_used: {waiver.faab_used}, time_and_date_added: {waiver.date_and_time_added}")

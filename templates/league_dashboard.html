@@ -64,6 +64,7 @@
         <th scope="col">Place</th>
         <th scope="col">Person</th>
         <th scope="col">Points</th>
+        <th scope="col">Faab</th>
         <th scope="col">Team 1</th>
         <th scope="col">Team 2</th>
         <th scope="col">Team 3</th>
@@ -76,6 +77,7 @@
           <th scope="row">{{ league_scores_with_names.index(person) + 1 }}</th>
           <td>{{ person[0] }}</td>
           <td>{{ person[1] }}</td>
+          <td>${{ person[7] }}</td>
           <td>{{ person[3] }}</td>
           <td>{{ person[4] }}</td>
           <td>{{ person[5] }}</td>
@@ -176,6 +178,16 @@
   </table>
 </div>
 
+<div class="card">
+  <div class="card-header" style="text-align:center">
+    <strong>List of Activity</strong>
+  </div>
+  <div class="card-body">
+    {% for waiver in executed_waivers %}
+      <p class="card-text"><strong>{{waiver[0]}}({{waiver[4]}}): </strong>Added {{waiver[1]}}, Dropped {{waiver[2]}} for ${{waiver[3]}}</p>
+    {% endfor %}
+  </div>
+</div>
 
 <br/><br/>
 

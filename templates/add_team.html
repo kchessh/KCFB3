@@ -62,8 +62,13 @@
           <td>{{ team }}</td>
           <td>{{ eligible_teams_dict_sorted[team][0] }}</td>
           <td>{{ eligible_teams_dict_sorted[team][1] }}</td>
-          <td><a href="{{ url_for('drop_team', league_id=league_id, team_id=eligible_teams_dict_sorted[team][2]) }}"
-            class="btn btn-outline-success">Add</a></td>
+          {% if already_updated == True %}
+            <td><a href="{{ url_for('drop_team', league_id=league_id, team_id=eligible_teams_dict_sorted[team][2]) }}"
+              class="btn btn-success">Add</a></td>
+          {% else %}
+            <td><a href="{{ url_for('drop_team', league_id=league_id, team_id=eligible_teams_dict_sorted[team][2]) }}"
+              class="btn btn-warning">Add</a></td>
+          {% endif %}
         </tr>
       {% endfor %}
     </tbody>

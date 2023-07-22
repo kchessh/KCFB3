@@ -39,6 +39,8 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(100), nullable=False)
     name = db.Column(db.String(1000), nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.utcnow())
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    locked_account = db.Column(db.Boolean, default=False)
     league_manager = db.relationship('League', backref='manager', cascade="all, delete-orphan")
     leagues = db.relationship('List_of_leagues_update1', backref='member', cascade="all, delete-orphan")
     player_teams = db.relationship('Player_weekly_info', backref='player_teams', cascade="all, delete-orphan")
@@ -56,6 +58,7 @@ class League(db.Model):
     league_password = db.Column(db.String(100))
     draft_complete = db.Column(db.Boolean, default=False)
     draft_date = db.Column(db.DateTime, nullable=True)
+    waivers_already_executed = db.Column(db.Boolean, default=False)
 
 
 class League_members_update1(db.Model):
@@ -108,6 +111,16 @@ class Football_Teams(db.Model):
     week13_score = db.Column(db.Integer)
     week14_score = db.Column(db.Integer)
     week15_score = db.Column(db.Integer)
+
+
+class Executed_Waivers_update1(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    added_team = db.Column(db.Integer, nullable=False)
+    dropped_team = db.Column(db.Integer, nullable=False)
+    faab_used = db.Column(db.Integer, nullable=False)
+    date_and_time_added = db.Column(db.DateTime, default=datetime.utcnow())
 
 """
 1s represent a win, 0s represent a loss or no game played)
@@ -254,7 +267,18 @@ if today.weekday() == 8:
     get_upcoming_games()
 
 #Update this to == 3
-if today.weekday() != 8:
+if today.weekday() == 8:
     get_scores()
 
+# session.query(League).filter(League.id == 48).update(
+#                         {"waivers_already_executed": True})
+print(session.query(League).filter(League.id == 48).first().waivers_already_executed)
+print(session.query(League).filter(League.id == 49).first().waivers_already_executed)
 session.commit()
+
+# all_users = session.query(User).all()
+# for user in all_users:
+#     print(user.id)
+#     print(user.username)
+#     print(user.failed_login_attempts)
+#     print(user.locked_account)
