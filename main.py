@@ -132,6 +132,7 @@ class Football_Teams(db.Model):
     updated_this_week = db.Column(db.Boolean, default=False)
     playing_now = db.Column(db.Boolean, default=False)
     upcoming_opponent = db.Column(db.String(100), nullable=True)
+    previous_opponent = db.Column(db.String(100), nullable=True, default="")
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)
@@ -573,8 +574,8 @@ def league_dashboard(league_id):
         user_teams = []
 
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
-    eligible_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if team.team not in ineligible_teams}
-    user_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if team.team in user_teams}
+    eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent] for team in all_teams if team.team not in ineligible_teams}
+    user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent] for team in all_teams if team.team in user_teams}
     try:
         eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
         user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
@@ -1083,126 +1084,19 @@ dashboard link except for that it receives the number of the link the person cli
 input to get different standings
 """
 
-
-@app.route("/Dashboard/leagueID=<league_number>&weekID=<number_from_website>")
-def get_standings(league_number, number_from_website):
-    team_data = pandas.read_csv("Team_points.csv", encoding='latin-1')
-
-    with open("Teams.txt", encoding='ISO-8859-1') as file:
-        text = file.read()
-        teams = text.split(",")
-
-    "Determine current week and previous week to calculate standings and previous standings"
-    week = my_functions.determine_week_number()
-    week_number = int(number_from_website)
-    if week_number == 1:
-        previous_week = 1
+@app.route("/MasterDashboard", methods=['GET', 'POST'])
+@login_required
+def MasterDashboard():
+    if current_user.id == 13:
+        all_members = User.query.order_by(User.id)
+        all_leagues = League.query.order_by(League.id)
+        all_league_members = League_members_update1.query.order_by(League_members_update1.id)
     else:
-        previous_week = week_number - 1
-
-    """
-	Converts csv data to dictionary and loops through every team (both for the current week and the new week) to get
-	everyone's total. It loops through every team and determines their score on the given week and saves it to a
-	dictionary (current_week_points_dict and previous_week_points_dict). It will also get data for team standings here
-	by generating a dictionary (team_score_dict) that has the point totals for every team that week
-	"""
-    points_dict = team_data.to_dict()
-    current_week_points_dict = {}
-    previous_week_points_dict = {}
-    team_score_dict = {}
-
-    for team in teams:
-        i = 0
-        points = 0
-        while i < week_number:
-            points += points_dict[team][i]
-            i += 1
-
-        i = 0
-        previous_points = 0
-        while i < previous_week:
-            previous_points += points_dict[team][i]
-            i += 1
-
-        current_week_points_dict[team] = points
-        previous_week_points_dict[team] = previous_points
-        team_score_dict[team] = points
-
-    """
-	The dictionaries generated previously are sorted by score and the places are determined for both the current week
-	and the previous week. Everything is then returned to be rendered by the html doc. Point totals are only generated
-	for the current weak for the teams but not the people. Then a new dictionary is made that has multiple dictionaries
-	for each team (rank, points, last result, player, and conference)
-	"""
-    current_week_score_dict = dict(
-        sorted(my_functions.determine_scores(points_dict=current_week_points_dict, league_number=league_number).items(),
-               key=lambda kv: kv[1], reverse=True))
-    previous_week_score_dict = dict(
-        sorted(
-            my_functions.determine_scores(points_dict=previous_week_points_dict, league_number=league_number).items(),
-            key=lambda kv: kv[1], reverse=True))
-    team_score_dict_sorted = dict(sorted(team_score_dict.items(), key=lambda kv: kv[1], reverse=True))
-    team_data_dict = {team: {"points": ""} for team in team_score_dict_sorted}
-
-    counter = 1
-    for team in team_data_dict:
-        team_data_dict[team]["rank"] = counter
-        counter += 1
-
-    for team, points in team_score_dict_sorted.items():
-        team_data_dict[team]["points"] = points
-
-    places = {}
-    counter = 1
-    for key, value in current_week_score_dict.items():
-        places[key] = counter
-        counter += 1
-
-    previous_places = {}
-    counter = 1
-    for key, value in previous_week_score_dict.items():
-        previous_places[key] = counter
-        counter += 1
-
-    for team in teams:
-        team = team.replace("&", "%26")
-        with open(f"Team_Results/{team}.txt", 'r', encoding='ISO-8859-1') as file:
-            text = file.read()
-            games_list = text.split(',')
-            previous_game = games_list[-2]
-            team_data_dict[team.replace("%26", "&")]["last_result"] = previous_game
-
-    data = pandas.read_csv(f"Leagues/League{league_number}.csv", encoding='latin-1')
-    player_teams_initial = data.to_dict()
-    del player_teams_initial["Unnamed: 0"]
-    player_teams_final = {}
-    for person in player_teams_initial:
-        list = []
-        for i in range(0, 4):
-            team = player_teams_initial[person][i]
-            list.append(team)
-        player_teams_final[person] = list
-
-    data = pandas.read_csv(f"This_Weeks_Games/League{league_number}.csv", encoding='latin-1')
-    team_games = data.to_dict()
-    upcoming_team_games = my_functions.convert_dict_to_simple_dict(team_games)
-
-    """
-	Variables used: week_num is the week number to be used by the html to calculate the standings.
-	display_num is to be used to display the week that was generated by default as the most recent week
-	score_dict is the dictionary passed to display the current scores.
-	places is the dictionary passed to display the current standings of people in the league.
-	previous_score_dict is used to generate the previous week's scores of people in the league.
-	previous_places is used to generate the previous week's standings of people in the league.
-	previous_game_dict is used to show the team's last game (and result).
-	team_data_dict is used to pass: a team's score, a team's last result, and what conference that team is in.
-	player_teams_final passes in what player owns the team (passes a blank result if unowned).
-	"""
-    return render_template("Dashboard.html", week_num=week, display_num=week_number, score_dict=current_week_score_dict,
-                           places=places, previous_score_dict=previous_week_score_dict, previous_places=previous_places,
-                           team_data_dict=team_data_dict, player_teams_final=player_teams_final,
-                           upcoming_team_games=upcoming_team_games, league_number=league_number)
-
+        flash("I'm not sure how you got here... just go back to your dasbhoard")
+        all_members = None
+        all_leagues = None
+        all_league_members = None
+    return render_template("MasterDashboard.html", all_members=all_members, all_leagues=all_leagues, all_league_members=all_league_members)
 
 if __name__ == "__main__":
     app.run(debug=True)

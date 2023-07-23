@@ -92,6 +92,7 @@ class Football_Teams(db.Model):
     updated_this_week = db.Column(db.Boolean, default=False)
     playing_now = db.Column(db.Boolean, default=False)
     upcoming_opponent = db.Column(db.String(100), nullable=True)
+    previous_opponent = db.Column(db.String(100), nullable=True, default="")
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)
@@ -123,7 +124,7 @@ class Executed_Waivers_update1(db.Model):
     date_and_time_added = db.Column(db.DateTime, default=datetime.utcnow())
 
 """
-1s represent a win, 0s represent a loss or no game played)
+1s represent a win, 0s represent a loss or no game played
 """
 
 year = 2023
@@ -201,9 +202,9 @@ def get_scores():
                 if game[0]['completed'] == True:
                     new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + 1
                     session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
-                        {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score})
+                        {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score, "previous_opponent": losing_team})
                     session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
-                        {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False})
+                        {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team})
 
             except IndexError:
                 # If IndexError, then the team doesn't have a game so assign it 0 and mark it as updated. It needs to be
@@ -282,3 +283,9 @@ session.commit()
 #     print(user.username)
 #     print(user.failed_login_attempts)
 #     print(user.locked_account)
+
+teams = session.query(Football_Teams).all()
+for team in teams:
+    print(team.team)
+    print(team.upcoming_opponent)
+    print(team.previous_opponent)

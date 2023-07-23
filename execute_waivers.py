@@ -91,6 +91,7 @@ class Football_Teams(db.Model):
     updated_this_week = db.Column(db.Boolean, default=False)
     playing_now = db.Column(db.Boolean, default=False)
     upcoming_opponent = db.Column(db.String(100), nullable=True)
+    previous_opponent = db.Column(db.String(100), nullable=True, default="")
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)

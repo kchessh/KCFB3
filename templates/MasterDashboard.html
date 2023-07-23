@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+{% extends "logged_in_base.html" %}
+
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Master Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="{{ url_for('static', filename='js/serve.js') }}" type="module"></script>
+
+</head>
+
+<h2>Master Dashboard</h2>
+<br/><br/>
+
+<table class="table table-hover table-bordered table-striped">
+	{% for member in all_members %}
+	<tr>
+	<td>
+		{{ member.id }}. <a href="{{ url_for('update', id=member.id) }}">{{ member.name }}</a> - {{ member.username }} - {{ member.email }} - <a href="{{ url_for('delete_user', id=member.id) }}">Delete</a></td>
+	</tr>
+	{% endfor %}
+</table>
+
+<table class="table table-hover table-bordered table-striped">
+	{% for league in all_leagues %}
+	<tr>
+	<td>
+		<strong>{{ league.id }}.</strong> {{ league.league_name }} - {{ league.date_created }} - {{ league.league_manager }} - {{ league.league_password }} - {{ league.waivers_already_executed }}</td>
+	</tr>
+	{% endfor %}
+</table>
+
+<table class="table table-hover table-bordered table-striped">
+	{% for item in all_league_members %}
+	<tr>
+	<td>
+		{{ item.id }}. <strong>{{ item.league_id }}</strong> - {{ item.member }}</td>
+	</tr>
+	{% endfor %}
+</table>
+
+{% endblock %}
