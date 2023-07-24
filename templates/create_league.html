@@ -37,21 +37,6 @@
 </div>
 
 <br/><br/><br/>
-<table class="table table-hover table-bordered table-striped">
-	{% for league in all_leagues %}
-	<tr>
-  	<td>
-  		{{ league.id }}. {{ league.league_name }} - {{ league.date_created }} - {{ league.league_manager }} - {{ league.league_password }} - {{ league.draft_complete }} -
-			{% for member in league_members %}
-				{% if member.league_id == league.id %}
-					{{ member.member }},
-				{% endif %}
-			{% endfor %}
-			 - <a href="{{ url_for('delete_league', id=league.id) }}">Delete</a>
-			 - <a href="{{ url_for('league_dashboard', league_id=league.id) }}">League Dashboard</a>
-    </td>
-	</tr>
-	{% endfor %}
-</table>
+
 
 {% endblock %}
