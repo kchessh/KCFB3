@@ -129,6 +129,7 @@ class Executed_Waivers_update1(db.Model):
 
 year = 2023
 week, postseason = my_functions.determine_week_number()
+print(week)
 today = date.today()
 now = datetime.now()
 week = 1
@@ -177,6 +178,8 @@ def get_scores():
             team_to_query = item.team.replace("&", "%26")
             game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
             print(game)
+
+            # Get scores of all games that are currently going on if they should be playing soon
             try:
                 home_team = game[0]['home_team']
                 away_team = game[0]['away_team']
@@ -193,6 +196,7 @@ def get_scores():
                         {"playing_now": True, "current_score": home_score})
                     session.query(Football_Teams).filter(Football_Teams.team == away_team).update(
                         {"playing_now": True, "current_score": away_score})
+
                 # TypeError is due to there not being a score yet, so operand is not supported for NoneType. Instead,
                 #
                 except TypeError:
@@ -206,12 +210,39 @@ def get_scores():
                     session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
                         {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team})
 
+                    # Add a point to every person's score by figuring out if they have the team by querying every team they have
+                    # and adding 1 after that if they do
+                    all_player_weekly_info = Player_weekly_info.query.order_by(Player_weekly_info.id)
+                    for item in all_player_weekly_info:
+                        if item.team_1 == winning_team:
+                            new_player_score = session.query(Player_weekly_info).filter(
+                                Player_weekly_info.id == item.id).this_weeks_score + 1
+                            session.query(Player_weekly_info).filter(Player_weekly_info.id == item.id).update(
+                                {"this_weeks_score": new_player_score})
+                        elif item.team_2 == winning_team:
+                            new_player_score = session.query(Player_weekly_info).filter(
+                                Player_weekly_info.id == item.id).this_weeks_score + 1
+                            session.query(Player_weekly_info).filter(Player_weekly_info.id == item.id).update(
+                                {"this_weeks_score": new_player_score})
+                        elif item.team_3 == winning_team:
+                            new_player_score = session.query(Player_weekly_info).filter(
+                                Player_weekly_info.id == item.id).this_weeks_score + 1
+                            session.query(Player_weekly_info).filter(Player_weekly_info.id == item.id).update(
+                                {"this_weeks_score": new_player_score})
+                        elif item.team_4 == winning_team:
+                            new_player_score = session.query(Player_weekly_info).filter(
+                                Player_weekly_info.id == item.id).this_weeks_score + 1
+                            session.query(Player_weekly_info).filter(Player_weekly_info.id == item.id).update(
+                                {"this_weeks_score": new_player_score})
+
             except IndexError:
                 # If IndexError, then the team doesn't have a game so assign it 0 and mark it as updated. It needs to be
                 # Saturday before updating so someone can still drop this team and add another one
                 if today.weekday() == 5:
                     session.query(Football_Teams).filter(Football_Teams.team == team_to_query.replace("%26", "&")).update(
                         {f"week{week}_score": 0, "updated_this_week": True})
+                else:
+                    pass
 
         time.sleep(2)
     # session.commit()
@@ -261,7 +292,7 @@ for item in new_results:
 #     db.session.query(Football_Teams).filter(Football_Teams.id == every_team.id).update(
 #         {"conference": conferences_2023[every_team.team]})
 #     print(f"{every_team.team} is in {every_team.conference}")
-# db.session.commit()
+# session.commit()
 
 #Update this to == 6
 if today.weekday() == 8:
@@ -275,7 +306,6 @@ if today.weekday() == 8:
 #                         {"waivers_already_executed": True})
 print(session.query(League).filter(League.id == 48).first().waivers_already_executed)
 print(session.query(League).filter(League.id == 49).first().waivers_already_executed)
-session.commit()
 
 # all_users = session.query(User).all()
 # for user in all_users:

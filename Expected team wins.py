@@ -12,9 +12,10 @@ soup = BeautifulSoup(text, "html.parser")
 
 'teams_raw uses the class "table-responsive" to get the data'
 teams_raw = str(soup.select(selector=".table-responsive"))
+print(teams_raw)
 
 teams = re.findall('(?:<td>)([\w\s\&\;-]*)(?:<\/td>)', teams_raw)
-wins = re.findall('(?:<td>)([0-9]+\.[0-9]+)(?: )', teams_raw)
+wins = re.findall('(?:<td>)([0-9]+\.[0-9]*)(?:<\/td>)', teams_raw)
 
 dict = dict(zip(teams, wins))
 print(dict)

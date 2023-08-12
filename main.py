@@ -162,6 +162,7 @@ class Waiver_Info(db.Model):
     faab_submitted = db.Column(db.Integer, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
 
+
 class Executed_Waivers_update1(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -170,6 +171,16 @@ class Executed_Waivers_update1(db.Model):
     dropped_team = db.Column(db.Integer, nullable=False)
     faab_used = db.Column(db.Integer, nullable=False)
     date_and_time_added = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+
+
+class HistoryOfWaivers(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    team_to_add_id = db.Column(db.Integer, nullable=False)
+    team_to_drop_id = db.Column(db.Integer, nullable=False)
+    faab_submitted = db.Column(db.Integer, nullable=False)
+    priority = db.Column(db.Integer, nullable=False)
 
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
@@ -233,24 +244,24 @@ csv with a list of 0s and 1s (1s representing a win, 0s representing a loss or n
 
 
 
-new_teams = []
-with open("Teams.txt", encoding='ISO-8859-1') as file:
-    text = file.read()
-    teams = text.split(",")
-    for team in teams:
-        new_team = team.replace("&", "%26")
-        new_teams.append(new_team)
-
-teams_dict = {team: [] for team in teams}
-
-if get_upcoming_games:
-    my_functions.upcoming_games_master(teams_dict=teams_dict, year=year)
-data = pandas.read_csv("This_weeks_games.csv", encoding='latin-1')
-team_games = data.to_dict()
-final_team_games = my_functions.convert_dict_to_simple_dict(team_games)
-
-if get_data:
-    my_functions.save_data(league_number=1, new_teams=new_teams, year=year, teams_dict=teams_dict)
+# new_teams = []
+# with open("Teams.txt", encoding='ISO-8859-1') as file:
+#     text = file.read()
+#     teams = text.split(",")
+#     for team in teams:
+#         new_team = team.replace("&", "%26")
+#         new_teams.append(new_team)
+#
+# teams_dict = {team: [] for team in teams}
+#
+# if get_upcoming_games:
+#     my_functions.upcoming_games_master(teams_dict=teams_dict, year=year)
+# data = pandas.read_csv("This_weeks_games.csv", encoding='latin-1')
+# team_games = data.to_dict()
+# final_team_games = my_functions.convert_dict_to_simple_dict(team_games)
+#
+# if get_data:
+#     my_functions.save_data(league_number=1, new_teams=new_teams, year=year, teams_dict=teams_dict)
 
 # Invalid URL
 @app.errorhandler(404)
@@ -514,6 +525,7 @@ def join_league(league_id):
 @app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def league_dashboard(league_id):
+    # Get many different queries for use later in the league_dashboard script
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     league_member_names = [User.query.filter_by(id=member.member).first().name for member in league_members
                            if member.league_id == league_id]
@@ -527,6 +539,8 @@ def league_dashboard(league_id):
     sorted_user_waivers_list = sorted(user_waivers_list, key=lambda waiver: waiver[2], reverse=True)
 
     league_members_weekly_info = Player_weekly_info.query.filter_by(league=league_id).all()
+
+    # Returns all info for the Standings tab as a list of unions
     # Attribute error means that no one has any teams, which will lead to errors in the html file
     try:
         league_scores_with_names = [(User.query.filter_by(id=member.user_id).first().name, member.this_weeks_score,
@@ -536,11 +550,13 @@ def league_dashboard(league_id):
                                     Football_Teams.query.filter_by(id=member.team_4).first().team,
                                     Player_weekly_info.query.filter_by(user_id=member.user_id).filter_by(league=league_id).first().faab)
                                     for member in league_members_weekly_info]
+        print(league_scores_with_names)
     except AttributeError:
         league_scores_with_names = []
+
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                            if member.league_id == league_id]
-    week, preseason = my_functions.determine_week_number()
+    week, postseason = my_functions.determine_week_number()
 
     # Gets all teams that the user can't pickup due to being owned by the user or another user
     ineligible_teams = []
@@ -557,7 +573,7 @@ def league_dashboard(league_id):
     except TypeError:
         pass
 
-    # Gets all the user's teams to pass in, so they see how their teams are doing
+    # Gets all the user's teams to get the dict that will be passed in for the standings table
     try:
         user_teams = [Football_Teams.query.filter_by(id=int(
             Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
@@ -570,9 +586,11 @@ def league_dashboard(league_id):
                       Football_Teams.query.filter_by(id=int(
                           Player_weekly_info.query.filter_by(league=league_id,
                                                              user_id=current_user.id).first().team_4)).first().team]
+        print(user_teams)
     except TypeError:
         user_teams = []
 
+    # Pass in dict where team is the key and values are a list made for the standings table (points, conference, next opponent, previous opponent)
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
     eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent] for team in all_teams if team.team not in ineligible_teams}
     user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent] for team in all_teams if team.team in user_teams}
@@ -584,23 +602,33 @@ def league_dashboard(league_id):
         user_teams_dict_sorted = user_teams_dict
     eligible_teams = list(eligible_teams_dict_sorted)
 
+    # For the navbar, passes in all the leagues so user can click on a league to go to the league dashboard
     current_user_teams = list(user_teams_dict_sorted.keys())
-    print(user_teams_dict_sorted)
-
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
                     leagues]
 
+    # Sends all waivers that have succeeded in the league so user can see all the successful waivers
     all_executed_waivers = Executed_Waivers_update1.query.filter_by(league=league_id).all()
     executed_waivers = [(User.query.filter_by(id=waiver.user_id).first().name, Football_Teams.query.filter_by(id=waiver.added_team).first().team, Football_Teams.query.filter_by(id=waiver.dropped_team).first().team,
                          waiver.faab_used, waiver.date_and_time_added) for waiver in all_executed_waivers]
+
+    # Sends all of the user's waiver history so they can see what waivers of theirs have been processed
+    your_waiver_history = HistoryOfWaivers.query.filter_by(user_id=current_user.id)
+
+    # Determines if it's time for playoffs. If it is, allow the top 4 people to preference which playoff representative they want
+    if postseason:
+        playoff_teams = []
+    else:
+        playoff_teams = []
 
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
                            league_member_names=league_member_names, league_manager=league_manager,
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
                            eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted,
                            user_waivers_list=sorted_user_waivers_list, faab=faab, league_scores_with_names=league_scores_with_names,
-                           leagues_list=leagues_list, executed_waivers=executed_waivers)
+                           leagues_list=leagues_list, executed_waivers=executed_waivers, your_waiver_history=your_waiver_history,
+                           postseason=postseason, playoff_teams=playoff_teams)
 
 
 @app.route("/add_team/league=<int:league_id>", methods=['GET', 'POST'])

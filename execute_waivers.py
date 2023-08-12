@@ -132,7 +132,17 @@ class Executed_Waivers_update1(db.Model):
     faab_used = db.Column(db.Integer, nullable=False)
     date_and_time_added = db.Column(db.DateTime, default=datetime.utcnow())
 
-reset = False
+
+class HistoryOfWaivers(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    team_to_add_id = db.Column(db.Integer, nullable=False)
+    team_to_drop_id = db.Column(db.Integer, nullable=False)
+    faab_submitted = db.Column(db.Integer, nullable=False)
+    priority = db.Column(db.Integer, nullable=False)
+
+reset = True
 if reset:
     cases.case2()
 # all_teams = session.query(Football_Teams).all()
@@ -147,6 +157,14 @@ else:
     all_leagues = session.query(League).all()
     for league in all_leagues:
         all_waivers = session.query(Waiver_Info).filter(Waiver_Info.league == league.id).all()
+
+        # Add all waivers to the history of waivers table so people can see all their historical waivers that either
+        # were or were not processed
+        for waiver in all_waivers:
+            waiver_to_add_to_history = HistoryOfWaivers(id=waiver.id, user_id=waiver.user_id, league=waiver.league,
+                team_to_add_id=waiver.team_to_add_id, team_to_drop_id=waiver.team_to_drop_id,
+                faab_submitted=waiver.faab_submitted, priority=waiver.priority)
+
         if len(all_waivers) > 0:
             print(all_waivers)
             waiver_list = []

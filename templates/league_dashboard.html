@@ -58,7 +58,7 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th colspan="7" style="text-align:center">Standings</th>
+        <th colspan="8" style="text-align:center">Standings</th>
       </tr>
       <tr>
         <th scope="col">Place</th>
@@ -88,6 +88,30 @@
   </table>
 </div>
 <br>
+
+{% if postseason == True %}
+  <div class="card">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th colspan="2" style="text-align:center">Playoff Team Preferences</th>
+        </tr>
+        <tr>
+          <th scope="col">Team</th>
+          <th scope="col">Preference</th>
+        </tr>
+      </thead>
+      <tbody class="table-group-divider">
+        {% for team in playoff_teams %}
+          <tr>
+            <td>{{team}}</td>
+            
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
 
 {% if user_waivers_list|length > 0 %}
   <div class="card">
@@ -156,7 +180,7 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th colspan="4" style="text-align:center">Available Teams</th>
+        <th colspan="6" style="text-align:center">Available Teams</th>
       </tr>
       <tr>
         <th scope="col">#</th>
@@ -184,7 +208,7 @@
 
 <div class="card">
   <div class="card-header" style="text-align:center">
-    <strong>List of Activity</strong>
+    <strong>List of League Activity</strong>
   </div>
   <div class="card-body">
     {% for waiver in executed_waivers %}
@@ -194,6 +218,19 @@
 </div>
 
 <br/><br/>
+
+<div class="card">
+  <div class="card-header" style="text-align:center">
+    <strong>History of Your Waiver Claims</strong>
+  </div>
+  <div class="card-body">
+    {% for waiver in your_waiver_history %}
+      <p class="card-text"><strong>{{waiver[0]}}({{waiver[4]}}): </strong>Added {{waiver[1]}}, Dropped {{waiver[2]}} for ${{waiver[3]}}</p>
+    {% endfor %}
+  </div>
+</div>
+
+<br><br>
 
 
 {% endblock %}
