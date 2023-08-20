@@ -422,8 +422,8 @@ def delete_user(id):
 @login_required
 def create_league():
     # Add analysis to db
-    num_of_visits = Analysis.query.filter_by(endpoint="create_league").num_of_visits
-    db.session.query(Analysis).filter(endpoint="create_league").update(
+    num_of_visits = Analysis.query.filter(Analysis.endpoint == "create_league").first().num_of_visits
+    db.session.query(Analysis).filter(Analysis.endpoint == "create_league").update(
         {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
@@ -499,8 +499,8 @@ def delete_league(id):
 @login_manager.unauthorized_handler
 def join_league(league_id):
     # Add analysis to db
-    num_of_visits = Analysis.query.filter_by(endpoint="join_league").num_of_visits
-    db.session.query(Analysis).filter(endpoint="join_league").update(
+    num_of_visits = Analysis.query.filter(Analysis.endpoint == "join_league").first().num_of_visits
+    db.session.query(Analysis).filter(Analysis.endpoint == "join_league").update(
         {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
@@ -558,9 +558,9 @@ def join_league(league_id):
 @login_required
 def league_dashboard(league_id):
     # Add analysis to db
-    num_of_visits = Analysis.query.filter_by(endpoint="league_dashboard", league=league_id).num_of_visits
-    db.session.query(Analysis).filter(endpoint="league_dashboard").update(
-        {"num_of_visits": num_of_visits + 1, "league": league_id})
+    num_of_visits = Analysis.query.filter(Analysis.endpoint == "league_dashboard", Analysis.league == league_id).first().num_of_visits
+    db.session.query(Analysis).filter(Analysis.endpoint == "league_dashboard").update(
+        {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
     # Get many different queries for use later in the league_dashboard script
@@ -673,9 +673,10 @@ def league_dashboard(league_id):
 @login_required
 def add_team(league_id):
     # Add analysis to db
-    num_of_visits = Analysis.query.filter_by(endpoint="add_team").num_of_visits
-    db.session.query(Analysis).filter(endpoint="add_team").update(
-        {"num_of_visits": num_of_visits + 1, "league": league_id})
+    num_of_visits = Analysis.query.filter(Analysis.endpoint == "add_team",
+                                          Analysis.league == league_id).first().num_of_visits
+    db.session.query(Analysis).filter(Analysis.endpoint == "add_team").update(
+        {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
@@ -888,9 +889,10 @@ def delete_waiver(id, league_id):
 @app.route("/update_faab/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
 def update_faab(id, league_id):
     # Add analysis to db
-    num_of_visits = Analysis.query.filter_by(endpoint="update_faab").num_of_visits
-    db.session.query(Analysis).filter(endpoint="update_faab").update(
-        {"num_of_visits": num_of_visits + 1, "league": league_id})
+    num_of_visits = Analysis.query.filter(Analysis.endpoint == "update_faab",
+                                          Analysis.league == league_id).first().num_of_visits
+    db.session.query(Analysis).filter(Analysis.endpoint == "update_faab").update(
+        {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
     form = UpdateFaab()
@@ -1026,8 +1028,8 @@ week. It will have a link to display the weeks for someone to choose so they can
 @login_required
 def UserDashboard():
     # Add analysis to db
-    num_of_visits = Analysis.query.filter_by(endpoint="userdashboard").num_of_visits
-    db.session.query(Analysis).filter(endpoint="userdashboard").update(
+    num_of_visits = Analysis.query.filter(Analysis.endpoint == "userdashboard").first().num_of_visits
+    db.session.query(Analysis).filter(Analysis.endpoint == "userdashboard").update(
         {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
