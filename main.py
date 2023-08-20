@@ -559,7 +559,7 @@ def join_league(league_id):
 def league_dashboard(league_id):
     # Add analysis to db
     num_of_visits = Analysis.query.filter(Analysis.endpoint == "league_dashboard", Analysis.league == league_id).first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "league_dashboard").update(
+    db.session.query(Analysis).filter(Analysis.endpoint == "league_dashboard", Analysis.league == league_id).update(
         {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
@@ -675,7 +675,7 @@ def add_team(league_id):
     # Add analysis to db
     num_of_visits = Analysis.query.filter(Analysis.endpoint == "add_team",
                                           Analysis.league == league_id).first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "add_team").update(
+    db.session.query(Analysis).filter(Analysis.endpoint == "add_team", Analysis.league == league_id).update(
         {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
@@ -891,7 +891,7 @@ def update_faab(id, league_id):
     # Add analysis to db
     num_of_visits = Analysis.query.filter(Analysis.endpoint == "update_faab",
                                           Analysis.league == league_id).first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "update_faab").update(
+    db.session.query(Analysis).filter(Analysis.endpoint == "update_faab", Analysis.league == league_id).update(
         {"num_of_visits": num_of_visits + 1})
     db.session.commit()
 
