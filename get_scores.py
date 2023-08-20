@@ -174,6 +174,9 @@ def get_scores():
     for item in teams_to_update:
         print(item.team)
         print(item.date_and_time_of_game)
+        with open(f"log.txt", mode="a") as file:
+            text = f"Week {week}: {item.team} \n"
+            file.write(text)
         if cutoff_for_querying_games > item.date_and_time_of_game or scores_test is True:
             team_to_query = item.team.replace("&", "%26")
             game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
@@ -210,6 +213,11 @@ def get_scores():
                     session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
                         {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team})
 
+                    # Add to the log that the team was updated
+                    with open(f"log.txt", mode="a") as file:
+                        text = f"Week {week}: {item.team} updated \n"
+                        file.write(text)
+
                     # Add a point to every person's score by figuring out if they have the team by querying every team they have
                     # and adding 1 after that if they do
                     all_player_weekly_info = Player_weekly_info.query.order_by(Player_weekly_info.id)
@@ -241,6 +249,11 @@ def get_scores():
                 if today.weekday() == 5:
                     session.query(Football_Teams).filter(Football_Teams.team == team_to_query.replace("%26", "&")).update(
                         {f"week{week}_score": 0, "updated_this_week": True})
+
+                    # Add to the log that the team was updated
+                    with open(f"log.txt", mode="a") as file:
+                        text = f"Week {week}: {item.team} updated \n"
+                        file.write(text)
                 else:
                     pass
 
@@ -298,9 +311,14 @@ for item in new_results:
 if today.weekday() == 8:
     get_upcoming_games()
 
-#Update this to == 3
-if today.weekday() == 8:
-    get_scores()
+#Update this to >= 3
+if today.weekday() != 8:
+    while len(teams_to_update) > 0:
+        get_scores()
+        print(" ")
+        print(" ")
+        print(" ")
+        time.sleep(600)
 
 # session.query(League).filter(League.id == 48).update(
 #                         {"waivers_already_executed": True})

@@ -182,6 +182,14 @@ class HistoryOfWaivers(db.Model):
     faab_submitted = db.Column(db.Integer, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
 
+
+class Analysis(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    num_of_visits = db.Column(db.Integer)
+    league = db.Column(db.Integer, nullable=True)
+    endpoint = db.Column(db.String(100))
+
+
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
     username = StringField("Username", validators=[DataRequired()])
@@ -413,6 +421,13 @@ def delete_user(id):
 @app.route("/create_league", methods=['GET', 'POST'])
 @login_required
 def create_league():
+    # Add analysis to db
+    num_of_visits = Analysis.query.filter_by(endpoint="create_league").num_of_visits
+    db.session.query(Analysis).filter(endpoint="create_league").update(
+        {"num_of_visits": num_of_visits + 1})
+    db.session.commit()
+
+    # Initialize form and get leagues_list to send to website for the navbar
     form = LeagueForm()
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
@@ -437,6 +452,17 @@ def create_league():
         # Setup player's weekly info table (assign 4 teams as none, give faab of $100)
         initial_player_setup = Player_weekly_info(user_id=current_user.id, league=league.id)
         db.session.add(initial_player_setup)
+        db.session.commit()
+
+        # Setup analysis table
+        join_league_analysis = Analysis(num_of_visits=0, endpoint="join_league")
+        create_league_analysis = Analysis(num_of_visits=0, endpoint="create_league")
+        userdashboard_analysis = Analysis(num_of_visits=0, endpoint="userdashboard")
+        league_dashboard_analysis = Analysis(num_of_visits=0, endpoint="league_dashboard", league=league.id)
+        add_team_analysis = Analysis(num_of_visits=0, endpoint="add_team", league=league.id)
+        update_faab_analysis = Analysis(num_of_visits=0, endpoint="update_faab", league=league.id)
+        db.session.add(join_league_analysis, create_league_analysis, userdashboard_analysis, league_dashboard_analysis,
+                       add_team_analysis, update_faab_analysis)
         db.session.commit()
 
         return redirect(url_for('league_dashboard', league_id=league.id, leagues_list=leagues_list))
@@ -472,6 +498,12 @@ def delete_league(id):
 @app.route("/join_league/league_id=<int:league_id>", methods=['GET', 'POST'])
 @login_manager.unauthorized_handler
 def join_league(league_id):
+    # Add analysis to db
+    num_of_visits = Analysis.query.filter_by(endpoint="join_league").num_of_visits
+    db.session.query(Analysis).filter(endpoint="join_league").update(
+        {"num_of_visits": num_of_visits + 1})
+    db.session.commit()
+
     try:
         form = JoinLeagueForm()
         leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
@@ -525,6 +557,12 @@ def join_league(league_id):
 @app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def league_dashboard(league_id):
+    # Add analysis to db
+    num_of_visits = Analysis.query.filter_by(endpoint="league_dashboard", league=league_id).num_of_visits
+    db.session.query(Analysis).filter(endpoint="league_dashboard").update(
+        {"num_of_visits": num_of_visits + 1, "league": league_id})
+    db.session.commit()
+
     # Get many different queries for use later in the league_dashboard script
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     league_member_names = [User.query.filter_by(id=member.member).first().name for member in league_members
@@ -634,6 +672,12 @@ def league_dashboard(league_id):
 @app.route("/add_team/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def add_team(league_id):
+    # Add analysis to db
+    num_of_visits = Analysis.query.filter_by(endpoint="add_team").num_of_visits
+    db.session.query(Analysis).filter(endpoint="add_team").update(
+        {"num_of_visits": num_of_visits + 1, "league": league_id})
+    db.session.commit()
+
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                          if member.league_id == league_id]
@@ -843,6 +887,12 @@ def delete_waiver(id, league_id):
 
 @app.route("/update_faab/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
 def update_faab(id, league_id):
+    # Add analysis to db
+    num_of_visits = Analysis.query.filter_by(endpoint="update_faab").num_of_visits
+    db.session.query(Analysis).filter(endpoint="update_faab").update(
+        {"num_of_visits": num_of_visits + 1, "league": league_id})
+    db.session.commit()
+
     form = UpdateFaab()
     current_waiver = Waiver_Info.query.get(id)
     faab = current_waiver.faab_submitted
@@ -975,6 +1025,12 @@ week. It will have a link to display the weeks for someone to choose so they can
 @app.route("/UserDashboard", methods=['GET', 'POST'])
 @login_required
 def UserDashboard():
+    # Add analysis to db
+    num_of_visits = Analysis.query.filter_by(endpoint="userdashboard").num_of_visits
+    db.session.query(Analysis).filter(endpoint="userdashboard").update(
+        {"num_of_visits": num_of_visits + 1})
+    db.session.commit()
+
     user_list_of_leagues = [league.league_id for league in
                             List_of_leagues_update1.query.filter_by(user_id=current_user.id)]
     user_list_of_league_members = {}

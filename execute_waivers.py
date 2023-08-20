@@ -142,7 +142,7 @@ class HistoryOfWaivers(db.Model):
     faab_submitted = db.Column(db.Integer, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
 
-reset = True
+reset = False
 if reset:
     cases.case2()
 # all_teams = session.query(Football_Teams).all()
@@ -181,11 +181,25 @@ else:
                 # Get the highest bid data. User's priorities are determined by amount of faab bid (i.e. if a user bid 10 on team1 and 12 on team2, it will try to give them team2 before team 1
                 print(f"waiver_list_sorted: {waiver_list_sorted}")
                 highest_bid = waiver_list_sorted[0]
+                print(f"waiver_id: {highest_bid[4]}")
+
+                # Figure out if the highest bid has no matching bids. If there are matching bids, award a team to the person with the lowest score. Else, do a RNG to determine who gets the team
+                go_on = True
+                match_counter = 1
+                while go_on:
+                    if highest_bid[3] == waiver_list_sorted[match_counter][3]:
+                        match_counter += 1
+                        highest_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == highest_bidder)
+                        other_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver_list_sorted[match_counter][0])
+                        if highest_bidder_league_points > other_bidder_league_points:
+                            highest_bid = waiver_list_sorted[match_counter]
+                    else:
+                        go_on = False
+
                 highest_bidder = highest_bid[0]
                 team_to_add_id = highest_bid[1]
                 team_to_drop_id = highest_bid[2]
                 faab_submitted = highest_bid[3]
-                print(f"waiver_id: {highest_bid[4]}")
 
                 # Calling this before the first waiver is even executed to ensure someone wasn't somehow able to submit a waiver with more faab than they have available
                 for waiver in reversed(waiver_list_sorted):
