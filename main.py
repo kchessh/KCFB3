@@ -1177,12 +1177,16 @@ def MasterDashboard():
         all_members = User.query.order_by(User.id)
         all_leagues = League.query.order_by(League.id)
         all_league_members = League_members_update1.query.order_by(League_members_update1.id)
+        leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+        leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                        leagues]
     else:
         flash("I'm not sure how you got here... just go back to your dasbhoard")
         all_members = None
         all_leagues = None
         all_league_members = None
-    return render_template("MasterDashboard.html", all_members=all_members, all_leagues=all_leagues, all_league_members=all_league_members)
+    return render_template("MasterDashboard.html", all_members=all_members, all_leagues=all_leagues,
+                           all_league_members=all_league_members, leagues_list=leagues_list)
 
 if __name__ == "__main__":
     app.run(debug=True)
