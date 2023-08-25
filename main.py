@@ -68,6 +68,7 @@ class User(db.Model, UserMixin):
     leagues = db.relationship('List_of_leagues_update1', backref='member', cascade="all, delete-orphan")
     player_teams = db.relationship('Player_weekly_info', backref='player_teams', cascade="all, delete-orphan")
     waiver_info = db.relationship('Waiver_Info', backref='user_waiver_info', cascade="all, delete-orphan")
+    league_membership = db.relationship('League_members_update1', backref='member2', cascade="all, delete-orphan")
 
     @property
     def password(self):
