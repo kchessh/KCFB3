@@ -455,14 +455,15 @@ def create_league():
         db.session.commit()
 
         # Setup analysis table
-        join_league_analysis = Analysis(num_of_visits=0, endpoint="join_league")
-        create_league_analysis = Analysis(num_of_visits=0, endpoint="create_league")
-        userdashboard_analysis = Analysis(num_of_visits=0, endpoint="userdashboard")
+        # join_league_analysis = Analysis(num_of_visits=0, endpoint="join_league")
+        # create_league_analysis = Analysis(num_of_visits=0, endpoint="create_league")
+        # userdashboard_analysis = Analysis(num_of_visits=0, endpoint="userdashboard")
         league_dashboard_analysis = Analysis(num_of_visits=0, endpoint="league_dashboard", league=league.id)
         add_team_analysis = Analysis(num_of_visits=0, endpoint="add_team", league=league.id)
         update_faab_analysis = Analysis(num_of_visits=0, endpoint="update_faab", league=league.id)
-        db.session.add(join_league_analysis, create_league_analysis, userdashboard_analysis, league_dashboard_analysis,
-                       add_team_analysis, update_faab_analysis)
+        db.session.add(league_dashboard_analysis)
+        db.session.add(add_team_analysis)
+        db.session.add(update_faab_analysis)
         db.session.commit()
 
         return redirect(url_for('league_dashboard', league_id=league.id, leagues_list=leagues_list))

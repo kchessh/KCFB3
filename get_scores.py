@@ -307,12 +307,14 @@ for item in new_results:
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-#Update this to == 6
-if today.weekday() == 8:
+#This should be == 6 to work properly (normally on Sundays) but should be == 1 for week 2 since teams play on Monday on week 1
+if today.weekday() == 6 and week != 2:
+    get_upcoming_games()
+elif today.weekday() == 1 and week == 2:
     get_upcoming_games()
 
 #Update this to >= 3
-if today.weekday() != 8:
+if today.weekday() == 8:
     while len(teams_to_update) > 0:
         get_scores()
         print(" ")
@@ -324,16 +326,3 @@ if today.weekday() != 8:
 #                         {"waivers_already_executed": True})
 print(session.query(League).filter(League.id == 48).first().waivers_already_executed)
 print(session.query(League).filter(League.id == 49).first().waivers_already_executed)
-
-# all_users = session.query(User).all()
-# for user in all_users:
-#     print(user.id)
-#     print(user.username)
-#     print(user.failed_login_attempts)
-#     print(user.locked_account)
-
-teams = session.query(Football_Teams).all()
-for team in teams:
-    print(team.team)
-    print(team.upcoming_opponent)
-    print(team.previous_opponent)
