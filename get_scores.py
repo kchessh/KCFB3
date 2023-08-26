@@ -16,7 +16,7 @@ from flask_migrate import Migrate
 import time
 # from main import User, League, League_members_update1, List_of_leagues_update1, Player_weekly_info, Football_Teams
 
-scores_test = True
+scores_test = False
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
@@ -133,7 +133,11 @@ print(week)
 today = date.today()
 now = datetime.now()
 week = 1
-time_delta = timedelta(hours=2)
+
+# time_delta is the value used to determine how far in the future to query games
+# time_correction is to go from central time to gmt
+time_correction = 5
+time_delta = timedelta(hours=3 + time_correction)
 
 def get_upcoming_games():
     all_teams = session.query(Football_Teams).all()
@@ -147,6 +151,7 @@ def get_upcoming_games():
             home_team = game[1]['home_team']
             away_team = game[1]['away_team']
             game_time = game[1]['start_date']
+            print(game_time)
             if team_to_query == home_team:
                 upcoming_opponent = away_team
             else:
@@ -155,6 +160,7 @@ def get_upcoming_games():
             home_team = game[0]['home_team']
             away_team = game[0]['away_team']
             game_time = game[0]['start_date']
+            print(game_time)
             if team_to_query == home_team:
                 upcoming_opponent = away_team
             else:
@@ -177,12 +183,13 @@ def get_scores():
         with open(f"log.txt", mode="a") as file:
             text = f"Week {week}: {item.team} \n"
             file.write(text)
+        print(cutoff_for_querying_games - item.date_and_time_of_game)
         if cutoff_for_querying_games > item.date_and_time_of_game or scores_test is True:
             team_to_query = item.team.replace("&", "%26")
             game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
             print(game)
 
-            # Get scores of all games that are currently going on if they should be playing soon
+            # Get scores of all games that are currently going on if they should be currently playing or playing soon
             try:
                 home_team = game[0]['home_team']
                 away_team = game[0]['away_team']
@@ -196,11 +203,11 @@ def get_scores():
                         winning_team = away_team.replace("%26", "&")
                         losing_team = home_team.replace("%26", "&")
                     session.query(Football_Teams).filter(Football_Teams.team == home_team).update(
-                        {"playing_now": True, "current_score": home_score})
+                        {"playing_now": True})
                     session.query(Football_Teams).filter(Football_Teams.team == away_team).update(
-                        {"playing_now": True, "current_score": away_score})
+                        {"playing_now": True})
 
-                # TypeError is due to there not being a score yet, so operand is not supported for NoneType. Instead,
+                # TypeError is due to there not being a score yet, so operand is not supported for NoneType
                 #
                 except TypeError:
                     pass
@@ -220,26 +227,34 @@ def get_scores():
 
                     # Add a point to every person's score by figuring out if they have the team by querying every team they have
                     # and adding 1 after that if they do
-                    all_player_weekly_info = Player_weekly_info.query.order_by(Player_weekly_info.id)
+                    all_player_weekly_info = session.query(Player_weekly_info).order_by(Player_weekly_info.id)
                     for item in all_player_weekly_info:
-                        if item.team_1 == winning_team:
+                        try:
+                            team_2 = session.query(Football_Teams).filter(item.team_2 == Football_Teams.id).first().team
+                            team_3 = session.query(Football_Teams).filter(item.team_3 == Football_Teams.id).first().team
+                            team_4 = session.query(Football_Teams).filter(item.team_4 == Football_Teams.id).first().team
+                            team_1 = session.query(Football_Teams).filter(item.team_1 == Football_Teams.id).first().team
+                        # AttributeError will occur for every league that doesn't have teams assigned
+                        except AttributeError:
+                            pass
+                        if team_1 == winning_team:
                             new_player_score = session.query(Player_weekly_info).filter(
-                                Player_weekly_info.id == item.id).this_weeks_score + 1
+                                Player_weekly_info.id == item.id).first().this_weeks_score + 1
                             session.query(Player_weekly_info).filter(Player_weekly_info.id == item.id).update(
                                 {"this_weeks_score": new_player_score})
-                        elif item.team_2 == winning_team:
+                        elif team_2 == winning_team:
                             new_player_score = session.query(Player_weekly_info).filter(
-                                Player_weekly_info.id == item.id).this_weeks_score + 1
+                                Player_weekly_info.id == item.id).first().this_weeks_score + 1
                             session.query(Player_weekly_info).filter(Player_weekly_info.id == item.id).update(
                                 {"this_weeks_score": new_player_score})
-                        elif item.team_3 == winning_team:
+                        elif team_3 == winning_team:
                             new_player_score = session.query(Player_weekly_info).filter(
-                                Player_weekly_info.id == item.id).this_weeks_score + 1
+                                Player_weekly_info.id == item.id).first().this_weeks_score + 1
                             session.query(Player_weekly_info).filter(Player_weekly_info.id == item.id).update(
                                 {"this_weeks_score": new_player_score})
-                        elif item.team_4 == winning_team:
+                        elif team_4 == winning_team:
                             new_player_score = session.query(Player_weekly_info).filter(
-                                Player_weekly_info.id == item.id).this_weeks_score + 1
+                                Player_weekly_info.id == item.id).first().this_weeks_score + 1
                             session.query(Player_weekly_info).filter(Player_weekly_info.id == item.id).update(
                                 {"this_weeks_score": new_player_score})
 
@@ -258,7 +273,7 @@ def get_scores():
                     pass
 
         time.sleep(2)
-    # session.commit()
+    session.commit()
 
 new_results = session.query(Football_Teams).all()
 for item in new_results:
@@ -314,7 +329,7 @@ elif today.weekday() == 1 and week == 2:
     get_upcoming_games()
 
 #Update this to >= 3
-if today.weekday() == 8:
+if today.weekday() >= 3:
     while len(teams_to_update) > 0:
         get_scores()
         print(" ")
@@ -322,7 +337,11 @@ if today.weekday() == 8:
         print(" ")
         time.sleep(600)
 
-# session.query(League).filter(League.id == 48).update(
-#                         {"waivers_already_executed": True})
 print(session.query(League).filter(League.id == 48).first().waivers_already_executed)
 print(session.query(League).filter(League.id == 49).first().waivers_already_executed)
+
+# ----------------- SANDBOX -------------------
+# Reset Football team's score to 0
+# session.query(Football_Teams).filter_by(team="Notre Dame").update({"current_score": 0,
+#             "week0_score": 0, "updated_this_week": False})
+# session.commit()
