@@ -123,6 +123,17 @@ class Executed_Waivers_update1(db.Model):
     faab_used = db.Column(db.Integer, nullable=False)
     date_and_time_added = db.Column(db.DateTime, default=datetime.utcnow())
 
+
+class Waiver_Info(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    team_to_add_id = db.Column(db.Integer, nullable=False)
+    team_to_drop_id = db.Column(db.Integer, nullable=False)
+    faab_submitted = db.Column(db.Integer, nullable=False)
+    priority = db.Column(db.Integer, nullable=False)
+
+
 """
 1s represent a win, 0s represent a loss or no game played
 """
@@ -173,9 +184,6 @@ def get_upcoming_games():
         session.commit()
 
 cutoff_for_querying_games = datetime.now() + time_delta
-print(cutoff_for_querying_games)
-teams_to_update = session.query(Football_Teams).filter_by(updated_this_week=False).all()
-print(len(teams_to_update))
 def get_scores():
     for item in teams_to_update:
         print(item.team)
@@ -272,7 +280,7 @@ def get_scores():
                 else:
                     pass
 
-        time.sleep(2)
+        time.sleep(.2)
     session.commit()
 
 new_results = session.query(Football_Teams).all()
@@ -322,26 +330,46 @@ for item in new_results:
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-#This should be == 6 to work properly (normally on Sundays) but should be == 1 for week 2 since teams play on Monday on week 1
-if today.weekday() == 6 and week != 2:
+#This should be == 7 to work properly (normally on Mondays) but should be == 2 for week 2 since teams play on Monday on week 1
+if today.weekday() == 7 and week != 2:
     get_upcoming_games()
-elif today.weekday() == 1 and week == 2:
+elif today.weekday() == 2 and week == 2:
     get_upcoming_games()
 
 #Update this to >= 3
+i = 0
 if today.weekday() >= 3:
-    while len(teams_to_update) > 0:
-        get_scores()
-        print(" ")
-        print(" ")
-        print(" ")
-        time.sleep(600)
-
-print(session.query(League).filter(League.id == 48).first().waivers_already_executed)
-print(session.query(League).filter(League.id == 49).first().waivers_already_executed)
+    while i < 300:
+        teams_to_update = session.query(Football_Teams).filter_by(updated_this_week=False).all()
+        if len(teams_to_update) > 0:
+            get_scores()
+            print(" ")
+            print(" ")
+            print(" ")
+            time.sleep(20)
+        i += 1
 
 # ----------------- SANDBOX -------------------
-# Reset Football team's score to 0
-# session.query(Football_Teams).filter_by(team="Notre Dame").update({"current_score": 0,
-#             "week0_score": 0, "updated_this_week": False})
+# # Reset Football team's score
+# team = "Vanderbilt"
+# session.query(Football_Teams).filter_by(team=team).update({"current_score": 1,
+#             "week0_score": 1, "updated_this_week": True})
 # session.commit()
+
+# # Query a team's info
+# team = "USC"
+# print(session.query(Football_Teams).filter(Football_Teams.team == team).first().updated_this_week)
+# print(session.query(Football_Teams).filter(Football_Teams.team == team).first().week0_score)
+# print(session.query(Football_Teams).filter(Football_Teams.team == team).first().current_score)
+
+# # Edit someone's score/info
+# user_id = 13
+# league = 54
+# session.query(Player_weekly_info).filter(Player_weekly_info.user_id == user_id).filter(Player_weekly_info.league == league).update({"this_weeks_score": 0})
+# session.commit()
+
+# # Get waiver info
+# all_waivers = session.query(Waiver_Info).all()
+# print(len(all_waivers))
+# for waiver in all_waivers:
+#     print(waiver.league)

@@ -422,11 +422,12 @@ def delete_user(id):
 @app.route("/create_league", methods=['GET', 'POST'])
 @login_required
 def create_league():
-    # Add analysis to db
-    num_of_visits = Analysis.query.filter(Analysis.endpoint == "create_league").first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "create_league").update(
-        {"num_of_visits": num_of_visits + 1})
-    db.session.commit()
+    # Add analysis to db if the user visiting is not me
+    if current_user.id != 13:
+        num_of_visits = Analysis.query.filter(Analysis.endpoint == "create_league").first().num_of_visits
+        db.session.query(Analysis).filter(Analysis.endpoint == "create_league").update(
+            {"num_of_visits": num_of_visits + 1})
+        db.session.commit()
 
     # Initialize form and get leagues_list to send to website for the navbar
     form = LeagueForm()
@@ -500,11 +501,12 @@ def delete_league(id):
 @app.route("/join_league/league_id=<int:league_id>", methods=['GET', 'POST'])
 @login_manager.unauthorized_handler
 def join_league(league_id):
-    # Add analysis to db
-    num_of_visits = Analysis.query.filter(Analysis.endpoint == "join_league").first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "join_league").update(
-        {"num_of_visits": num_of_visits + 1})
-    db.session.commit()
+    # Add analysis to db if the user is not me
+    if current_user.id != 13:
+        num_of_visits = Analysis.query.filter(Analysis.endpoint == "join_league").first().num_of_visits
+        db.session.query(Analysis).filter(Analysis.endpoint == "join_league").update(
+            {"num_of_visits": num_of_visits + 1})
+        db.session.commit()
 
     try:
         form = JoinLeagueForm()
@@ -559,11 +561,12 @@ def join_league(league_id):
 @app.route("/league_dashboard/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def league_dashboard(league_id):
-    # Add analysis to db
-    num_of_visits = Analysis.query.filter(Analysis.endpoint == "league_dashboard", Analysis.league == league_id).first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "league_dashboard", Analysis.league == league_id).update(
-        {"num_of_visits": num_of_visits + 1})
-    db.session.commit()
+    # Add analysis to db if the user is not me
+    if current_user.id != 13:
+        num_of_visits = Analysis.query.filter(Analysis.endpoint == "league_dashboard", Analysis.league == league_id).first().num_of_visits
+        db.session.query(Analysis).filter(Analysis.endpoint == "league_dashboard", Analysis.league == league_id).update(
+            {"num_of_visits": num_of_visits + 1})
+        db.session.commit()
 
     # Get many different queries for use later in the league_dashboard script
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
@@ -674,12 +677,13 @@ def league_dashboard(league_id):
 @app.route("/add_team/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
 def add_team(league_id):
-    # Add analysis to db
-    num_of_visits = Analysis.query.filter(Analysis.endpoint == "add_team",
-                                          Analysis.league == league_id).first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "add_team", Analysis.league == league_id).update(
-        {"num_of_visits": num_of_visits + 1})
-    db.session.commit()
+    # Add analysis to db if the user is not me
+    if current_user.id != 13:
+        num_of_visits = Analysis.query.filter(Analysis.endpoint == "add_team",
+                                              Analysis.league == league_id).first().num_of_visits
+        db.session.query(Analysis).filter(Analysis.endpoint == "add_team", Analysis.league == league_id).update(
+            {"num_of_visits": num_of_visits + 1})
+        db.session.commit()
 
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
@@ -694,7 +698,7 @@ def add_team(league_id):
         ineligible_teams.append(Football_Teams.query.filter_by(
             id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_3)).first().team)
         ineligible_teams.append(Football_Teams.query.filter_by(
-            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
+                id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
 
     # Displays the user's current teams that they can choose to drop from
     user_teams = [Football_Teams.query.filter_by(id=int(
@@ -890,12 +894,13 @@ def delete_waiver(id, league_id):
 
 @app.route("/update_faab/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
 def update_faab(id, league_id):
-    # Add analysis to db
-    num_of_visits = Analysis.query.filter(Analysis.endpoint == "update_faab",
-                                          Analysis.league == league_id).first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "update_faab", Analysis.league == league_id).update(
-        {"num_of_visits": num_of_visits + 1})
-    db.session.commit()
+    # Add analysis to db if the user is not me
+    if current_user.id != 13:
+        num_of_visits = Analysis.query.filter(Analysis.endpoint == "update_faab",
+                                              Analysis.league == league_id).first().num_of_visits
+        db.session.query(Analysis).filter(Analysis.endpoint == "update_faab", Analysis.league == league_id).update(
+            {"num_of_visits": num_of_visits + 1})
+        db.session.commit()
 
     form = UpdateFaab()
     current_waiver = Waiver_Info.query.get(id)
@@ -1029,11 +1034,12 @@ week. It will have a link to display the weeks for someone to choose so they can
 @app.route("/UserDashboard", methods=['GET', 'POST'])
 @login_required
 def UserDashboard():
-    # Add analysis to db
-    num_of_visits = Analysis.query.filter(Analysis.endpoint == "userdashboard").first().num_of_visits
-    db.session.query(Analysis).filter(Analysis.endpoint == "userdashboard").update(
-        {"num_of_visits": num_of_visits + 1})
-    db.session.commit()
+    # Add analysis to db if the user is not me
+    if current_user.id != 13:
+        num_of_visits = Analysis.query.filter(Analysis.endpoint == "userdashboard").first().num_of_visits
+        db.session.query(Analysis).filter(Analysis.endpoint == "userdashboard").update(
+            {"num_of_visits": num_of_visits + 1})
+        db.session.commit()
 
     user_list_of_leagues = [league.league_id for league in
                             List_of_leagues_update1.query.filter_by(user_id=current_user.id)]
