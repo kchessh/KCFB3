@@ -134,6 +134,7 @@ class Football_Teams(db.Model):
     playing_now = db.Column(db.Boolean, default=False)
     upcoming_opponent = db.Column(db.String(100), nullable=True)
     previous_opponent = db.Column(db.String(100), nullable=True, default="")
+    previous_result = db.Column(db.String(1), nullable=True, default="")
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)
@@ -635,8 +636,8 @@ def league_dashboard(league_id):
 
     # Pass in dict where team is the key and values are a list made for the standings table (points, conference, next opponent, previous opponent)
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
-    eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent] for team in all_teams if team.team not in ineligible_teams}
-    user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent] for team in all_teams if team.team in user_teams}
+    eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent, team.previous_result] for team in all_teams if team.team not in ineligible_teams}
+    user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent, team.previous_result] for team in all_teams if team.team in user_teams}
     try:
         eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
         user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
