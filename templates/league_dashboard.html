@@ -169,7 +169,7 @@
           <th scope="row">{{ current_user_teams.index(team) + 1 }}</th>
           <td>{{ team }}</td>
           <td>{{ user_teams_dict_sorted[team][0] }}</td>
-          <td>{{ user_teams_dict_sorted[team][2] }}</td>
+          <td>{{ user_teams_dict_sorted[team][2] }} ({{ user_teams_dict_sorted[team][5] }})</td>
           {% if user_teams_dict_sorted[team][4] != None %}
             <td><strong>{{ user_teams_dict_sorted[team][4] }}</strong> {{ user_teams_dict_sorted[team][3] }}</td>
           {% else %}

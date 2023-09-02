@@ -142,9 +142,11 @@ class HistoryOfWaivers(db.Model):
     faab_submitted = db.Column(db.Integer, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
 
+week, postseason = my_functions.determine_week_number()
 reset = False
 if reset:
     cases.case2()
+
 # all_teams = session.query(Football_Teams).all()
 # for team in all_teams:
 #     print(f"{team.team},{team.id}")
@@ -156,95 +158,96 @@ if reset:
 else:
     all_leagues = session.query(League).all()
     for league in all_leagues:
-        all_waivers = session.query(Waiver_Info).filter(Waiver_Info.league == league.id).all()
+        if league.league_id != 54 or week > 2:
+            all_waivers = session.query(Waiver_Info).filter(Waiver_Info.league == league.id).all()
 
-        # Add all waivers to the history of waivers table so people can see all their historical waivers that either
-        # were or were not processed
-        for waiver in all_waivers:
-            waiver_to_add_to_history = HistoryOfWaivers(id=waiver.id, user_id=waiver.user_id, league=waiver.league,
-                team_to_add_id=waiver.team_to_add_id, team_to_drop_id=waiver.team_to_drop_id,
-                faab_submitted=waiver.faab_submitted, priority=waiver.priority)
-
-        if len(all_waivers) > 0:
-            print(all_waivers)
-            waiver_list = []
-            waiver_list_sorted = []
-            teams_assigned = []
-            faabs_dict = {person.user_id: person.faab for person in session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).all()}
-            print(f"faabs_dict: {faabs_dict}")
-            completed_waiver_list = []
+            # Add all waivers to the history of waivers table so people can see all their historical waivers that either
+            # were or were not processed
             for waiver in all_waivers:
-                # Create waiver list to iterate through for assigning teams to the highest bidder
-                waiver_list.append([waiver.user_id, waiver.team_to_add_id, waiver.team_to_drop_id, waiver.faab_submitted, waiver.id])
-                waiver_list_sorted = sorted(waiver_list, key=lambda waiver: waiver[3], reverse=True)
-            while len(waiver_list_sorted) > 0:
-                # Get the highest bid data. User's priorities are determined by amount of faab bid (i.e. if a user bid 10 on team1 and 12 on team2, it will try to give them team2 before team 1
-                print(f"waiver_list_sorted: {waiver_list_sorted}")
-                highest_bid = waiver_list_sorted[0]
-                print(f"waiver_id: {highest_bid[4]}")
+                waiver_to_add_to_history = HistoryOfWaivers(id=waiver.id, user_id=waiver.user_id, league=waiver.league,
+                    team_to_add_id=waiver.team_to_add_id, team_to_drop_id=waiver.team_to_drop_id,
+                    faab_submitted=waiver.faab_submitted, priority=waiver.priority)
 
-                # Figure out if the highest bid has no matching bids. If there are matching bids, award a team to the person with the lowest score. Else, do a RNG to determine who gets the team
-                go_on = True
-                match_counter = 1
-                while go_on:
-                    if highest_bid[3] == waiver_list_sorted[match_counter][3]:
-                        match_counter += 1
-                        highest_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == highest_bidder)
-                        other_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver_list_sorted[match_counter][0])
-                        if highest_bidder_league_points > other_bidder_league_points:
-                            highest_bid = waiver_list_sorted[match_counter]
-                    else:
-                        go_on = False
+            if len(all_waivers) > 0:
+                print(all_waivers)
+                waiver_list = []
+                waiver_list_sorted = []
+                teams_assigned = []
+                faabs_dict = {person.user_id: person.faab for person in session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).all()}
+                print(f"faabs_dict: {faabs_dict}")
+                completed_waiver_list = []
+                for waiver in all_waivers:
+                    # Create waiver list to iterate through for assigning teams to the highest bidder
+                    waiver_list.append([waiver.user_id, waiver.team_to_add_id, waiver.team_to_drop_id, waiver.faab_submitted, waiver.id])
+                    waiver_list_sorted = sorted(waiver_list, key=lambda waiver: waiver[3], reverse=True)
+                while len(waiver_list_sorted) > 0:
+                    # Get the highest bid data. User's priorities are determined by amount of faab bid (i.e. if a user bid 10 on team1 and 12 on team2, it will try to give them team2 before team 1
+                    print(f"waiver_list_sorted: {waiver_list_sorted}")
+                    highest_bid = waiver_list_sorted[0]
+                    print(f"waiver_id: {highest_bid[4]}")
 
-                highest_bidder = highest_bid[0]
-                team_to_add_id = highest_bid[1]
-                team_to_drop_id = highest_bid[2]
-                faab_submitted = highest_bid[3]
+                    # Figure out if the highest bid has no matching bids. If there are matching bids, award a team to the person with the lowest score. Else, do a RNG to determine who gets the team
+                    go_on = True
+                    match_counter = 1
+                    while go_on:
+                        if highest_bid[3] == waiver_list_sorted[match_counter][3]:
+                            match_counter += 1
+                            highest_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == highest_bidder)
+                            other_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver_list_sorted[match_counter][0])
+                            if highest_bidder_league_points > other_bidder_league_points:
+                                highest_bid = waiver_list_sorted[match_counter]
+                        else:
+                            go_on = False
 
-                # Calling this before the first waiver is even executed to ensure someone wasn't somehow able to submit a waiver with more faab than they have available
-                for waiver in reversed(waiver_list_sorted):
-                    # Delete waivers for everyone who lost the bid for the awarded team
-                    if waiver[1] == team_to_add_id:
-                        print(f"{waiver} deleted due to someone trying to add a team that was already awarded")
-                        waiver_list_sorted.remove(waiver)
-                        waiver_to_delete = session.query(Waiver_Info).filter(Waiver_Info.id == waiver[4]).first()
-                        session.delete(waiver_to_delete)
+                    highest_bidder = highest_bid[0]
+                    team_to_add_id = highest_bid[1]
+                    team_to_drop_id = highest_bid[2]
+                    faab_submitted = highest_bid[3]
 
-                    # Delete waivers where the faab submitted exceeds faab remaining after awarding team
-                    elif waiver[3] > faabs_dict[highest_bidder]:
-                        print(f"{waiver} deleted due to the user who won the most recent team not having enough faab to win another team")
-                        waiver_list_sorted.remove(waiver)
-                        waiver_to_delete = session.query(Waiver_Info).filter(Waiver_Info.id == waiver[4]).first()
-                        session.delete(waiver_to_delete)
+                    # Calling this before the first waiver is even executed to ensure someone wasn't somehow able to submit a waiver with more faab than they have available
+                    for waiver in reversed(waiver_list_sorted):
+                        # Delete waivers for everyone who lost the bid for the awarded team
+                        if waiver[1] == team_to_add_id:
+                            print(f"{waiver} deleted due to someone trying to add a team that was already awarded")
+                            waiver_list_sorted.remove(waiver)
+                            waiver_to_delete = session.query(Waiver_Info).filter(Waiver_Info.id == waiver[4]).first()
+                            session.delete(waiver_to_delete)
 
-                    elif waiver[0] == highest_bidder and waiver[2] == team_to_drop_id:
-                        print(f"{waiver} deleted due to the user who won the most recent team trying to drop the team they just dropped")
-                        waiver_list_sorted.remove(waiver)
-                        waiver_to_delete = session.query(Waiver_Info).filter(Waiver_Info.id == waiver[4]).first()
-                        session.delete(waiver_to_delete)
+                        # Delete waivers where the faab submitted exceeds faab remaining after awarding team
+                        elif waiver[3] > faabs_dict[highest_bidder]:
+                            print(f"{waiver} deleted due to the user who won the most recent team not having enough faab to win another team")
+                            waiver_list_sorted.remove(waiver)
+                            waiver_to_delete = session.query(Waiver_Info).filter(Waiver_Info.id == waiver[4]).first()
+                            session.delete(waiver_to_delete)
 
-                # Db is setup with 4 teams, each having their own column. We need to figure out which of the user's 4 teams are being dropped so the correct team can be dropped
-                # for the correct team to be added (i.e. if someone wants to drop team A for team B, we need to figure out if team A is in the team_1, team_2, team_3, or team_4 column
-                winner_teams = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == highest_bidder, Player_weekly_info.league == league.id).first()
-                winner_teams_dict = {int(winner_teams.team_1): "team_1", int(winner_teams.team_2): "team_2", int(winner_teams.team_3): "team_3", int(winner_teams.team_4): "team_4"}
+                        elif waiver[0] == highest_bidder and waiver[2] == team_to_drop_id:
+                            print(f"{waiver} deleted due to the user who won the most recent team trying to drop the team they just dropped")
+                            waiver_list_sorted.remove(waiver)
+                            waiver_to_delete = session.query(Waiver_Info).filter(Waiver_Info.id == waiver[4]).first()
+                            session.delete(waiver_to_delete)
 
-                current_faab = faabs_dict[highest_bidder]
-                # Update the new Player_weekly_info table with the new team replacing the old team and the submitted faab subtracted from the original faab
-                # KeyError should be due to waiver being deleted due to someone somehow placing a bid with more faab than they had available
-                if current_faab - faab_submitted >= 0:
-                    try:
-                        session.query(Player_weekly_info).filter(Player_weekly_info.user_id == highest_bidder, Player_weekly_info.league == league.id).update({str(winner_teams_dict[team_to_drop_id]): team_to_add_id, "faab": current_faab - faab_submitted})
-                        executed_waiver = Executed_Waivers_update1(user_id=highest_bidder, league=league.id, added_team=team_to_add_id, dropped_team=team_to_drop_id, faab_used=faab_submitted)
-                        session.add(executed_waiver)
-                        faabs_dict[highest_bidder] -= faab_submitted
-                        print(f"new faabs_dict: {faabs_dict}")
-                        completed_waiver_list.append(highest_bid)
-                    except KeyError:
-                        pass
+                    # Db is setup with 4 teams, each having their own column. We need to figure out which of the user's 4 teams are being dropped so the correct team can be dropped
+                    # for the correct team to be added (i.e. if someone wants to drop team A for team B, we need to figure out if team A is in the team_1, team_2, team_3, or team_4 column
+                    winner_teams = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == highest_bidder, Player_weekly_info.league == league.id).first()
+                    winner_teams_dict = {int(winner_teams.team_1): "team_1", int(winner_teams.team_2): "team_2", int(winner_teams.team_3): "team_3", int(winner_teams.team_4): "team_4"}
 
-            print(waiver_list_sorted)
-            print(completed_waiver_list)
-    session.commit()
+                    current_faab = faabs_dict[highest_bidder]
+                    # Update the new Player_weekly_info table with the new team replacing the old team and the submitted faab subtracted from the original faab
+                    # KeyError should be due to waiver being deleted due to someone somehow placing a bid with more faab than they had available
+                    if current_faab - faab_submitted >= 0:
+                        try:
+                            session.query(Player_weekly_info).filter(Player_weekly_info.user_id == highest_bidder, Player_weekly_info.league == league.id).update({str(winner_teams_dict[team_to_drop_id]): team_to_add_id, "faab": current_faab - faab_submitted})
+                            executed_waiver = Executed_Waivers_update1(user_id=highest_bidder, league=league.id, added_team=team_to_add_id, dropped_team=team_to_drop_id, faab_used=faab_submitted)
+                            session.add(executed_waiver)
+                            faabs_dict[highest_bidder] -= faab_submitted
+                            print(f"new faabs_dict: {faabs_dict}")
+                            completed_waiver_list.append(highest_bid)
+                        except KeyError:
+                            pass
+
+                print(waiver_list_sorted)
+                print(completed_waiver_list)
+        session.commit()
 
 player_11 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 11, Player_weekly_info.league == 48).first()
 player_13 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 13, Player_weekly_info.league == 48).first()

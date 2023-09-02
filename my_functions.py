@@ -269,4 +269,8 @@ def get_password_list():
         i += 1
     return passwords
 
-get_password_list()
+def return_calendar_day(input_date):
+    dict = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
+    day_of_week = input_date.weekday()
+    calendar_day = dict[day_of_week]
+    return calendar_day

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, url_for, redirect, flash, sen
 from flask_wtf import FlaskForm
 import pandas
 import datetime
+from datetime import date
 import my_functions
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, EmailField, IntegerField, \
     SelectField
@@ -634,10 +635,13 @@ def league_dashboard(league_id):
     except TypeError:
         user_teams = []
 
-    # Pass in dict where team is the key and values are a list made for the standings table (points, conference, next opponent, previous opponent)
+    # Pass in dict where team is the key and values are a list made for the standings table (points, conference, next opponent, previous opponent). Delete time_correction_delta once the next upcoming_games is queried
+    time_correction_delta = datetime.timedelta(hours=5)
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
-    eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent, team.previous_result] for team in all_teams if team.team not in ineligible_teams}
-    user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent, team.previous_result] for team in all_teams if team.team in user_teams}
+    eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
+                                       team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%A %I:%M%p")] for team in all_teams if team.team not in ineligible_teams}
+    user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
+                                   team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team in user_teams}
     try:
         eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
         user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
@@ -665,6 +669,7 @@ def league_dashboard(league_id):
         playoff_teams = []
     else:
         playoff_teams = []
+
 
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
                            league_member_names=league_member_names, league_manager=league_manager,

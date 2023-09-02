@@ -141,7 +141,7 @@ class Waiver_Info(db.Model):
 
 year = 2023
 week, postseason = my_functions.determine_week_number()
-print(week)
+print(f"week: {week}")
 today = date.today()
 now = datetime.now()
 week = 1
@@ -150,6 +150,7 @@ week = 1
 # time_correction is to go from central time to gmt
 time_correction = 5
 time_delta = timedelta(hours=3 + time_correction)
+time_correction_delta = timedelta(hours=5)
 
 def get_upcoming_games():
     all_teams = session.query(Football_Teams).all()
@@ -162,7 +163,7 @@ def get_upcoming_games():
         if number_of_games > 1 and datetime.now() > datetime.combine(date(2023, 8, 28), datetime.min.time()):
             home_team = game[1]['home_team']
             away_team = game[1]['away_team']
-            game_time = game[1]['start_date']
+            game_time = game[1]['start_date'] - time_correction_delta
             print(game_time)
             if team_to_query == home_team:
                 upcoming_opponent = away_team
@@ -171,7 +172,7 @@ def get_upcoming_games():
         else:
             home_team = game[0]['home_team']
             away_team = game[0]['away_team']
-            game_time = game[0]['start_date']
+            game_time = game[0]['start_date'] - time_correction_delta
             print(game_time)
             if team_to_query == home_team:
                 upcoming_opponent = away_team
@@ -380,10 +381,10 @@ if run_programs:
 # for waiver in all_waivers:
 #     print(waiver.league)
 
-# Set previous_result for every team already played
-team = "Florida"
-session.query(Football_Teams).filter_by(team=team).update({"previous_result": "L"})
-session.commit()
+# # Set previous_result for every team already played
+# team = "Florida"
+# session.query(Football_Teams).filter_by(team=team).update({"previous_result": "L"})
+# session.commit()
 
 # # Add user to league
 # user_id = 54
