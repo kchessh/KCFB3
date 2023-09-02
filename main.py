@@ -639,7 +639,7 @@ def league_dashboard(league_id):
     time_correction_delta = datetime.timedelta(hours=5)
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
     eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                       team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%A %I:%M%p")] for team in all_teams if team.team not in ineligible_teams}
+                                       team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team not in ineligible_teams}
     user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
                                    team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team in user_teams}
     try:
