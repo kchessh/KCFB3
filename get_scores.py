@@ -286,10 +286,6 @@ def get_scores():
         time.sleep(2)
     session.commit()
 
-new_results = session.query(Football_Teams).all()
-for item in new_results:
-    print(item.week2_score)
-
 # scores_2022 = {"Clemson": 11, "Florida State": 10, "Syracuse": 7, "Louisville": 8, "NC State": 8, "Wake Forest": 8,
 #                "Boston College": 3, "North Carolina": 9, "Pittsburgh": 9, "Duke": 9, "Georgia Tech": 5, "Miami": 5,
 #                "Virginia": 3, "Virginia Tech": 3, "TCU": 12, "Kansas State": 10, "Texas": 8, "Texas Tech": 9,
@@ -333,7 +329,7 @@ for item in new_results:
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = False
+run_programs = True
 if run_programs:
 
     #This should be == 7 to work properly (normally on Mondays) but should be == 2 for week 2 since teams play on Monday on week 1
@@ -385,6 +381,11 @@ if run_programs:
 # team = "Florida"
 # session.query(Football_Teams).filter_by(team=team).update({"previous_result": "L"})
 # session.commit()
+
+# Get weekly scores
+# new_results = session.query(Football_Teams).all()
+# for item in new_results:
+#     print(item.week0_score)
 
 # # Add user to league
 # user_id = 54

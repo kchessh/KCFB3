@@ -205,7 +205,7 @@
           <th scope="row">{{ eligible_teams.index(team) + 1 }}</th>
           <td>{{ team }}</td>
           <td>{{ eligible_teams_dict_sorted[team][0] }}</td>
-          <td>{{ eligible_teams_dict_sorted[team][2] }}</td>
+          <td>{{ eligible_teams_dict_sorted[team][2] }} ({{ eligible_teams_dict_sorted[team][5] }})</td>
           {% if eligible_teams_dict_sorted[team][4] != None %}
             <td><strong>{{ eligible_teams_dict_sorted[team][4] }}</strong> {{ eligible_teams_dict_sorted[team][3] }}</td>
           {% else %}
