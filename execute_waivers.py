@@ -158,7 +158,7 @@ if reset:
 else:
     all_leagues = session.query(League).all()
     for league in all_leagues:
-        if league.league_id != 54 or week > 2:
+        if league.id != 54 or week > 2:
             all_waivers = session.query(Waiver_Info).filter(Waiver_Info.league == league.id).all()
 
             # Add all waivers to the history of waivers table so people can see all their historical waivers that either
@@ -178,7 +178,7 @@ else:
                 completed_waiver_list = []
                 for waiver in all_waivers:
                     # Create waiver list to iterate through for assigning teams to the highest bidder
-                    waiver_list.append([waiver.user_id, waiver.team_to_add_id, waiver.team_to_drop_id, waiver.faab_submitted, waiver.id])
+                    waiver_list.append([waiver.user_id, waiver.team_to_add_id, waiver.team_to_drop_id, waiver.faab_submitted, waiver.id, waiver.league])
                     waiver_list_sorted = sorted(waiver_list, key=lambda waiver: waiver[3], reverse=True)
                 while len(waiver_list_sorted) > 0:
                     # Get the highest bid data. User's priorities are determined by amount of faab bid (i.e. if a user bid 10 on team1 and 12 on team2, it will try to give them team2 before team 1
@@ -190,13 +190,19 @@ else:
                     go_on = True
                     match_counter = 1
                     while go_on:
-                        if highest_bid[3] == waiver_list_sorted[match_counter][3]:
-                            match_counter += 1
-                            highest_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == highest_bidder)
-                            other_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver_list_sorted[match_counter][0])
-                            if highest_bidder_league_points > other_bidder_league_points:
-                                highest_bid = waiver_list_sorted[match_counter]
-                        else:
+                        try:
+                            if highest_bid[3] == waiver_list_sorted[match_counter][3]:
+                                print(f"waiver_list_sorted: {waiver_list_sorted}")
+                                print(f"match_counter: {match_counter}")
+                                match_counter += 1
+                                highest_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == highest_bidder)
+                                other_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver_list_sorted[match_counter][0])
+                                if highest_bidder_league_points > other_bidder_league_points:
+                                    highest_bid = waiver_list_sorted[match_counter]
+                            else:
+                                go_on = False
+                        # IndexError will occur when there's only one waiver claim left
+                        except IndexError:
                             go_on = False
 
                     highest_bidder = highest_bid[0]
@@ -249,12 +255,12 @@ else:
                 print(completed_waiver_list)
         session.commit()
 
-player_11 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 11, Player_weekly_info.league == 48).first()
-player_13 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 13, Player_weekly_info.league == 48).first()
-player_7 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 7, Player_weekly_info.league == 48).first()
-print(f"player_11: {player_11.team_1}, {player_11.team_2}, {player_11.team_3}, {player_11.team_4}, {player_11.faab}")
-print(f"player_13: {player_13.team_1}, {player_13.team_2}, {player_13.team_3}, {player_13.team_4}, {player_13.faab}")
-print(f"player_7: {player_7.team_1}, {player_7.team_2}, {player_7.team_3}, {player_7.team_4}, {player_7.faab}")
+# player_11 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 11, Player_weekly_info.league == 48).first()
+# player_13 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 13, Player_weekly_info.league == 48).first()
+# player_7 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 7, Player_weekly_info.league == 48).first()
+# print(f"player_11: {player_11.team_1}, {player_11.team_2}, {player_11.team_3}, {player_11.team_4}, {player_11.faab}")
+# print(f"player_13: {player_13.team_1}, {player_13.team_2}, {player_13.team_3}, {player_13.team_4}, {player_13.faab}")
+# print(f"player_7: {player_7.team_1}, {player_7.team_2}, {player_7.team_3}, {player_7.team_4}, {player_7.faab}")
 
 executed_waivers = session.query(Executed_Waivers_update1).all()
 for waiver in executed_waivers:

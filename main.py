@@ -387,22 +387,28 @@ def add_user():
 def update(id):
     form = UserForm()
     name_to_update = User.query.get(id)
-    if request.method == "POST" and form.password_hash.data == form.password_hash2.data:
+    passwords = my_functions.get_password_list()
+    passwords2 = [(str(word), word) for word in passwords]
+    form.password.choices = passwords2
+    form.password_confirm.choices = passwords2
+    if request.method == "POST" and form.password.data == form.password_confirm.data:
         name_to_update.name = request.form['name']
         name_to_update.email = request.form['email']
-        name_to_update.password_hash = generate_password_hash(request.form['password_hash'], method="pbkdf2:sha256",
+        name_to_update.password_hash = generate_password_hash(form.password.data, method="pbkdf2:sha256",
                                                               salt_length=8)
         name_to_update.username = request.form['username']
         try:
             db.session.commit()
             flash("User Updated Successfully!")
-            return render_template("update.html", form=form, name_to_update=name_to_update)
+            return render_template("update.html", form=form, name_to_update=name_to_update, passwords=passwords)
         except:
             flash("Error!")
-            return render_template("update.html", form=form, name_to_update=name_to_update, id=id)
+            return render_template("update.html", form=form, name_to_update=name_to_update, id=id, passwords=passwords)
+    elif request.method == "POST" and form.password.data != form.password_confirm.data:
+        flash("Passwords must match")
+        return render_template("update.html", form=form, name_to_update=name_to_update, id=id, passwords=passwords)
     else:
-        flash("Error!")
-        return render_template("update.html", form=form, name_to_update=name_to_update, id=id)
+        return render_template("update.html", form=form, name_to_update=name_to_update, id=id, passwords=passwords)
 
 
 @app.route('/delete/<int:id>', methods=['GET', 'POST'])
@@ -635,7 +641,7 @@ def league_dashboard(league_id):
     except TypeError:
         user_teams = []
 
-    # Pass in dict where team is the key and values are a list made for the standings table (points, conference, next opponent, previous opponent). Delete time_correction_delta once the next upcoming_games is queried
+    # Pass in dict where team is the key and values are a list made for the standings table (points, conference, next opponent, previous opponent)
     time_correction_delta = datetime.timedelta(hours=5)
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
     eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
@@ -811,7 +817,7 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
         if not already_updated:
             submitted_faab = form.faab.data
 
-            if submitted_faab < 0:
+            if submitted_faab <= -1:
                 flash(f"You must submit faab that is $0 or more...")
                 return render_template("confirm_drop.html", form=form, league_id=league_id, league_name=league_name,
                                        team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list,
