@@ -141,11 +141,12 @@ class Waiver_Info(db.Model):
 
 year = 2023
 week, postseason = my_functions.determine_week_number()
+# week = 5
 print(f"week: {week}")
 today = date.today()
 now = datetime.now()
+print(now)
 week_01_cutoff = datetime(2023, 8, 30)
-# week = 1
 
 # time_delta is the value used to determine how far in the future to query games
 # time_correction is to go from central time to gmt
@@ -182,7 +183,8 @@ def get_upcoming_games():
                     upcoming_opponent = home_team
             # IndexError occurs when a team is on a Bye since the returned result is None
             except IndexError:
-                upcoming_opponent = "Bye"
+                upcoming_opponent = "BYE"
+                game_time = None
 
         session.query(Football_Teams).filter_by(team=team_to_query).update({"upcoming_opponent": upcoming_opponent,
             "date_and_time_of_game": game_time, "updated_this_week": False})
@@ -192,6 +194,7 @@ def get_upcoming_games():
 
 
 def get_scores():
+
     for item in teams_to_update:
         print(item.team)
         if cutoff_for_querying_games > item.date_and_time_of_game or scores_test is True:
@@ -385,11 +388,11 @@ def get_scores():
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = False
+run_programs = True
 if run_programs:
 
     #This should be == 0 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    if today.weekday() == 0 and week != 2:
+    if today.weekday() == 6 and week != 2:
         get_upcoming_games()
     elif today.weekday() == 1 and week == 2:
         get_upcoming_games()
@@ -409,6 +412,9 @@ if run_programs:
             i += 1
 
 # ----------------- SANDBOX -------------------
+get_waiver_info = True
+edit_user_info = False
+add_waiver_info = False
 # # Reset Football team/teams's score(s)
 # teams = ["Iowa State", "Virginia"]
 # for team in teams:
@@ -422,32 +428,47 @@ if run_programs:
 # print(session.query(Football_Teams).filter(Football_Teams.team == team).first().week0_score)
 # print(session.query(Football_Teams).filter(Football_Teams.team == team).first().current_score)
 
-# # Edit someone's score/info
-# user_id = 40
-# league = 53
-# session.query(Player_weekly_info).filter(Player_weekly_info.user_id == user_id).filter(Player_weekly_info.league == league).update({"this_weeks_score": 4})
-# session.commit()
+# Edit someone's score/info
+if edit_user_info:
+    user_id = 40
+    league = 53
+    session.query(Player_weekly_info).filter(Player_weekly_info.user_id == user_id).filter(Player_weekly_info.league == league).update({"this_weeks_score": 4})
+    session.commit()
 
-# # Get waiver info
-# all_waivers = session.query(Waiver_Info).all()
-# print(len(all_waivers))
-# for waiver in all_waivers:
-#     print(waiver.league)
+# Get waiver info
+if get_waiver_info:
+    all_waivers = session.query(Waiver_Info).all()
+    print(len(all_waivers))
+    for waiver in all_waivers:
+        print(waiver.league)
+
+# Add waiver info for someone
+if add_waiver_info:
+    user_id = 42
+    league = 53
+    team_to_add_id = 54
+    team_to_drop_id = 47
+    faab_submitted = 0
+    priority = 2
+    waiver = Waiver_Info(user_id=user_id, league=league, team_to_add_id=team_to_add_id, team_to_drop_id=team_to_drop_id, faab_submitted=faab_submitted, priority=priority)
+    session.add(waiver)
+    session.commit()
 
 # # Set previous_result for every team already played
 # team = "Utah"
 # session.query(Football_Teams).filter_by(team=team).update({"previous_result": "W"})
 # session.commit()
 
-# Get weekly scores
+# # Get weekly scores
 # new_results = session.query(Football_Teams).all()
 # for item in new_results:
-#     print(item.week0_score)
+#     print(item.team)
+#     print(item.date_and_time_of_game)
 
-# Reset password
-user_id = 43
-user = session.query(User).filter_by(id=user_id).update({"locked_account": False})
-session.commit()
+# # Reset password
+# user_id = 43
+# user = session.query(User).filter_by(id=user_id).update({"locked_account": False})
+# session.commit()
 
 # # Get all team ids
 # all_teams = session.query(Football_Teams).order_by(Football_Teams.id)

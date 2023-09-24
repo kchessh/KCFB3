@@ -158,7 +158,8 @@ if reset:
 else:
     all_leagues = session.query(League).all()
     for league in all_leagues:
-        if league.id != 54 or week > 2:
+        print(league.id)
+        if league.id != 54 or week > 3:
             all_waivers = session.query(Waiver_Info).filter(Waiver_Info.league == league.id).all()
 
             # Add all waivers to the history of waivers table so people can see all their historical waivers that either
@@ -186,6 +187,11 @@ else:
                     highest_bid = waiver_list_sorted[0]
                     print(f"waiver_id: {highest_bid[4]}")
 
+                    highest_bidder = highest_bid[0]
+                    team_to_add_id = highest_bid[1]
+                    team_to_drop_id = highest_bid[2]
+                    faab_submitted = highest_bid[3]
+
                     # Figure out if the highest bid has no matching bids. If there are matching bids, award a team to the person with the lowest score. Else, do a RNG to determine who gets the team
                     go_on = True
                     match_counter = 1
@@ -204,11 +210,6 @@ else:
                         # IndexError will occur when there's only one waiver claim left
                         except IndexError:
                             go_on = False
-
-                    highest_bidder = highest_bid[0]
-                    team_to_add_id = highest_bid[1]
-                    team_to_drop_id = highest_bid[2]
-                    faab_submitted = highest_bid[3]
 
                     # Calling this before the first waiver is even executed to ensure someone wasn't somehow able to submit a waiver with more faab than they have available
                     for waiver in reversed(waiver_list_sorted):
@@ -253,6 +254,7 @@ else:
 
                 print(waiver_list_sorted)
                 print(completed_waiver_list)
+            session.query(League).filter(League.id == league.id).update({"waivers_already_executed": True})
         session.commit()
 
 # player_11 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 11, Player_weekly_info.league == 48).first()
