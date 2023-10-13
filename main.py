@@ -155,6 +155,22 @@ class Football_Teams(db.Model):
     week13_score = db.Column(db.Integer)
     week14_score = db.Column(db.Integer)
     week15_score = db.Column(db.Integer)
+    week0_opponent = db.Column(db.String(50), nullable=True, default="")
+    week1_opponent = db.Column(db.String(50), nullable=True, default="")
+    week2_opponent = db.Column(db.String(50), nullable=True, default="")
+    week3_opponent = db.Column(db.String(50), nullable=True, default="")
+    week4_opponent = db.Column(db.String(50), nullable=True, default="")
+    week5_opponent = db.Column(db.String(50), nullable=True, default="")
+    week6_opponent = db.Column(db.String(50), nullable=True, default="")
+    week7_opponent = db.Column(db.String(50), nullable=True, default="")
+    week8_opponent = db.Column(db.String(50), nullable=True, default="")
+    week9_opponent = db.Column(db.String(50), nullable=True, default="")
+    week10_opponent = db.Column(db.String(50), nullable=True, default="")
+    week11_opponent = db.Column(db.String(50), nullable=True, default="")
+    week12_opponent = db.Column(db.String(50), nullable=True, default="")
+    week13_opponent = db.Column(db.String(50), nullable=True, default="")
+    week14_opponent = db.Column(db.String(50), nullable=True, default="")
+    week15_opponent = db.Column(db.String(50), nullable=True, default="")
 
 class Waiver_Info(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -637,7 +653,6 @@ def league_dashboard(league_id):
                       Football_Teams.query.filter_by(id=int(
                           Player_weekly_info.query.filter_by(league=league_id,
                                                              user_id=current_user.id).first().team_4)).first().team]
-        print(user_teams)
     except TypeError:
         user_teams = []
 
@@ -685,7 +700,8 @@ def league_dashboard(league_id):
                          waiver.faab_used, waiver.date_and_time_added) for waiver in all_executed_waivers]
 
     # Sends all of the user's waiver history so they can see what waivers of theirs have been processed
-    your_waiver_history = HistoryOfWaivers.query.filter_by(user_id=current_user.id)
+    your_waiver_history = HistoryOfWaivers.query.filter(HistoryOfWaivers.user_id == current_user.id, HistoryOfWaivers.league == league_id).all()
+    your_waiver_history_list = [(waiver.id, Football_Teams.query.filter_by(id=waiver.team_to_add_id).first().team, Football_Teams.query.filter_by(id=waiver.team_to_drop_id).first().team, waiver.faab_submitted, waiver.priority) for waiver in your_waiver_history]
 
     # Determines if it's time for playoffs. If it is, allow the top 4 people to preference which playoff representative they want
     if postseason:
@@ -699,9 +715,15 @@ def league_dashboard(league_id):
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
                            eligible_teams_dict_sorted=eligible_teams_dict_sorted, user_teams_dict_sorted=user_teams_dict_sorted,
                            user_waivers_list=sorted_user_waivers_list, faab=faab, league_scores_with_names=league_scores_with_names,
-                           leagues_list=leagues_list, executed_waivers=executed_waivers, your_waiver_history=your_waiver_history,
+                           leagues_list=leagues_list, executed_waivers=executed_waivers, your_waiver_history=your_waiver_history_list,
                            postseason=postseason, playoff_teams=playoff_teams)
 
+
+# @app.route("/team_schedule/team_id=<int:team_id>", methods=['GET', 'POST'])
+# @login_required
+# def league_dashboard(team_id):
+#
+#     return render_template("team_schedule.html")
 
 @app.route("/add_team/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
@@ -874,6 +896,9 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
             db.session.query(Player_weekly_info).filter(Player_weekly_info.user_id == current_user.id,
                                                      Player_weekly_info.league == league_id).update(
                 {str(winner_teams_dict[dropteam_id]): addteam_id})
+            executed_waiver = Executed_Waivers_update1(user_id=current_user.id, league=league_id, added_team=team_to_add,
+                                                       dropped_team=team_to_drop, faab_used=0, date_and_time_added=datetime.datetime.now())
+            db.session.add(executed_waiver)
             db.session.commit()
             return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
 

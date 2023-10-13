@@ -197,151 +197,155 @@ def get_scores():
 
     for item in teams_to_update:
         print(item.team)
-        if cutoff_for_querying_games > item.date_and_time_of_game or scores_test is True:
-            team_to_query = item.team.replace("&", "%26")
-            game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
-            print(game)
+        try:
+            if cutoff_for_querying_games > item.date_and_time_of_game or scores_test is True:
+                team_to_query = item.team.replace("&", "%26")
+                game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
+                print(game)
 
-            # Get scores of all games that are currently going on if they should be currently playing or playing soon
-            try:
-                if week == 1 and datetime.now() > week_01_cutoff:
-                    if len(game) > 1:
-                        home_team = game[1]['home_team']
-                        away_team = game[1]['away_team']
-                        home_score = game[1]['home_points']
-                        away_score = game[1]['away_points']
-                        game_completed = game[1]['completed']
+                # Get scores of all games that are currently going on if they should be currently playing or playing soon
+                try:
+                    if week == 1 and datetime.now() > week_01_cutoff:
+                        if len(game) > 1:
+                            home_team = game[1]['home_team']
+                            away_team = game[1]['away_team']
+                            home_score = game[1]['home_points']
+                            away_score = game[1]['away_points']
+                            game_completed = game[1]['completed']
+                        else:
+                            home_team = game[0]['home_team']
+                            away_team = game[0]['away_team']
+                            home_score = game[0]['home_points']
+                            away_score = game[0]['away_points']
+                            game_completed = game[0]['completed']
                     else:
                         home_team = game[0]['home_team']
                         away_team = game[0]['away_team']
                         home_score = game[0]['home_points']
                         away_score = game[0]['away_points']
                         game_completed = game[0]['completed']
-                else:
-                    home_team = game[0]['home_team']
-                    away_team = game[0]['away_team']
-                    home_score = game[0]['home_points']
-                    away_score = game[0]['away_points']
-                    game_completed = game[0]['completed']
-                try:
-                    print(f"home_score: {home_score}")
-                    print(f"away_score: {away_score}")
-                    if home_score > away_score:
-                        winning_team = home_team.replace("%26", "&")
-                        print(f"winning_team: {winning_team}")
-                        losing_team = away_team.replace("%26", "&")
-                    elif away_score > home_score:
-                        winning_team = away_team.replace("%26", "&")
-                        print(f"winning_team: {winning_team}")
-                        losing_team = home_team.replace("%26", "&")
-                    session.query(Football_Teams).filter(Football_Teams.team == home_team).update(
-                        {"playing_now": True})
-                    session.query(Football_Teams).filter(Football_Teams.team == away_team).update(
-                        {"playing_now": True})
+                    try:
+                        print(f"home_score: {home_score}")
+                        print(f"away_score: {away_score}")
+                        if home_score > away_score:
+                            winning_team = home_team.replace("%26", "&")
+                            print(f"winning_team: {winning_team}")
+                            losing_team = away_team.replace("%26", "&")
+                        elif away_score > home_score:
+                            winning_team = away_team.replace("%26", "&")
+                            print(f"winning_team: {winning_team}")
+                            losing_team = home_team.replace("%26", "&")
+                        session.query(Football_Teams).filter(Football_Teams.team == home_team).update(
+                            {"playing_now": True})
+                        session.query(Football_Teams).filter(Football_Teams.team == away_team).update(
+                            {"playing_now": True})
 
-                # TypeError is due to there not being a score yet, so operand is not supported for NoneType
-                except TypeError:
-                    pass
+                    # TypeError is due to there not being a score yet, so operand is not supported for NoneType
+                    except TypeError:
+                        pass
 
-                # Update the week's score and updated_this_week variables for both teams if the game is over if team
-                # hasn't been updated (it'll update twice if an eligibile team is playing another eligible team
-                if game_completed == True:
-                    if session.query(Football_Teams).filter(Football_Teams.team == item.team).first().updated_this_week == False:
-                        if item.team == winning_team:
-                            print(f"{item.team} won. New score +1")
-                            new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + 1
-                            session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
-                                {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score, "previous_opponent": losing_team, "previous_result": "W"})
-                        elif item.team == losing_team:
-                            print(f"{item.team} lost. No new score")
-                            session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
-                                {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team, "previous_result": "L"})
-                        else:
-                            print("weird else entered")
+                    # Update the week's score and updated_this_week variables for both teams if the game is over if team
+                    # hasn't been updated (it'll update twice if an eligibile team is playing another eligible team
+                    if game_completed == True:
+                        if session.query(Football_Teams).filter(Football_Teams.team == item.team).first().updated_this_week == False:
+                            if item.team == winning_team:
+                                print(f"{item.team} won. New score +1")
+                                new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + 1
+                                session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
+                                    {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score, "previous_opponent": losing_team, "previous_result": "W"})
+                            elif item.team == losing_team:
+                                print(f"{item.team} lost. No new score")
+                                session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
+                                    {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team, "previous_result": "L"})
+                            else:
+                                print("weird else entered")
+
+                            # Add to the log that the team was updated
+                            with open(f"log.txt", mode="a") as file:
+                                text = f"Week {week}: {item.team} updated \n"
+                                file.write(text)
+
+                            # Add a point to every person's score by figuring out if they have the team by querying every team they have
+                            # and adding 1 after that if they do
+                            all_player_weekly_info = session.query(Player_weekly_info).order_by(Player_weekly_info.id)
+                            for info in all_player_weekly_info:
+                                user = session.query(User).filter(User.id == info.user_id).first()
+                                user_name = user.name
+                                league = session.query(League).filter(League.id == info.league).first()
+                                team_1 = " "
+                                team_2 = " "
+                                team_3 = " "
+                                team_4 = " "
+                                try:
+                                    team_2 = session.query(Football_Teams).filter(info.team_2 == Football_Teams.id).first().team
+                                    team_3 = session.query(Football_Teams).filter(info.team_3 == Football_Teams.id).first().team
+                                    team_4 = session.query(Football_Teams).filter(info.team_4 == Football_Teams.id).first().team
+                                    team_1 = session.query(Football_Teams).filter(info.team_1 == Football_Teams.id).first().team
+                                # AttributeError will occur for every league that doesn't have teams assigned
+                                except AttributeError:
+                                    pass
+                                if team_1 == winning_team and team_1 == item.team:
+                                    new_player_score = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().this_weeks_score + 1
+                                    session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
+                                        {"this_weeks_score": new_player_score})
+                                    print(f"{user_name} +1 from team_1")
+                                    print(f"winning_team: {winning_team}")
+                                    print(f"losing_team: {losing_team}")
+                                    print(f"team_1: {team_1}")
+                                    print(f"league: {league}")
+                                    print(" ")
+                                elif team_2 == winning_team and team_2 == item.team:
+                                    new_player_score = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().this_weeks_score + 1
+                                    session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
+                                        {"this_weeks_score": new_player_score})
+                                    print(f"{user_name} +1 from team_2")
+                                    print(f"winning_team: {winning_team}")
+                                    print(f"losing_team: {losing_team}")
+                                    print(f"team_2: {team_2}")
+                                    print(f"league: {league}")
+                                    print(" ")
+                                elif team_3 == winning_team and team_3 == item.team:
+                                    new_player_score = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().this_weeks_score + 1
+                                    session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
+                                        {"this_weeks_score": new_player_score})
+                                    print(f"{user_name} +1 from team_3")
+                                    print(f"winning_team: {winning_team}")
+                                    print(f"losing_team: {losing_team}")
+                                    print(f"team_3: {team_3}")
+                                    print(f"league: {league}")
+                                    print(" ")
+                                elif team_4 == winning_team and team_4 == item.team:
+                                    new_player_score = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().this_weeks_score + 1
+                                    session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
+                                        {"this_weeks_score": new_player_score})
+                                    print(f"{user_name} +1 from team_4")
+                                    print(f"winning_team: {winning_team}")
+                                    print(f"losing_team: {losing_team}")
+                                    print(f"team_4: {team_4}")
+                                    print(f"league: {league}")
+                                    print(" ")
+
+                except IndexError:
+                    # If IndexError, then the team doesn't have a game so assign it 0 and mark it as updated. It needs to be
+                    # Saturday before updating so someone can still drop this team and add another one
+                    if today.weekday() == 5:
+                        session.query(Football_Teams).filter(Football_Teams.team == team_to_query.replace("%26", "&")).update(
+                            {f"week{week}_score": 0, "updated_this_week": True})
 
                         # Add to the log that the team was updated
                         with open(f"log.txt", mode="a") as file:
                             text = f"Week {week}: {item.team} updated \n"
                             file.write(text)
-
-                        # Add a point to every person's score by figuring out if they have the team by querying every team they have
-                        # and adding 1 after that if they do
-                        all_player_weekly_info = session.query(Player_weekly_info).order_by(Player_weekly_info.id)
-                        for info in all_player_weekly_info:
-                            user = session.query(User).filter(User.id == info.user_id).first()
-                            user_name = user.name
-                            league = session.query(League).filter(League.id == info.league).first()
-                            team_1 = " "
-                            team_2 = " "
-                            team_3 = " "
-                            team_4 = " "
-                            try:
-                                team_2 = session.query(Football_Teams).filter(info.team_2 == Football_Teams.id).first().team
-                                team_3 = session.query(Football_Teams).filter(info.team_3 == Football_Teams.id).first().team
-                                team_4 = session.query(Football_Teams).filter(info.team_4 == Football_Teams.id).first().team
-                                team_1 = session.query(Football_Teams).filter(info.team_1 == Football_Teams.id).first().team
-                            # AttributeError will occur for every league that doesn't have teams assigned
-                            except AttributeError:
-                                pass
-                            if team_1 == winning_team and team_1 == item.team:
-                                new_player_score = session.query(Player_weekly_info).filter(
-                                    Player_weekly_info.id == info.id).first().this_weeks_score + 1
-                                session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
-                                    {"this_weeks_score": new_player_score})
-                                print(f"{user_name} +1 from team_1")
-                                print(f"winning_team: {winning_team}")
-                                print(f"losing_team: {losing_team}")
-                                print(f"team_1: {team_1}")
-                                print(f"league: {league}")
-                                print(" ")
-                            elif team_2 == winning_team and team_2 == item.team:
-                                new_player_score = session.query(Player_weekly_info).filter(
-                                    Player_weekly_info.id == info.id).first().this_weeks_score + 1
-                                session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
-                                    {"this_weeks_score": new_player_score})
-                                print(f"{user_name} +1 from team_2")
-                                print(f"winning_team: {winning_team}")
-                                print(f"losing_team: {losing_team}")
-                                print(f"team_2: {team_2}")
-                                print(f"league: {league}")
-                                print(" ")
-                            elif team_3 == winning_team and team_3 == item.team:
-                                new_player_score = session.query(Player_weekly_info).filter(
-                                    Player_weekly_info.id == info.id).first().this_weeks_score + 1
-                                session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
-                                    {"this_weeks_score": new_player_score})
-                                print(f"{user_name} +1 from team_3")
-                                print(f"winning_team: {winning_team}")
-                                print(f"losing_team: {losing_team}")
-                                print(f"team_3: {team_3}")
-                                print(f"league: {league}")
-                                print(" ")
-                            elif team_4 == winning_team and team_4 == item.team:
-                                new_player_score = session.query(Player_weekly_info).filter(
-                                    Player_weekly_info.id == info.id).first().this_weeks_score + 1
-                                session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
-                                    {"this_weeks_score": new_player_score})
-                                print(f"{user_name} +1 from team_4")
-                                print(f"winning_team: {winning_team}")
-                                print(f"losing_team: {losing_team}")
-                                print(f"team_4: {team_4}")
-                                print(f"league: {league}")
-                                print(" ")
-
-            except IndexError:
-                # If IndexError, then the team doesn't have a game so assign it 0 and mark it as updated. It needs to be
-                # Saturday before updating so someone can still drop this team and add another one
-                if today.weekday() == 5:
-                    session.query(Football_Teams).filter(Football_Teams.team == team_to_query.replace("%26", "&")).update(
-                        {f"week{week}_score": 0, "updated_this_week": True})
-
-                    # Add to the log that the team was updated
-                    with open(f"log.txt", mode="a") as file:
-                        text = f"Week {week}: {item.team} updated \n"
-                        file.write(text)
-                else:
-                    pass
-
+                    else:
+                        pass
+        #TypeError occurs when a team is on bye and datetime is being compared to NoneType
+        except TypeError:
+            session.query(Football_Teams).filter(Football_Teams.team == item.team).update(
+                {"updated_this_week": True, "previous_result": None, "previous_opponent": "BYE", f"week{week}_score": 0})
         time.sleep(2)
     session.commit()
 
@@ -392,7 +396,7 @@ run_programs = True
 if run_programs:
 
     #This should be == 0 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    if today.weekday() == 6 and week != 2:
+    if today.weekday() <= 1 and week != 2:
         get_upcoming_games()
     elif today.weekday() == 1 and week == 2:
         get_upcoming_games()
@@ -412,9 +416,10 @@ if run_programs:
             i += 1
 
 # ----------------- SANDBOX -------------------
-get_waiver_info = True
+get_waiver_info = False
 edit_user_info = False
 add_waiver_info = False
+reset_waivers = True
 # # Reset Football team/teams's score(s)
 # teams = ["Iowa State", "Virginia"]
 # for team in teams:
@@ -446,13 +451,20 @@ if get_waiver_info:
 if add_waiver_info:
     user_id = 42
     league = 53
-    team_to_add_id = 54
-    team_to_drop_id = 47
+    team_to_add_id = 47
+    team_to_drop_id = 59
     faab_submitted = 0
-    priority = 2
+    priority = 1
     waiver = Waiver_Info(user_id=user_id, league=league, team_to_add_id=team_to_add_id, team_to_drop_id=team_to_drop_id, faab_submitted=faab_submitted, priority=priority)
     session.add(waiver)
     session.commit()
+
+# Turn the leagues back to waivers only
+if reset_waivers:
+    all_leagues = session.query(League).all()
+    for the_league in all_leagues:
+        session.query(League).filter(League.id == the_league.id).update({"waivers_already_executed": False})
+        session.commit()
 
 # # Set previous_result for every team already played
 # team = "Utah"
@@ -469,7 +481,7 @@ if add_waiver_info:
 # user_id = 43
 # user = session.query(User).filter_by(id=user_id).update({"locked_account": False})
 # session.commit()
-
+#
 # # Get all team ids
 # all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
 # for every_team in all_teams:

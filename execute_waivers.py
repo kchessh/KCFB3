@@ -168,6 +168,8 @@ else:
                 waiver_to_add_to_history = HistoryOfWaivers(id=waiver.id, user_id=waiver.user_id, league=waiver.league,
                     team_to_add_id=waiver.team_to_add_id, team_to_drop_id=waiver.team_to_drop_id,
                     faab_submitted=waiver.faab_submitted, priority=waiver.priority)
+                session.add(waiver_to_add_to_history)
+            session.commit()
 
             if len(all_waivers) > 0:
                 print(all_waivers)
@@ -201,8 +203,8 @@ else:
                                 print(f"waiver_list_sorted: {waiver_list_sorted}")
                                 print(f"match_counter: {match_counter}")
                                 match_counter += 1
-                                highest_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == highest_bidder)
-                                other_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver_list_sorted[match_counter][0])
+                                highest_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == highest_bidder).first().this_weeks_score
+                                other_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver_list_sorted[match_counter][0]).first().this_weeks_score
                                 if highest_bidder_league_points > other_bidder_league_points:
                                     highest_bid = waiver_list_sorted[match_counter]
                             else:
