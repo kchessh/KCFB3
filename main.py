@@ -765,7 +765,7 @@ def add_team(league_id):
                                                          user_id=current_user.id).first().team_4)).first().team]
 
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
-    eligible_teams_dict = {team.team: [team.current_score, team.conference, team.id, team.date_and_time_of_game - datetime.timedelta(hours=5)] for team in all_teams if
+    eligible_teams_dict = {team.team: [team.current_score, team.conference, team.id, team.date_and_time_of_game] for team in all_teams if
                            team.team not in ineligible_teams}
     user_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if
                        team.team in user_teams}
