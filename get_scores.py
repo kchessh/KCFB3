@@ -396,7 +396,7 @@ run_programs = True
 if run_programs:
 
     #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    if today.weekday() <= 1 and week != 2:
+    if today.weekday() != 1 and week != 2:
         get_upcoming_games()
     elif today.weekday() == 1 and week == 2:
         get_upcoming_games()
@@ -419,7 +419,7 @@ if run_programs:
 get_waiver_info = False
 edit_user_info = False
 add_waiver_info = False
-reset_waivers = False
+reset_waivers = True
 # # Reset Football team/teams's score(s)
 # teams = ["Iowa State", "Virginia"]
 # for team in teams:
