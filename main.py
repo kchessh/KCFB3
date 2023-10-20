@@ -910,9 +910,14 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
     team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first()
 
     already_updated = League.query.filter_by(id=league_id).first().waivers_already_executed
-    if already_updated and team_to_add.date_and_time_of_game < datetime.datetime.utcnow() + datetime.timedelta(hours=5):
+    print(already_updated)
+    print(team_to_add.date_and_time_of_game)
+    print(datetime.datetime.utcnow() + datetime.timedelta(hours=5))
+    if already_updated and team_to_add.date_and_time_of_game > datetime.datetime.utcnow() + datetime.timedelta(hours=5):
+        print('first')
         form = AlreadyUpdatedDropComplete()
     else:
+        print('second')
         form = DropComplete()
     user_faab = Player_weekly_info.query.filter_by(user_id=current_user.id, league=league_id).first().faab
     team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first()

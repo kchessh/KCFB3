@@ -392,7 +392,7 @@ def get_scores():
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = True
+run_programs = False
 if run_programs:
 
     #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
@@ -416,10 +416,10 @@ if run_programs:
             i += 1
 
 # ----------------- SANDBOX -------------------
-get_waiver_info = False
+get_waiver_info = True
 edit_user_info = False
 add_waiver_info = False
-reset_waivers = True
+reset_waivers = False
 # # Reset Football team/teams's score(s)
 # teams = ["Iowa State", "Virginia"]
 # for team in teams:
