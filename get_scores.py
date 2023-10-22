@@ -392,11 +392,11 @@ def get_scores():
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = False
+run_programs = True
 if run_programs:
 
     #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    if today.weekday() != 1 and week != 2:
+    if today.weekday() <= 1 and week != 2:
         get_upcoming_games()
     elif today.weekday() == 1 and week == 2:
         get_upcoming_games()
@@ -416,7 +416,7 @@ if run_programs:
             i += 1
 
 # ----------------- SANDBOX -------------------
-get_waiver_info = True
+get_waiver_info = False
 edit_user_info = False
 add_waiver_info = False
 reset_waivers = False

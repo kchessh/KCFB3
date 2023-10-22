@@ -750,6 +750,7 @@ def add_team(league_id):
             id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_3)).first().team)
         ineligible_teams.append(Football_Teams.query.filter_by(
                 id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
+    print(ineligible_teams)
 
     # Displays the user's current teams that they can choose to drop from
     user_teams = [Football_Teams.query.filter_by(id=int(
@@ -797,123 +798,51 @@ def add_team(league_id):
 def drop_team(league_id, team_id):
     league_members = League_members_update1.query.order_by(League_members_update1.league_id)
     team_to_add = Football_Teams.query.filter_by(id=int(team_id)).first()
-    now = datetime.datetime.now()
-    if team_to_add.date_and_time_of_game > datetime.datetime.utcnow():
-        team_to_add_list = [team_to_add.team, team_to_add.current_score, team_to_add.conference, team_to_add.id]
-        print(team_to_add_list)
-        # Gets all teams that the user can't pickup due to being owned by the user or another user
+    team_to_add_list = [team_to_add.team, team_to_add.current_score, team_to_add.conference, team_to_add.id]
+    print(team_to_add_list)
+    # Gets all teams that the user can't pickup due to being owned by the user or another user
 
-        user_teams = [Football_Teams.query.filter_by(id=int(
-            Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
-                      Football_Teams.query.filter_by(id=int(
-                          Player_weekly_info.query.filter_by(league=league_id,
-                                                             user_id=current_user.id).first().team_2)).first().team,
-                      Football_Teams.query.filter_by(id=int(
-                          Player_weekly_info.query.filter_by(league=league_id,
-                                                             user_id=current_user.id).first().team_3)).first().team,
-                      Football_Teams.query.filter_by(id=int(
-                          Player_weekly_info.query.filter_by(league=league_id,
-                                                             user_id=current_user.id).first().team_4)).first().team]
+    user_teams = [Football_Teams.query.filter_by(id=int(
+        Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_2)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_3)).first().team,
+                  Football_Teams.query.filter_by(id=int(
+                      Player_weekly_info.query.filter_by(league=league_id,
+                                                         user_id=current_user.id).first().team_4)).first().team]
 
-        all_teams = Football_Teams.query.order_by(Football_Teams.id)
-        user_teams_dict = {team.team: [team.current_score, team.conference, team.id] for team in all_teams if
-                           team.team in user_teams}
-        try:
-            user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
-        except TypeError:
-            user_teams_dict_sorted = user_teams_dict
+    all_teams = Football_Teams.query.order_by(Football_Teams.id)
+    user_teams_dict = {team.team: [team.current_score, team.conference, team.id] for team in all_teams if team.team in user_teams}
+    try:
+        user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
+    except TypeError:
+        user_teams_dict_sorted = user_teams_dict
 
-        current_user_teams = list(user_teams_dict_sorted.keys())
-        league_name = League.query.filter_by(id=league_id).first().league_name
+    current_user_teams = list(user_teams_dict_sorted.keys())
+    league_name = League.query.filter_by(id=league_id).first().league_name
 
-        leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
-        leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
-                        leagues]
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
 
-        return render_template("drop_team.html", league_members=league_members, league_id=league_id,
-                               current_user_teams=current_user_teams, user_teams_dict_sorted=user_teams_dict_sorted,
-                               league_name=league_name, team_to_add_list=team_to_add_list, leagues_list=leagues_list)
-    else:
-        flash("Page reloaded due to trying to add a team that is now on waivers")
-        if current_user.id != 13:
-            num_of_visits = Analysis.query.filter(Analysis.endpoint == "add_team",
-                                                  Analysis.league == league_id).first().num_of_visits
-            db.session.query(Analysis).filter(Analysis.endpoint == "add_team", Analysis.league == league_id).update(
-                {"num_of_visits": num_of_visits + 1})
-            db.session.commit()
+    return render_template("drop_team.html", league_members=league_members, league_id=league_id,
+                           current_user_teams=current_user_teams, user_teams_dict_sorted=user_teams_dict_sorted,
+                           league_name=league_name, team_to_add_list=team_to_add_list, leagues_list=leagues_list)
 
-        league_members = League_members_update1.query.order_by(League_members_update1.league_id)
-        league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
-                             if member.league_id == league_id]
-        # Gets all teams that the user can't pickup due to being owned by the user or another user
-        ineligible_teams = []
-        for member in league_member_ids:
-            ineligible_teams.append(Football_Teams.query.filter_by(
-                id=int(
-                    Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_1)).first().team)
-            ineligible_teams.append(Football_Teams.query.filter_by(
-                id=int(
-                    Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_2)).first().team)
-            ineligible_teams.append(Football_Teams.query.filter_by(
-                id=int(
-                    Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_3)).first().team)
-            ineligible_teams.append(Football_Teams.query.filter_by(
-                id=int(
-                    Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
-
-        # Displays the user's current teams that they can choose to drop from
-        user_teams = [Football_Teams.query.filter_by(id=int(
-            Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
-                      Football_Teams.query.filter_by(id=int(
-                          Player_weekly_info.query.filter_by(league=league_id,
-                                                             user_id=current_user.id).first().team_2)).first().team,
-                      Football_Teams.query.filter_by(id=int(
-                          Player_weekly_info.query.filter_by(league=league_id,
-                                                             user_id=current_user.id).first().team_3)).first().team,
-                      Football_Teams.query.filter_by(id=int(
-                          Player_weekly_info.query.filter_by(league=league_id,
-                                                             user_id=current_user.id).first().team_4)).first().team]
-
-        all_teams = Football_Teams.query.order_by(Football_Teams.id)
-        eligible_teams_dict = {team.team: [team.current_score, team.conference, team.id, team.date_and_time_of_game] for
-                               team in all_teams if
-                               team.team not in ineligible_teams}
-        user_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if
-                           team.team in user_teams}
-        try:
-            eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
-            user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
-        except TypeError:
-            eligible_teams_dict_sorted = eligible_teams_dict
-            user_teams_dict_sorted = user_teams_dict
-
-        eligible_teams = list(eligible_teams_dict_sorted)
-        current_user_teams = list(user_teams_dict_sorted.keys())
-        league_name = League.query.filter_by(id=league_id).first().league_name
-        already_updated = League.query.filter_by(id=league_id).first().waivers_already_executed
-
-        leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
-        leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
-                        leagues]
-        now = datetime.datetime.now()
-
-        return render_template("add_team.html", league_members=league_members, league_id=league_id,
-                               eligible_teams=eligible_teams, current_user_teams=current_user_teams,
-                               eligible_teams_dict_sorted=eligible_teams_dict_sorted,
-                               user_teams_dict_sorted=user_teams_dict_sorted, league_name=league_name,
-                               leagues_list=leagues_list,
-                               already_updated=already_updated, now=now)
 
 @app.route("/confirm_drop/league=<int:league_id>/drop_team=<int:dropteam_id>/add_team=<int:addteam_id>", methods=['GET', 'POST'])
 @login_required
 def confirm_drop(league_id, dropteam_id, addteam_id):
     team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first()
-
     already_updated = League.query.filter_by(id=league_id).first().waivers_already_executed
+    now = datetime.datetime.utcnow()
     print(already_updated)
     print(team_to_add.date_and_time_of_game)
     print(datetime.datetime.utcnow() + datetime.timedelta(hours=5))
-    if already_updated and team_to_add.date_and_time_of_game > datetime.datetime.utcnow() + datetime.timedelta(hours=5):
+    if already_updated and team_to_add.date_and_time_of_game > now + datetime.timedelta(hours=5):
         print('first')
         form = AlreadyUpdatedDropComplete()
     else:
