@@ -843,11 +843,15 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
     print(team_to_add.date_and_time_of_game)
     print(datetime.datetime.utcnow() + datetime.timedelta(hours=5))
     if already_updated and team_to_add.date_and_time_of_game > now + datetime.timedelta(hours=5):
-        print('first')
         form = AlreadyUpdatedDropComplete()
+        waiver_notification = False
     else:
-        print('second')
         form = DropComplete()
+        today = date.today()
+        if today.weekday() >= 3:
+            waiver_notification = True
+        else:
+            waiver_notification = False
     user_faab = Player_weekly_info.query.filter_by(user_id=current_user.id, league=league_id).first().faab
     team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first()
     team_to_drop = Football_Teams.query.filter_by(id=int(dropteam_id)).first()
@@ -914,17 +918,20 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
     elif already_updated:
         return render_template("confirm_drop.html", form=form, league_id=league_id, league_name=league_name,
                                team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list,
-                               available_faab=user_faab, leagues_list=leagues_list, already_updated=already_updated)
+                               available_faab=user_faab, leagues_list=leagues_list, already_updated=already_updated,
+                               waiver_notification=waiver_notification)
 
     else:
         flash("You don't have enough Faab to make that waiver request. Please update the faab!")
         return render_template("confirm_drop.html", form=form, league_id=league_id, league_name=league_name,
                                team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list,
-                               available_faab=user_faab, leagues_list=leagues_list, already_updated=already_updated)
+                               available_faab=user_faab, leagues_list=leagues_list, already_updated=already_updated,
+                               waiver_notification=waiver_notification)
 
     return render_template("confirm_drop.html", form=form, league_id=league_id, league_name=league_name,
                            team_to_add_list=team_to_add_list, team_to_drop_list=team_to_drop_list,
-                           available_faab=user_faab, leagues_list=leagues_list, already_updated=already_updated)
+                           available_faab=user_faab, leagues_list=leagues_list, already_updated=already_updated,
+                           waiver_notification=waiver_notification)
 
 
 @app.route("/confirm_delete_waiver/waiver=<int:id>/league=<int:league_id>", methods=['GET', 'POST'])
