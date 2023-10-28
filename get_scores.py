@@ -396,9 +396,11 @@ run_programs = True
 if run_programs:
 
     #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    if today.weekday() <= 1 and week != 2:
+    if today.weekday() <= 2 and week != 2:
+        print('getting upcoming games')
         get_upcoming_games()
     elif today.weekday() == 1 and week == 2:
+        print('getting upcoming games')
         get_upcoming_games()
 
     #Update this to >= 3

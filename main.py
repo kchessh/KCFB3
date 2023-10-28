@@ -200,6 +200,7 @@ class HistoryOfWaivers(db.Model):
     team_to_drop_id = db.Column(db.Integer, nullable=False)
     faab_submitted = db.Column(db.Integer, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
+    date_and_time_added = db.Column(db.DateTime, default=datetime.datetime.utcnow(), nullable=True)
 
 
 class Analysis(db.Model):
@@ -701,7 +702,7 @@ def league_dashboard(league_id):
 
     # Sends all of the user's waiver history so they can see what waivers of theirs have been processed
     your_waiver_history = HistoryOfWaivers.query.filter(HistoryOfWaivers.user_id == current_user.id, HistoryOfWaivers.league == league_id).all()
-    your_waiver_history_list = [(waiver.id, Football_Teams.query.filter_by(id=waiver.team_to_add_id).first().team, Football_Teams.query.filter_by(id=waiver.team_to_drop_id).first().team, waiver.faab_submitted, waiver.priority) for waiver in your_waiver_history]
+    your_waiver_history_list = [(waiver.id, Football_Teams.query.filter_by(id=waiver.team_to_add_id).first().team, Football_Teams.query.filter_by(id=waiver.team_to_drop_id).first().team, waiver.faab_submitted, waiver.date_and_time_added) for waiver in your_waiver_history]
 
     # Determines if it's time for playoffs. If it is, allow the top 4 people to preference which playoff representative they want
     if postseason:
@@ -841,17 +842,15 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
     now = datetime.datetime.utcnow()
     print(already_updated)
     print(team_to_add.date_and_time_of_game)
-    print(datetime.datetime.utcnow() + datetime.timedelta(hours=5))
-    if already_updated and team_to_add.date_and_time_of_game > now + datetime.timedelta(hours=5):
+    print(datetime.datetime.utcnow() - datetime.timedelta(hours=5))
+    if already_updated and team_to_add.date_and_time_of_game > now - datetime.timedelta(hours=5):
+        print('not waivers')
         form = AlreadyUpdatedDropComplete()
         waiver_notification = False
     else:
+        print('waivers')
         form = DropComplete()
-        today = date.today()
-        if today.weekday() >= 3:
-            waiver_notification = True
-        else:
-            waiver_notification = False
+        waiver_notification = True
     user_faab = Player_weekly_info.query.filter_by(user_id=current_user.id, league=league_id).first().faab
     team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first()
     team_to_drop = Football_Teams.query.filter_by(id=int(dropteam_id)).first()
@@ -866,7 +865,7 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
         team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first().id
         team_to_drop = Football_Teams.query.filter_by(id=int(dropteam_id)).first().id
 
-        if not already_updated:
+        if waiver_notification == True:
             submitted_faab = form.faab.data
 
             if submitted_faab <= -1:
