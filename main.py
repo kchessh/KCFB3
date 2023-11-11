@@ -852,7 +852,7 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
     print(team_to_add.date_and_time_of_game)
     print(team_to_drop.date_and_time_of_game)
     print(datetime.datetime.utcnow() - datetime.timedelta(hours=6))
-    if already_updated and team_to_add.date_and_time_of_game > now - datetime.timedelta(hours=6) and team_to_drop.date_and_time_of_game > now - datetime.timedelta(hours=6):
+    if already_updated and team_to_add.date_and_time_of_game > now and team_to_drop.date_and_time_of_game > now:
         print('not waivers')
         form = AlreadyUpdatedDropComplete()
         waiver_notification = False
