@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, url_for, redirect, flash, send_from_directory
 from flask_wtf import FlaskForm
-import pandas
 from datetime import date, datetime, timedelta
 import my_functions
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, EmailField, IntegerField, \
@@ -13,7 +12,6 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 from sqlalchemy import select, delete, update, inspect, create_engine, text
 from sqlalchemy.orm import sessionmaker
 from flask_migrate import Migrate
-import time
 import cases
 
 test = True
@@ -95,6 +93,7 @@ class Football_Teams(db.Model):
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)
+    chance_to_win = db.Column(db.Float, default=0)
     week0_score = db.Column(db.Integer)
     week1_score = db.Column(db.Integer)
     week2_score = db.Column(db.Integer)

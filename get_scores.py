@@ -97,6 +97,7 @@ class Football_Teams(db.Model):
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)
+    chance_to_win = db.Column(db.Float, default=0)
     week0_score = db.Column(db.Integer)
     week1_score = db.Column(db.Integer)
     week2_score = db.Column(db.Integer)
@@ -253,10 +254,24 @@ def get_scores():
                                 new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + 1
                                 session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
                                     {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score, "previous_opponent": losing_team, "previous_result": "W"})
+                                try:
+                                    write_data_dict = {"Week": [week], "Team": [item.team], "Points": [1]}
+                                    write_data = pandas.DataFrame(write_data_dict)
+                                    write_data.to_csv(f"Results.csv", mode='a', header=False)
+                                except FileNotFoundError:
+                                    print('FILE NOT FOUND')
+                                    pass
                             elif item.team == losing_team:
                                 print(f"{item.team} lost. No new score")
                                 session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
                                     {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team, "previous_result": "L"})
+                                try:
+                                    write_data_dict = {"Week": [week], "Team": [item.team], "Points": [0]}
+                                    write_data = pandas.DataFrame(write_data_dict)
+                                    write_data.to_csv(f"Results.csv", mode='a', header=False)
+                                except FileNotFoundError:
+                                    print('FILE NOT FOUND')
+                                    pass
                             else:
                                 print("weird else entered")
 
@@ -392,7 +407,7 @@ def get_scores():
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = True
+run_programs = False
 if run_programs:
 
     #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1

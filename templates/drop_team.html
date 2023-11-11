@@ -60,10 +60,15 @@
           <td>{{ team }}</td>
           <td>{{ user_teams_dict_sorted[team][0] }}</td>
           <td>{{ user_teams_dict_sorted[team][1] }}</td>
-          <td><a href="{{ url_for('confirm_drop', league_id=league_id,
-            addteam_id=team_to_add_list[3],
-            dropteam_id=user_teams_dict_sorted[team][2]) }}"
-            class="btn btn-danger">Drop</a></td>
+          {% if already_updated == True and user_teams_dict_sorted[team][3] >= now %}
+            <td><a href="{{ url_for('confirm_drop', league_id=league_id, addteam_id=team_to_add_list[3],
+              dropteam_id=user_teams_dict_sorted[team][2]) }}"
+              class="btn btn-outline-danger">Drop</a></td>
+          {% else %}
+            <td><a href="{{ url_for('confirm_drop', league_id=league_id, addteam_id=team_to_add_list[3],
+              dropteam_id=user_teams_dict_sorted[team][2]) }}"
+              class="btn btn-danger">Drop</a></td>
+          {% endif %}
         </tr>
       {% endfor %}
     </tbody>

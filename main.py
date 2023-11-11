@@ -139,6 +139,7 @@ class Football_Teams(db.Model):
     date_and_time_of_game = db.Column(db.DateTime)
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)
+    chance_to_win = db.Column(db.Float, default=0)
     week0_score = db.Column(db.Integer)
     week1_score = db.Column(db.Integer)
     week2_score = db.Column(db.Integer)
@@ -527,11 +528,10 @@ def delete_league(id):
 @login_manager.unauthorized_handler
 def join_league(league_id):
     # Add analysis to db if the user is not me
-    if current_user.id != 13:
-        num_of_visits = Analysis.query.filter(Analysis.endpoint == "join_league").first().num_of_visits
-        db.session.query(Analysis).filter(Analysis.endpoint == "join_league").update(
-            {"num_of_visits": num_of_visits + 1})
-        db.session.commit()
+    num_of_visits = Analysis.query.filter(Analysis.endpoint == "join_league").first().num_of_visits
+    db.session.query(Analysis).filter(Analysis.endpoint == "join_league").update(
+        {"num_of_visits": num_of_visits + 1})
+    db.session.commit()
 
     try:
         form = JoinLeagueForm()
@@ -658,7 +658,7 @@ def league_dashboard(league_id):
         user_teams = []
 
     # Pass in dict where team is the key and values are a list made for the standings table (points, conference, next opponent, previous opponent)
-    time_correction_delta = datetime.timedelta(hours=5)
+    time_correction_delta = datetime.timedelta(hours=6)
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
     eligible_teams_dict = {}
     user_teams_dict = {}
@@ -816,7 +816,7 @@ def drop_team(league_id, team_id):
                                                          user_id=current_user.id).first().team_4)).first().team]
 
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
-    user_teams_dict = {team.team: [team.current_score, team.conference, team.id] for team in all_teams if team.team in user_teams}
+    user_teams_dict = {team.team: [team.current_score, team.conference, team.id, team.date_and_time_of_game] for team in all_teams if team.team in user_teams}
     try:
         user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
     except TypeError:
@@ -828,10 +828,17 @@ def drop_team(league_id, team_id):
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
                     leagues]
+    already_updated = League.query.filter_by(id=league_id).first().waivers_already_executed
+    now = datetime.datetime.now()
+    print(now)
+    print(user_teams_dict_sorted)
+    for team in user_teams_dict_sorted:
+        print(user_teams_dict_sorted[team][3])
 
     return render_template("drop_team.html", league_members=league_members, league_id=league_id,
                            current_user_teams=current_user_teams, user_teams_dict_sorted=user_teams_dict_sorted,
-                           league_name=league_name, team_to_add_list=team_to_add_list, leagues_list=leagues_list)
+                           league_name=league_name, team_to_add_list=team_to_add_list, leagues_list=leagues_list,
+                           already_updated=already_updated, now=now)
 
 
 @app.route("/confirm_drop/league=<int:league_id>/drop_team=<int:dropteam_id>/add_team=<int:addteam_id>", methods=['GET', 'POST'])
@@ -842,8 +849,8 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
     now = datetime.datetime.utcnow()
     print(already_updated)
     print(team_to_add.date_and_time_of_game)
-    print(datetime.datetime.utcnow() - datetime.timedelta(hours=5))
-    if already_updated and team_to_add.date_and_time_of_game > now - datetime.timedelta(hours=5):
+    print(datetime.datetime.utcnow() - datetime.timedelta(hours=6))
+    if already_updated and team_to_add.date_and_time_of_game > now - datetime.timedelta(hours=6):
         print('not waivers')
         form = AlreadyUpdatedDropComplete()
         waiver_notification = False
