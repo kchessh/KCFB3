@@ -845,12 +845,13 @@ def drop_team(league_id, team_id):
 @login_required
 def confirm_drop(league_id, dropteam_id, addteam_id):
     team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first()
+    team_to_drop = Football_Teams.query.filter_by(id=int(dropteam_id)).first()
     already_updated = League.query.filter_by(id=league_id).first().waivers_already_executed
     now = datetime.datetime.utcnow()
     print(already_updated)
     print(team_to_add.date_and_time_of_game)
     print(datetime.datetime.utcnow() - datetime.timedelta(hours=6))
-    if already_updated and team_to_add.date_and_time_of_game > now - datetime.timedelta(hours=6):
+    if already_updated and team_to_add.date_and_time_of_game > now - datetime.timedelta(hours=6) and team_to_drop.date_and_time_of_game > now - datetime.timedelta(hours=6):
         print('not waivers')
         form = AlreadyUpdatedDropComplete()
         waiver_notification = False
