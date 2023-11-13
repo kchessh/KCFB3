@@ -666,17 +666,17 @@ def league_dashboard(league_id):
         if team.team not in ineligible_teams:
             if team.date_and_time_of_game is not None:
                 eligible_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                       team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")]
+                                       team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"), team.chance_to_win]
             else:
                 eligible_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                                  team.previous_result, "no game"]
+                                                  team.previous_result, "no game", team.chance_to_win]
         if team.team in user_teams:
             if team.date_and_time_of_game is not None:
                 user_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                               team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")]
+                               team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"), team.chance_to_win]
             else:
                 user_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                              team.previous_result, "no game"]
+                                              team.previous_result, "no game", team.chance_to_win]
     # eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
     #                                    team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team not in ineligible_teams}
     # user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,

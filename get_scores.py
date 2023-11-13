@@ -253,7 +253,7 @@ def get_scores():
                                 print(f"{item.team} won. New score +1")
                                 new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + 1
                                 session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
-                                    {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score, "previous_opponent": losing_team, "previous_result": "W"})
+                                    {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score, "previous_opponent": losing_team, "previous_result": "W", "chance_to_win": 1.00})
                                 try:
                                     write_data_dict = {"Week": [week], "Team": [item.team], "Points": [1]}
                                     write_data = pandas.DataFrame(write_data_dict)
@@ -264,7 +264,7 @@ def get_scores():
                             elif item.team == losing_team:
                                 print(f"{item.team} lost. No new score")
                                 session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
-                                    {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team, "previous_result": "L"})
+                                    {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team, "previous_result": "L", "chance_to_win": 1.00})
                                 try:
                                     write_data_dict = {"Week": [week], "Team": [item.team], "Points": [0]}
                                     write_data = pandas.DataFrame(write_data_dict)
@@ -407,11 +407,12 @@ def get_scores():
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = False
+run_programs = True
 if run_programs:
+    # week = 12
 
     #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    if today.weekday() <= 2 and week != 2:
+    if today.weekday() != 2 and week != 2:
         print('getting upcoming games')
         get_upcoming_games()
     elif today.weekday() == 1 and week == 2:
@@ -499,8 +500,8 @@ if reset_waivers:
 # user = session.query(User).filter_by(id=user_id).update({"locked_account": False})
 # session.commit()
 #
-# # Get all team ids
-# all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
-# for every_team in all_teams:
-#     print(f"team_name: {every_team.team}")
-#     print(f"team_id: {every_team.id}")
+# Get all team ids
+all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
+for every_team in all_teams:
+    print(f"team_name: {every_team.team}")
+    print(f"team_id: {every_team.id}")
