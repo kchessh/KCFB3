@@ -15,6 +15,8 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 from sqlalchemy import select, delete, update, inspect
 from flask_migrate import Migrate
 import time
+import MySQLdb
+import sshtunnel
 
 test = True
 app = Flask(__name__)
@@ -28,9 +30,8 @@ app.config['SECRET_KEY'] = 'secret-key-goes-here'
 #     import no_push
 #     app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
 # Heroku SQL
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
-app.config[
-    'SQLALCHEMY_DATABASE_URI'] = 'postgresql://jecfvnqncxqxup:af1dd7dc452cacbea264d7aaee8f0c0e3800c97f40524130f22fe27a0f530260@ec2-44-215-22-37.compute-1.amazonaws.com:5432/das2i8qcpbctqg'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://rtkehelbfufmyx:727fe1bde6ea928e69cc13c697362850d38f84b02328c7a6bc91ec86774401ba@ec2-34-206-79-150.compute-1.amazonaws.com:5432/db8dqi5aldvff'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, compare_type=True)

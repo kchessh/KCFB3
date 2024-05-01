@@ -32,7 +32,7 @@ def determine_week_number():
             break
 
     if week == "":
-        if date(2024, 1, 1) > date.today():
+        if date(2024, 1, 1) < date.today():
             week = 2
         else:
             week = 1

@@ -22,9 +22,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
 # Heroku SQL
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
-app.config[
-    'SQLALCHEMY_DATABASE_URI'] = 'postgresql://jecfvnqncxqxup:af1dd7dc452cacbea264d7aaee8f0c0e3800c97f40524130f22fe27a0f530260@ec2-44-215-22-37.compute-1.amazonaws.com:5432/das2i8qcpbctqg'
-engine = create_engine('postgresql://jecfvnqncxqxup:af1dd7dc452cacbea264d7aaee8f0c0e3800c97f40524130f22fe27a0f530260@ec2-44-215-22-37.compute-1.amazonaws.com:5432/das2i8qcpbctqg', echo=False)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://rtkehelbfufmyx:727fe1bde6ea928e69cc13c697362850d38f84b02328c7a6bc91ec86774401ba@ec2-34-206-79-150.compute-1.amazonaws.com:5432/db8dqi5aldvff'
+engine = create_engine('postgresql://rtkehelbfufmyx:727fe1bde6ea928e69cc13c697362850d38f84b02328c7a6bc91ec86774401ba@ec2-34-206-79-150.compute-1.amazonaws.com:5432/db8dqi5aldvff', echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -142,7 +141,8 @@ class Waiver_Info(db.Model):
 
 year = 2023
 week, postseason = my_functions.determine_week_number()
-# week = 5
+week = 14
+postseason = False
 print(f"week: {week}")
 today = date.today()
 now = datetime.now()
@@ -264,7 +264,7 @@ def get_scores():
                             elif item.team == losing_team:
                                 print(f"{item.team} lost. No new score")
                                 session.query(Football_Teams).filter(Football_Teams.team == losing_team).update(
-                                    {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team, "previous_result": "L", "chance_to_win": 1.00})
+                                    {f"week{week}_score": 0, "updated_this_week": True, "playing_now": False, "previous_opponent": winning_team, "previous_result": "L", "chance_to_win": 0.00})
                                 try:
                                     write_data_dict = {"Week": [week], "Team": [item.team], "Points": [0]}
                                     write_data = pandas.DataFrame(write_data_dict)
@@ -407,21 +407,21 @@ def get_scores():
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = True
+run_programs = False
 if run_programs:
     # week = 12
 
-    #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    if today.weekday() != 2 and week != 2:
-        print('getting upcoming games')
-        get_upcoming_games()
-    elif today.weekday() == 1 and week == 2:
-        print('getting upcoming games')
-        get_upcoming_games()
+    # #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
+    # if today.weekday() <= 2 and week != 2:
+    #     print('getting upcoming games')
+    #     get_upcoming_games()
+    # elif today.weekday() == 1 and week == 2:
+    #     print('getting upcoming games')
+    #     get_upcoming_games()
 
     #Update this to >= 3
     i = 0
-    if today.weekday() >= 3:
+    if today.weekday() >= 1:
         while i < 30:
             print(f"i: {i}")
             cutoff_for_querying_games = datetime.now() + time_delta
@@ -501,7 +501,10 @@ if reset_waivers:
 # session.commit()
 #
 # Get all team ids
+# team_to_update_id = session.query(Football_Teams).filter_by(id=52).update({"conference": "Big 10"})
+# session.commit()
 all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
 for every_team in all_teams:
     print(f"team_name: {every_team.team}")
     print(f"team_id: {every_team.id}")
+    print(f"team_conference: {every_team.conference}")
