@@ -54,6 +54,7 @@ class League(db.Model):
     draft_complete = db.Column(db.Boolean, default=False)
     draft_date = db.Column(db.DateTime, nullable=True)
     waivers_already_executed = db.Column(db.Boolean, default=False)
+    matchups_already_generated = db.Column(db.Boolean, default=False)
 
 
 class League_members_update1(db.Model):

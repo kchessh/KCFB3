@@ -14,6 +14,8 @@ from sqlalchemy import select, delete, update, inspect, create_engine, text
 from sqlalchemy.orm import sessionmaker
 from flask_migrate import Migrate
 import time
+import random
+import math
 # from main import User, League, League_members_update1, List_of_leagues_update1, Player_weekly_info, Football_Teams
 
 scores_test = False
@@ -58,6 +60,7 @@ class League(db.Model):
     draft_complete = db.Column(db.Boolean, default=False)
     draft_date = db.Column(db.DateTime, nullable=True)
     waivers_already_executed = db.Column(db.Boolean, default=False)
+    matchups_already_generated = db.Column(db.Boolean, default=False)
 
 
 class League_members_update1(db.Model):
@@ -135,19 +138,29 @@ class Waiver_Info(db.Model):
     priority = db.Column(db.Integer, nullable=False)
 
 
+class Matchup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    week = db.Column(db.Integer, default=1)
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    user_id1 = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id2 = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user1_score = db.Column(db.Integer, default=0)
+    user2_score = db.Column(db.Integer, default=0)
+
+
 """
 1s represent a win, 0s represent a loss or no game played
 """
 
-year = 2023
-week, postseason = my_functions.determine_week_number()
-week = 14
+year = 2024
+# week, postseason = my_functions.determine_week_number()
+week = 0
 postseason = False
 print(f"week: {week}")
 today = date.today()
 now = datetime.now()
 print(now)
-week_01_cutoff = datetime(2023, 8, 30)
+week_01_cutoff = datetime(2024, 8, 28)
 
 # time_delta is the value used to determine how far in the future to query games
 # time_correction is to go from central time to gmt
@@ -377,28 +390,28 @@ def get_scores():
 #                "LSU": 10,
 #                "Alabama": 11, "Mississippi State": 9, "Ole Miss": 8, "Arkansas": 7, "Auburn": 5, "Texas A&M": 5}
 #
-# conferences_2023 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC", "Louisville": "ACC",
-#                         "NC State": "ACC", "Wake Forest": "ACC",
-#                         "Boston College": "ACC", "North Carolina": "ACC", "Pittsburgh": "ACC", "Duke": "ACC",
-#                         "Georgia Tech": "ACC", "Miami": "ACC",
-#                         "Virginia": "ACC", "Virginia Tech": "ACC", "TCU": "Big 12", "Kansas State": "Big 12",
-#                         "Texas": "Big 12", "Texas Tech": "Big 12",
-#                         "Oklahoma State": "Big 12", "Baylor": "Big 12", "Oklahoma": "Big 12", "Kansas": "Big 12",
-#                         "West Virginia": "Big 12", "Iowa State": "Big 12",
-#                         "Michigan": "Big 10", "Ohio State": "Big 10", "Penn State": "Big 10", "Maryland": "Big 10",
-#                         "Michigan State": "Big 10", "Indiana": "Big 10",
-#                         "Rutgers": "Big 10", "Purdue": "Big 10", "Illinois": "Big 10", "Iowa": "Big 10",
-#                         "Minnesota": "Big 10", "Wisconsin": "Big 10", "Nebraska": "Big 10",
-#                         "Northwestern": "Big 10", "Notre Dame": "Independent", "BYU": "Big 12", "UCF": "Big 12",
-#                         "Cincinnati": "Big 12", "Houston": "Big 12", "USC": "PAC 12",
-#                         "Washington": "PAC 12", "Oregon": "PAC 12", "Utah": "PAC 12", "Oregon State": "PAC 12",
-#                         "UCLA": "PAC 12", "Washington State": "PAC 12",
-#                         "Arizona": "PAC 12", "California": "PAC 12", "Arizona State": "PAC 12", "Stanford": "PAC 12",
-#                         "Colorado": "PAC 12", "Georgia": "SEC",
-#                         "Tennessee": "SEC", "South Carolina": "SEC", "Kentucky": "SEC", "Florida": "SEC",
-#                         "Missouri": "SEC", "Vanderbilt": "SEC",
-#                         "LSU": "SEC", "Alabama": "SEC", "Mississippi State": "SEC", "Ole Miss": "SEC",
-#                         "Arkansas": "SEC", "Auburn": "SEC", "Texas A&M": "SEC"}
+conferences_2024 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC", "Louisville": "ACC",
+                        "NC State": "ACC", "Wake Forest": "ACC",
+                        "Boston College": "ACC", "North Carolina": "ACC", "Pittsburgh": "ACC", "Duke": "ACC",
+                        "Georgia Tech": "ACC", "Miami": "ACC",
+                        "Virginia": "ACC", "Virginia Tech": "ACC", "TCU": "Big 12", "Kansas State": "Big 12",
+                        "Texas": "SEC", "Texas Tech": "Big 12",
+                        "Oklahoma State": "Big 12", "Baylor": "Big 12", "Oklahoma": "SEC", "Kansas": "Big 12",
+                        "West Virginia": "Big 12", "Iowa State": "Big 12",
+                        "Michigan": "Big 10", "Ohio State": "Big 10", "Penn State": "Big 10", "Maryland": "Big 10",
+                        "Michigan State": "Big 10", "Indiana": "Big 10",
+                        "Rutgers": "Big 10", "Purdue": "Big 10", "Illinois": "Big 10", "Iowa": "Big 10",
+                    "Minnesota": "Big 10", "Wisconsin": "Big 10", "Nebraska": "Big 10",
+                    "Northwestern": "Big 10", "Notre Dame": "Independent", "BYU": "Big 12", "UCF": "Big 12",
+                    "Cincinnati": "Big 12", "Houston": "Big 12", "USC": "Big 10",
+                    "Washington": "Big 10", "Oregon": "Big 10", "Utah": "Big 12", "Oregon State": "PAC 12",
+                    "UCLA": "Big 10", "Washington State": "PAC 12",
+                    "Arizona": "Big 12", "California": "ACC", "Arizona State": "Big 12", "Stanford": "ACC",
+                    "Colorado": "Big 12", "Georgia": "SEC",
+                    "Tennessee": "SEC", "South Carolina": "SEC", "Kentucky": "SEC", "Florida": "SEC",
+                    "Missouri": "SEC", "Vanderbilt": "SEC",
+                    "LSU": "SEC", "Alabama": "SEC", "Mississippi State": "SEC", "Ole Miss": "SEC",
+                    "Arkansas": "SEC", "Auburn": "SEC", "Texas A&M": "SEC", "SMU": "ACC"}
 
 # for every_team in all_teams:
 #     print(every_team.id)
@@ -407,17 +420,18 @@ def get_scores():
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = False
+run_programs = True
 if run_programs:
     # week = 12
+    upcoming_test = True
 
-    # #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    # if today.weekday() <= 2 and week != 2:
-    #     print('getting upcoming games')
-    #     get_upcoming_games()
-    # elif today.weekday() == 1 and week == 2:
-    #     print('getting upcoming games')
-    #     get_upcoming_games()
+    #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
+    if upcoming_test or today.weekday() <= 2 and week != 2:
+        print('getting upcoming games1')
+        get_upcoming_games()
+    elif upcoming_test or today.weekday() == 1 and week == 2:
+        print('getting upcoming games2')
+        get_upcoming_games()
 
     #Update this to >= 3
     i = 0
@@ -500,11 +514,87 @@ if reset_waivers:
 # user = session.query(User).filter_by(id=user_id).update({"locked_account": False})
 # session.commit()
 #
-# Get all team ids
+# # Get all team ids
 # team_to_update_id = session.query(Football_Teams).filter_by(id=52).update({"conference": "Big 10"})
 # session.commit()
-all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
-for every_team in all_teams:
-    print(f"team_name: {every_team.team}")
-    print(f"team_id: {every_team.id}")
-    print(f"team_conference: {every_team.conference}")
+# all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
+# for every_team in all_teams:
+#     print(f"team_name: {every_team.team}")
+#     print(f"team_id: {every_team.id}")
+#     print(f"team_conference: {every_team.conference}")
+
+# # Reset everyones teams
+# all_users = session.query(Player_weekly_info).all()
+# for user in all_users:
+#     # session.query(Player_weekly_info).filter(Player_weekly_info.id == user.id).update({"team_1": None})
+#     # session.query(Player_weekly_info).filter(Player_weekly_info.id == user.id).update({"team_2": None})
+#     # session.query(Player_weekly_info).filter(Player_weekly_info.id == user.id).update({"team_3": None})
+#     # session.query(Player_weekly_info).filter(Player_weekly_info.id == user.id).update({"team_4": None})
+#     var = session.query(Player_weekly_info).filter(Player_weekly_info.id == user.id).first()
+#     print(var.team_1)
+# session.commit()
+
+league_id = 48
+# league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+league_members = session.query(League_members_update1).filter(League_members_update1.league_id == league_id)
+league_member_ids = [member.member for member in league_members]
+
+def round_robin_schedule(num_people):
+    participants = sorted(league_member_ids, key=lambda x: random.random())
+    schedule = []
+    if num_people % 2 != 0:
+        participants.append("Bye")  # Add a "Bye" week
+        num_people += 1
+
+    for round in range(num_people - 1):
+        round_matchups = []
+        for i in range(num_people // 2):
+            p1 = participants[i]
+            p2 = participants[num_people - 1 - i]
+            if "Bye" in (p1, p2):
+                bye_team = p1 if p1 != "Bye" else p2
+                round_matchups.append((bye_team, "Bye"))
+            else:
+                round_matchups.append((p1, p2))
+        schedule.append(round_matchups)
+        participants.insert(1, participants.pop())  # Rotate participants except the first one
+
+    return schedule
+
+
+def extend_schedule(schedule, num_weeks):
+    extended_schedule = []
+    rounds_needed = (num_weeks + len(schedule) - 1) // len(schedule)
+    for i in range(rounds_needed):
+        for week in schedule:
+            if len(extended_schedule) < num_weeks:
+                extended_schedule.append(week)
+    return extended_schedule
+
+
+def print_schedule(schedule):
+    for week_num, week in enumerate(schedule, 1):
+        print(f"Week {week_num}:")
+        for match in week:
+            print(f"  Player {match[0]} vs Player {match[1]}")
+        print()
+
+
+def commit_schedule(schedule, league_id):
+    for week_num, week in enumerate(schedule, 1):
+        for match in week:
+            matchup = Matchup(week=week_num, league=league_id, user_id1=match[0], user_id2=match[1], user1_score=0, user2_score=0)
+            session.add(matchup)
+            session.commit()
+
+# # Create a round-robin schedule for a number of participants based upon league size and extend to the number of weeks
+# # in the season
+# num_participants = len(league_member_ids)
+# base_schedule = round_robin_schedule(num_participants)
+# full_schedule = extend_schedule(base_schedule, 16)
+# print_schedule(full_schedule)
+# commit_schedule(full_schedule, league_id=league_id)
+
+all_matchups = session.query(Matchup).all()
+for matchup in all_matchups:
+    print(f'Week {matchup.week}: Player {matchup.user_id1} vs Player {matchup.user_id2}')

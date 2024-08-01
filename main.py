@@ -15,6 +15,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 from sqlalchemy import select, delete, update, inspect
 from flask_migrate import Migrate
 import time
+import random
 import MySQLdb
 import sshtunnel
 
@@ -101,6 +102,7 @@ class League(db.Model):
     draft_complete = db.Column(db.Boolean, default=False)
     draft_date = db.Column(db.DateTime, nullable=True)
     waivers_already_executed = db.Column(db.Boolean, default=False)
+    matchups_already_generated = db.Column(db.Boolean, default=False)
 
 
 class League_members_update1(db.Model):
@@ -203,6 +205,16 @@ class HistoryOfWaivers(db.Model):
     faab_submitted = db.Column(db.Integer, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
     date_and_time_added = db.Column(db.DateTime, default=datetime.datetime.utcnow(), nullable=True)
+
+
+class Matchup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    week = db.Column(db.Integer, default=1)
+    league = db.Column(db.Integer, db.ForeignKey('league.id'))
+    user_id1 = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id2 = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user1_score = db.Column(db.Integer, default=0)
+    user2_score = db.Column(db.Integer, default=0)
 
 
 class Analysis(db.Model):
@@ -1077,6 +1089,9 @@ def league_setup(league_id):
                 updated_users_with_teams[User.query.filter_by(id=user).first().name] = [[team1, team2, team3, team4],
                                                                                         faab]
 
+        matchups_generated = League.query.filter_by(id=league_id).first().matchups_already_generated
+        print(f'matchups_generated: {matchups_generated}')
+
     else:
         flash("You must be the league manager to perform this operation!")
         return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
@@ -1085,7 +1100,7 @@ def league_setup(league_id):
                            league_member_names=league_member_names, league_manager=league_manager,
                            users_to_update=users_to_update, league_name=league_name, form=form,
                            eligible_teams=eligible_teams, updated_users_with_teams=updated_users_with_teams,
-                           leagues_list=leagues_list)
+                           leagues_list=leagues_list, matchups_generated=matchups_generated)
 
 
 @app.route("/schedule_draft/league=<int:league_id>", methods=['GET', 'POST'])
@@ -1101,6 +1116,78 @@ def schedule_draft(league_id):
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
                     leagues]
+    return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
+                           league_member_names=league_member_names, league_manager=league_manager, leagues_list=leagues_list)
+
+
+@app.route("/generate_matchups/league=<int:league_id>", methods=['GET', 'POST'])
+@login_required
+def generate_matchups(league_id):
+    # This function generates all the matchups for the league
+    league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+    league_member_ids = [member.member for member in league_members]
+
+    def round_robin_schedule(num_people):
+        if num_people % 2 != 0:
+            raise ValueError("Number of participants must be even.")
+
+        participants = sorted(league_member_ids, key=lambda x: random.random())
+        schedule = []
+
+        for round in range(num_people - 1):
+            round_matchups = []
+            for i in range(num_people // 2):
+                p1 = participants[i]
+                p2 = participants[num_people - 1 - i]
+                round_matchups.append((p1, p2))
+            schedule.append(round_matchups)
+            participants.insert(1, participants.pop())  # Rotate participants except the first one
+
+        return schedule
+
+    def extend_schedule(schedule, num_weeks):
+        extended_schedule = []
+        rounds_needed = (num_weeks + len(schedule) - 1) // len(schedule)
+        for i in range(rounds_needed):
+            for week in schedule:
+                if len(extended_schedule) < num_weeks:
+                    extended_schedule.append(week)
+        return extended_schedule
+
+    def print_schedule(schedule):
+        for week_num, week in enumerate(schedule, 1):
+            print(f"Week {week_num}:")
+            for match in week:
+                print(f"  Player {match[0]} vs Player {match[1]}")
+            print()
+
+    def commit_schedule(schedule, league_id):
+        for week_num, week in enumerate(schedule, 1):
+            for match in week:
+                matchup = Matchup(week=week_num, league=league_id, user_id1=match[0], user_id2=match[1], user1_score=0,
+                                  user2_score=0)
+                db.session.add(matchup)
+                db.session.commit()
+        db.session.query(League).filter(League.id == league_id).update({"matchups_already_generated": True})
+        db.session.commit()
+
+    # Create a round-robin schedule for a number of participants based upon league size and extend to the number of weeks
+    # in the season if a league's matchups have not already been generated
+    num_participants = len(league_member_ids)
+    base_schedule = round_robin_schedule(num_participants)
+    full_schedule = extend_schedule(base_schedule, 16)
+    print_schedule(full_schedule)
+    commit_schedule(full_schedule, league_id=league_id)
+
+
+    "The following is for the navbar at the top of the screen"
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
+    league_member_names = [User.query.filter_by(id=member.member).first().name for member in league_members
+                           if member.league_id == league_id]
+    if not League.query.filter_by(id=league_id).first().draft_complete:
+        league_manager = League.query.filter_by(id=league_id).first().league_manager
     return render_template("league_dashboard.html", league_members=league_members, league_id=league_id,
                            league_member_names=league_member_names, league_manager=league_manager, leagues_list=leagues_list)
 
