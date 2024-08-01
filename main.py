@@ -17,7 +17,6 @@ from flask_migrate import Migrate
 import time
 import random
 import MySQLdb
-import sshtunnel
 
 test = True
 app = Flask(__name__)
