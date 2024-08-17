@@ -100,6 +100,9 @@ class Football_Teams(db.Model):
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)
     chance_to_win = db.Column(db.Float, default=0)
+    ap_ranking = db.Column(db.Integer, default=None)
+    opponent_ap_ranking = db.Column(db.Integer, default=None)
+    opponent_p5 = db.Column(db.Boolean, default=False)
     week0_score = db.Column(db.Integer)
     week1_score = db.Column(db.Integer)
     week2_score = db.Column(db.Integer)
@@ -154,7 +157,7 @@ class Matchup(db.Model):
 
 year = 2024
 # week, postseason = my_functions.determine_week_number()
-week = 0
+week = 1
 postseason = False
 print(f"week: {week}")
 today = date.today()
@@ -168,23 +171,62 @@ time_correction = 5
 time_delta = timedelta(hours=0 + time_correction)
 time_correction_delta = timedelta(hours=5)
 
+
 def get_upcoming_games():
+    # Get the rankings for all the teams
+    rankings_response = my_functions.get_rankings(year=2024, week=1)
+    rankings_response_reduced = rankings_response[0]['polls'][0]['ranks']
+    i = 0
+    school_dict = {}
+    while i < len(rankings_response_reduced):
+        school = rankings_response_reduced[i]['school']
+        school_dict[school] = i + 1
+        i += 1
+    print(school_dict)
+
+    # Get all of the games
     all_teams = session.query(Football_Teams).all()
+    all_teams_list = [item.team for item in all_teams]
+    exclusion_list = ["Oregon State", "Washington State"]
     for item in all_teams:
         print(item.team)
         team_to_query = item.team.replace("&", "%26")
         game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
         team_to_query = team_to_query.replace("%26", "&")
         number_of_games = len(game)
-        if number_of_games > 1 and datetime.now() > datetime.combine(date(2023, 8, 28), datetime.min.time()):
+        try:
+            ap_ranking = school_dict[item.team]
+        except KeyError:
+            ap_ranking = None
+        if number_of_games > 1 and datetime.now() > datetime.combine(date(2024, 8, 28), datetime.min.time()):
             home_team = game[1]['home_team']
             away_team = game[1]['away_team']
             game_time = game[1]['start_date']
             print(game_time)
             if team_to_query == home_team:
                 upcoming_opponent = away_team
+                if upcoming_opponent in all_teams_list and upcoming_opponent not in exclusion_list:
+                    opponent_p5 = True
+                else:
+                    opponent_p5 = False
+                try:
+                    upcoming_opponent_ap_ranking = school_dict[away_team]
+                    print(f'upcoming opponent info11: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
+                except KeyError:
+                    upcoming_opponent_ap_ranking = None
+                    print(f'upcoming opponent info21: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
             else:
                 upcoming_opponent = home_team
+                if upcoming_opponent in all_teams_list and upcoming_opponent not in exclusion_list:
+                    opponent_p5 = True
+                else:
+                    opponent_p5 = False
+                try:
+                    upcoming_opponent_ap_ranking = school_dict[home_team]
+                    print(f'upcoming opponent info31: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
+                except KeyError:
+                    upcoming_opponent_ap_ranking = None
+                    print(f'upcoming opponent info41: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
         else:
             try:
                 home_team = game[0]['home_team']
@@ -193,15 +235,36 @@ def get_upcoming_games():
                 print(game_time)
                 if team_to_query == home_team:
                     upcoming_opponent = away_team
+                    if upcoming_opponent in all_teams_list and upcoming_opponent not in exclusion_list:
+                        opponent_p5 = True
+                    else:
+                        opponent_p5 = False
+                    try:
+                        upcoming_opponent_ap_ranking = school_dict[away_team]
+                        print(f'upcoming opponent info1: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
+                    except KeyError:
+                        upcoming_opponent_ap_ranking = None
+                        print(f'upcoming opponent info2: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
                 else:
                     upcoming_opponent = home_team
+                    if upcoming_opponent in all_teams_list and upcoming_opponent not in exclusion_list:
+                        opponent_p5 = True
+                    else:
+                        opponent_p5 = False
+                    try:
+                        upcoming_opponent_ap_ranking = school_dict[home_team]
+                        print(f'upcoming opponent info3: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
+                    except KeyError:
+                        upcoming_opponent_ap_ranking = None
+                        print(f'upcoming opponent info4: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
             # IndexError occurs when a team is on a Bye since the returned result is None
             except IndexError:
                 upcoming_opponent = "BYE"
                 game_time = datetime.utcnow() + timedelta(days=10)
 
         session.query(Football_Teams).filter_by(team=team_to_query).update({"upcoming_opponent": upcoming_opponent,
-            "date_and_time_of_game": game_time, "updated_this_week": False})
+            "date_and_time_of_game": game_time, "updated_this_week": False, "ap_ranking": ap_ranking, "opponent_ap_ranking": upcoming_opponent_ap_ranking,
+            "opponent_p5": opponent_p5})
         time.sleep(2)
 
         session.commit()
@@ -263,7 +326,11 @@ def get_scores():
                     if game_completed == True:
                         if session.query(Football_Teams).filter(Football_Teams.team == item.team).first().updated_this_week == False:
                             if item.team == winning_team:
-                                print(f"{item.team} won. New score +1")
+                                points_to_add = 1
+                                if session.query(Football_Teams).filter(Football_Teams.team == item.team).first().opponent_ap_ranking is not None:
+                                    points_to_add += 0.25
+                                # if session.query(Football_Teams).filter(Football_Teams.team == )
+                                print(f"{item.team} won. New score +{points_to_add}")
                                 new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + 1
                                 session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
                                     {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score, "previous_opponent": losing_team, "previous_result": "W", "chance_to_win": 1.00})
@@ -452,6 +519,8 @@ get_waiver_info = False
 edit_user_info = False
 add_waiver_info = False
 reset_waivers = False
+reset_win_probabilities = False
+reset_previous_results = False
 # # Reset Football team/teams's score(s)
 # teams = ["Iowa State", "Virginia"]
 # for team in teams:
@@ -498,6 +567,26 @@ if reset_waivers:
         session.query(League).filter(League.id == the_league.id).update({"waivers_already_executed": False})
         session.commit()
 
+# Reset win probabilities for all teams
+if reset_win_probabilities:
+    all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
+    for every_team in all_teams:
+        print(f"team_name: {every_team.team}")
+        print(f"team_id: {every_team.id}")
+        print(f"team_conference: {every_team.conference}")
+        session.query(Football_Teams).filter(Football_Teams.id == every_team.id).update(
+            {"chance_to_win": 0})
+    session.commit()
+
+# Reset the previous win results for all teams
+if reset_previous_results:
+    all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
+    for every_team in all_teams:
+        print(f"team_name: {every_team.team}")
+        print(f"team_id: {every_team.id}")
+        session.query(Football_Teams).filter(Football_Teams.id == every_team.id).update(
+            {"previous_opponent": "", "previous_result": ""})
+    session.commit()
 # # Set previous_result for every team already played
 # team = "Utah"
 # session.query(Football_Teams).filter_by(team=team).update({"previous_result": "W"})
@@ -509,11 +598,7 @@ if reset_waivers:
 #     print(item.team)
 #     print(item.date_and_time_of_game)
 
-# # Reset password
-# user_id = 43
-# user = session.query(User).filter_by(id=user_id).update({"locked_account": False})
-# session.commit()
-#
+
 # # Get all team ids
 # team_to_update_id = session.query(Football_Teams).filter_by(id=52).update({"conference": "Big 10"})
 # session.commit()
@@ -534,10 +619,10 @@ if reset_waivers:
 #     print(var.team_1)
 # session.commit()
 
-league_id = 48
-# league_members = League_members_update1.query.order_by(League_members_update1.league_id)
-league_members = session.query(League_members_update1).filter(League_members_update1.league_id == league_id)
-league_member_ids = [member.member for member in league_members]
+# league_id = 48
+# # league_members = League_members_update1.query.order_by(League_members_update1.league_id)
+# league_members = session.query(League_members_update1).filter(League_members_update1.league_id == league_id)
+# league_member_ids = [member.member for member in league_members]
 
 def round_robin_schedule(num_people):
     participants = sorted(league_member_ids, key=lambda x: random.random())
@@ -595,6 +680,26 @@ def commit_schedule(schedule, league_id):
 # print_schedule(full_schedule)
 # commit_schedule(full_schedule, league_id=league_id)
 
-all_matchups = session.query(Matchup).all()
-for matchup in all_matchups:
-    print(f'Week {matchup.week}: Player {matchup.user_id1} vs Player {matchup.user_id2}')
+# all_matchups = session.query(Matchup).all()
+# for matchup in all_matchups:
+#     print(f'Week {matchup.week}: Player {matchup.user_id1} vs Player {matchup.user_id2}')
+
+
+# team_to_add =Football_Teams(id=70, team="SMU", updated_this_week=False, playing_now=False, upcoming_opponent=None, previous_opponent=None,
+#                             previous_result=None, date_and_time_of_game=None, current_score=0, conference="ACC", chance_to_win=0,
+#                             ap_ranking=None, opponent_ap_ranking=None, opponent_p5=None, week0_score=0, week1_score=0,
+#                             week2_score=0, week3_score=0, week4_score=0, week5_score=0, week6_score=0, week7_score=0, week8_score=0,
+#                             week9_score=0, week10_score=0, week11_score=0, week12_score=0, week13_score=0, week14_score=0, week15_score=0)
+# session.add(team_to_add)
+# session.commit()
+
+# # Reset all teams points and weekly scores to 0 to start the season
+# all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
+# for every_team in all_teams:
+#     print(f"team_name: {every_team.team}")
+#     print(f"team_conference: {every_team.conference}")
+#     session.query(Football_Teams).filter(Football_Teams.id == every_team.id).update(
+#         {"current_score": 0, "week0_score": 0, "week1_score": 0, "week2_score": 0, "week3_score": 0, "week4_score": 0,
+#          "week5_score": 0, "week6_score": 0, "week7_score": 0, "week8_score": 0, "week9_score": 0, "week10_score": 0,
+#          "week11_score": 0, "week12_score": 0, "week13_score": 0, "week14_score": 0, "week15_score": 0})
+# session.commit()

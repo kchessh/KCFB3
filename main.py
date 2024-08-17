@@ -142,6 +142,9 @@ class Football_Teams(db.Model):
     current_score = db.Column(db.Integer, default=0)
     conference = db.Column(db.String(30), nullable=True)
     chance_to_win = db.Column(db.Float, default=0)
+    ap_ranking = db.Column(db.Integer, default=None)
+    opponent_ap_ranking = db.Column(db.Integer, default=None)
+    opponent_p5 = db.Column(db.Boolean, default=False)
     week0_score = db.Column(db.Integer)
     week1_score = db.Column(db.Integer)
     week2_score = db.Column(db.Integer)
@@ -675,20 +678,32 @@ def league_dashboard(league_id):
     eligible_teams_dict = {}
     user_teams_dict = {}
     for team in all_teams:
+        print(team.team)
+        print(f'{team.ap_ranking} {team.team}')
+        try:
+            upcoming_opponent_ranking = team.opponent_ap_ranking
+            print(f'upcoming opponent info: {upcoming_opponent_ranking}, {team.upcoming_opponent}')
+            if upcoming_opponent_ranking is None:
+                upcoming_opponent_ranking = ""
+        except AttributeError:
+            # AttributeError most likely will be due to NoneType being the query result, so return "" which is the default
+            upcoming_opponent_ranking = ""
         if team.team not in ineligible_teams:
             if team.date_and_time_of_game is not None:
                 eligible_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                       team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"), team.chance_to_win]
+                                       team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"),
+                                                  team.chance_to_win, upcoming_opponent_ranking]
             else:
                 eligible_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                                  team.previous_result, "no game", team.chance_to_win]
+                                                  team.previous_result, "no game", team.chance_to_win, upcoming_opponent_ranking]
         if team.team in user_teams:
             if team.date_and_time_of_game is not None:
                 user_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                               team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"), team.chance_to_win]
+                               team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"),
+                                              team.chance_to_win, upcoming_opponent_ranking]
             else:
                 user_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                              team.previous_result, "no game", team.chance_to_win]
+                                              team.previous_result, "no game", team.chance_to_win, upcoming_opponent_ranking]
     # eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
     #                                    team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team not in ineligible_teams}
     # user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,

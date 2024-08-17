@@ -173,6 +173,17 @@ def upcoming_games_master(teams_dict, year):
             write_data.to_csv(f"This_Weeks_Games/League{league}.csv")
             league += 1
 
+def get_rankings(year, week):
+    url = f"http://api.collegefootballdata.com/rankings?year={year}&week={week}&seasonType=regular"
+
+    headers = {
+        'Authorization': 'Bearer YuVJiwtjTbmZ+XUvpjipRfpdytZRSr7o29yj5saaXfntEvvVekIkOCcC+nYhPTAH',
+    }
+
+    response = requests.get(url, headers=headers)
+    data = response.json()
+    return data
+
 
 """
 This function saves a csv with a dictionary where the key is the team and the value is a list of 0s and 1s to represent
