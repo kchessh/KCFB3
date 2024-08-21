@@ -77,6 +77,7 @@ class Player_weekly_info(db.Model):
     faab = db.Column(db.Integer, default=100)
     previous_weeks_score = db.Column(db.Integer, default=0)
     this_weeks_score = db.Column(db.Integer, default=0)
+    total_wins = db.Column(db.Integer, default=0)
     team_1 = db.Column(db.String(100), nullable=True, default=None)
     team_2 = db.Column(db.String(100), nullable=True, default=None)
     team_3 = db.Column(db.String(100), nullable=True, default=None)
