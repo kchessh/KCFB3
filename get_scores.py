@@ -487,7 +487,7 @@ conferences_2024 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC",
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = True
+run_programs = False
 if run_programs:
     # week = 12
     upcoming_test = True
@@ -599,14 +599,14 @@ if reset_previous_results:
 #     print(item.date_and_time_of_game)
 
 
-# # Get all team ids
-# team_to_update_id = session.query(Football_Teams).filter_by(id=52).update({"conference": "Big 10"})
-# session.commit()
-# all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
-# for every_team in all_teams:
-#     print(f"team_name: {every_team.team}")
-#     print(f"team_id: {every_team.id}")
-#     print(f"team_conference: {every_team.conference}")
+# Get all team ids
+team_to_update_id = session.query(Football_Teams).filter_by(team="Washington").update({"conference": "Big 10"})
+session.commit()
+all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
+for every_team in all_teams:
+    print(f"team_name: {every_team.team}")
+    print(f"team_id: {every_team.id}")
+    print(f"team_conference: {every_team.conference}")
 
 # # Reset everyones teams
 # all_users = session.query(Player_weekly_info).all()

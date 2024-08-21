@@ -692,18 +692,18 @@ def league_dashboard(league_id):
             if team.date_and_time_of_game is not None:
                 eligible_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
                                        team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"),
-                                                  team.chance_to_win, upcoming_opponent_ranking]
+                                                  team.chance_to_win, upcoming_opponent_ranking, team.ap_ranking]
             else:
                 eligible_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                                  team.previous_result, "no game", team.chance_to_win, upcoming_opponent_ranking]
+                                                  team.previous_result, "no game", team.chance_to_win, upcoming_opponent_ranking, team.ap_ranking]
         if team.team in user_teams:
             if team.date_and_time_of_game is not None:
                 user_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
                                team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"),
-                                              team.chance_to_win, upcoming_opponent_ranking]
+                                              team.chance_to_win, upcoming_opponent_ranking, team.ap_ranking]
             else:
                 user_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                              team.previous_result, "no game", team.chance_to_win, upcoming_opponent_ranking]
+                                              team.previous_result, "no game", team.chance_to_win, upcoming_opponent_ranking, team.ap_ranking]
     # eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
     #                                    team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team not in ineligible_teams}
     # user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
@@ -770,28 +770,35 @@ def add_team(league_id):
     # Gets all teams that the user can't pickup due to being owned by the user or another user
     ineligible_teams = []
     for member in league_member_ids:
-        ineligible_teams.append(Football_Teams.query.filter_by(
-            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_1)).first().team)
-        ineligible_teams.append(Football_Teams.query.filter_by(
-            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_2)).first().team)
-        ineligible_teams.append(Football_Teams.query.filter_by(
-            id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_3)).first().team)
-        ineligible_teams.append(Football_Teams.query.filter_by(
-                id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
+        try:
+            ineligible_teams.append(Football_Teams.query.filter_by(
+                id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_1)).first().team)
+            ineligible_teams.append(Football_Teams.query.filter_by(
+                id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_2)).first().team)
+            ineligible_teams.append(Football_Teams.query.filter_by(
+                id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_3)).first().team)
+            ineligible_teams.append(Football_Teams.query.filter_by(
+                    id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
+        except TypeError:
+            # Occurs when person who made the league isn't in the league
+            pass
     print(ineligible_teams)
 
     # Displays the user's current teams that they can choose to drop from
-    user_teams = [Football_Teams.query.filter_by(id=int(
-        Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
-                  Football_Teams.query.filter_by(id=int(
-                      Player_weekly_info.query.filter_by(league=league_id,
-                                                         user_id=current_user.id).first().team_2)).first().team,
-                  Football_Teams.query.filter_by(id=int(
-                      Player_weekly_info.query.filter_by(league=league_id,
-                                                         user_id=current_user.id).first().team_3)).first().team,
-                  Football_Teams.query.filter_by(id=int(
-                      Player_weekly_info.query.filter_by(league=league_id,
-                                                         user_id=current_user.id).first().team_4)).first().team]
+    try:
+        user_teams = [Football_Teams.query.filter_by(id=int(
+            Player_weekly_info.query.filter_by(league=league_id, user_id=current_user.id).first().team_1)).first().team,
+                      Football_Teams.query.filter_by(id=int(
+                          Player_weekly_info.query.filter_by(league=league_id,
+                                                             user_id=current_user.id).first().team_2)).first().team,
+                      Football_Teams.query.filter_by(id=int(
+                          Player_weekly_info.query.filter_by(league=league_id,
+                                                             user_id=current_user.id).first().team_3)).first().team,
+                      Football_Teams.query.filter_by(id=int(
+                          Player_weekly_info.query.filter_by(league=league_id,
+                                                             user_id=current_user.id).first().team_4)).first().team]
+    except TypeError:
+        user_teams = []
 
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
     eligible_teams_dict = {team.team: [team.current_score, team.conference, team.id, team.date_and_time_of_game] for team in all_teams if

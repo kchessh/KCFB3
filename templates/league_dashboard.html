@@ -168,7 +168,11 @@
       {% for team in current_user_teams %}
         <tr>
           <th scope="row">{{ current_user_teams.index(team) + 1 }}</th>
-          <td>{{ team }}</td>
+          {% if user_teams_dict_sorted[team][8] != None %}
+            <td><strong>{{ user_teams_dict_sorted[team][8] }}</strong> {{ team }}</td>
+          {% else %}
+            <td>{{ team }}</td>
+          {% endif %}
           <td>{{ user_teams_dict_sorted[team][0] }}</td>
           <td><strong>{{ user_teams_dict_sorted[team][7] }}</strong> {{ user_teams_dict_sorted[team][2] }} ({{ user_teams_dict_sorted[team][5] }})</td>
           <td>{{ user_teams_dict_sorted[team][6] }}</td>
@@ -206,7 +210,11 @@
       {% for team in eligible_teams %}
         <tr>
           <th scope="row">{{ eligible_teams.index(team) + 1 }}</th>
-          <td>{{ team }}</td>
+          {% if eligible_teams_dict_sorted[team][8] != None %}
+            <td><strong>{{ eligible_teams_dict_sorted[team][8] }}</strong> {{ team }}</td>
+          {% else %}
+            <td>{{ team }}</td>
+          {% endif %}
           <td>{{ eligible_teams_dict_sorted[team][0] }}</td>
           <td><strong>{{ eligible_teams_dict_sorted[team][7] }}</strong> {{ eligible_teams_dict_sorted[team][2] }} ({{ eligible_teams_dict_sorted[team][5] }})</td>
           <td>{{ eligible_teams_dict_sorted[team][6] }}</td>
