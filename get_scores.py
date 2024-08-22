@@ -330,13 +330,16 @@ def get_scores():
                                 points_to_add = 1
                                 if session.query(Football_Teams).filter(Football_Teams.team == item.team).first().opponent_ap_ranking is not None:
                                     points_to_add += 0.25
-                                # if session.query(Football_Teams).filter(Football_Teams.team == )
+                                if session.query(Football_Teams).filter(Football_Teams.team == losing_team).first().team is not None:
+                                    if losing_team != "Oregon State" and losing_team != "Washington State":
+                                        points_to_add += 0.25
                                 print(f"{item.team} won. New score +{points_to_add}")
-                                new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + 1
+                                new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + points_to_add
                                 session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
-                                    {f"week{week}_score": 1, "updated_this_week": True, "playing_now": False, "current_score": new_score, "previous_opponent": losing_team, "previous_result": "W", "chance_to_win": 1.00})
+                                    {f"week{week}_score": points_to_add, "updated_this_week": True, "playing_now": False, "current_score": new_score,
+                                     "previous_opponent": losing_team, "previous_result": "W", "chance_to_win": 1.00})
                                 try:
-                                    write_data_dict = {"Week": [week], "Team": [item.team], "Points": [1]}
+                                    write_data_dict = {"Week": [week], "Team": [item.team], "Points": [points_to_add]}
                                     write_data = pandas.DataFrame(write_data_dict)
                                     write_data.to_csv(f"Results.csv", mode='a', header=False)
                                 except FileNotFoundError:
@@ -382,9 +385,11 @@ def get_scores():
                                     pass
                                 if team_1 == winning_team and team_1 == item.team:
                                     new_player_score = session.query(Player_weekly_info).filter(
-                                        Player_weekly_info.id == info.id).first().this_weeks_score + 1
+                                        Player_weekly_info.id == info.id).first().this_weeks_score + points_to_add
+                                    new_player_win_total = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().total_wins + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
-                                        {"this_weeks_score": new_player_score})
+                                        {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
                                     print(f"{user_name} +1 from team_1")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
