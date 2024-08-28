@@ -626,17 +626,29 @@ def league_dashboard(league_id):
 
     # Returns all info for the Standings tab as a list of unions
     # Attribute error means that no one has any teams, which will lead to errors in the html file
-    try:
-        league_scores_with_names = sorted([(User.query.filter_by(id=member.user_id).first().name, member.this_weeks_score,
+    my_list = []
+        # league_scores_with_names = sorted([(User.query.filter_by(id=member.user_id).first().name, member.this_weeks_score,
+        #                             member.previous_weeks_score, Football_Teams.query.filter_by(id=member.team_1).first().team,
+        #                             Football_Teams.query.filter_by(id=member.team_2).first().team,
+        #                             Football_Teams.query.filter_by(id=member.team_3).first().team,
+        #                             Football_Teams.query.filter_by(id=member.team_4).first().team,
+        #                             Player_weekly_info.query.filter_by(user_id=member.user_id).filter_by(league=league_id).first().faab)
+        #                             for member in league_members_weekly_info], key=lambda kv: kv[1], reverse=True)
+
+    for member in league_members_weekly_info:
+        try:
+            my_list.append((User.query.filter_by(id=member.user_id).first().name, member.this_weeks_score,
                                     member.previous_weeks_score, Football_Teams.query.filter_by(id=member.team_1).first().team,
                                     Football_Teams.query.filter_by(id=member.team_2).first().team,
                                     Football_Teams.query.filter_by(id=member.team_3).first().team,
                                     Football_Teams.query.filter_by(id=member.team_4).first().team,
-                                    Player_weekly_info.query.filter_by(user_id=member.user_id).filter_by(league=league_id).first().faab)
-                                    for member in league_members_weekly_info], key=lambda kv: kv[1], reverse=True)
-        print(league_scores_with_names)
-    except AttributeError:
-        league_scores_with_names = []
+                                    Player_weekly_info.query.filter_by(user_id=member.user_id).filter_by(league=league_id).first().faab))
+        except AttributeError:
+            pass
+    league_scores_with_names = sorted(my_list, key=lambda kv: kv[1], reverse=True)
+    print(f'league_scores_with_names: {league_scores_with_names}')
+    # except AttributeError:
+    #     league_scores_with_names = []
 
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                            if member.league_id == league_id]

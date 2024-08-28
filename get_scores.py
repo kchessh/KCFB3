@@ -496,15 +496,15 @@ conferences_2024 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC",
 run_programs = False
 if run_programs:
     # week = 12
-    upcoming_test = True
-
+    upcoming_test = False
+    print(today.weekday())
     #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    if upcoming_test or today.weekday() <= 2 and week != 2:
-        print('getting upcoming games1')
-        get_upcoming_games()
-    elif upcoming_test or today.weekday() == 1 and week == 2:
-        print('getting upcoming games2')
-        get_upcoming_games()
+    # if upcoming_test or today.weekday() <= 2 and week != 2:
+    #     print('getting upcoming games1')
+    #     get_upcoming_games()
+    # elif upcoming_test or today.weekday() == 1 and week == 2:
+    #     print('getting upcoming games2')
+    #     get_upcoming_games()
 
     #Update this to >= 3
     i = 0
@@ -605,14 +605,14 @@ if reset_previous_results:
 #     print(item.date_and_time_of_game)
 
 
-# Get all team ids
-team_to_update_id = session.query(Football_Teams).filter_by(team="Washington").update({"conference": "Big 10"})
-session.commit()
-all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
-for every_team in all_teams:
-    print(f"team_name: {every_team.team}")
-    print(f"team_id: {every_team.id}")
-    print(f"team_conference: {every_team.conference}")
+# # Get all team ids
+# team_to_update_id = session.query(Football_Teams).filter_by(team="Washington").update({"conference": "Big 10"})
+# session.commit()
+# all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
+# for every_team in all_teams:
+#     print(f"team_name: {every_team.team}")
+#     print(f"team_id: {every_team.id}")
+#     print(f"team_conference: {every_team.conference}")
 
 # # Reset everyones teams
 # all_users = session.query(Player_weekly_info).all()
@@ -708,4 +708,23 @@ def commit_schedule(schedule, league_id):
 #         {"current_score": 0, "week0_score": 0, "week1_score": 0, "week2_score": 0, "week3_score": 0, "week4_score": 0,
 #          "week5_score": 0, "week6_score": 0, "week7_score": 0, "week8_score": 0, "week9_score": 0, "week10_score": 0,
 #          "week11_score": 0, "week12_score": 0, "week13_score": 0, "week14_score": 0, "week15_score": 0})
+# session.commit()
+
+# # Put someone into a league
+# league_id = 57
+# member_id = 31
+# league = session.query(League).filter_by(id=league_id).first()
+# league_member = League_members_update1(league_id=league_id, member=member_id)
+# member_name = session.query(User).filter_by(id=member_id).first().name
+# league_name = session.query(League).filter_by(id=league_id).first().league_name
+# print(f'{member_name} added to {league_name}')
+# # make sure someone isn't added if they're already in the league
+#
+# session.add(league_member)
+# session.commit()
+# league_to_add = List_of_leagues_update1(user_id=member_id, league=league_id)
+# session.add(league_to_add)
+# session.commit()
+# initial_player_setup = Player_weekly_info(user_id=member_id, league=league_id)
+# session.add(initial_player_setup)
 # session.commit()
