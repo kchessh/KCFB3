@@ -63,7 +63,7 @@
       <tr>
         <th scope="col">Place</th>
         <th scope="col">Person</th>
-        <th scope="col">Points</th>
+        <th scope="col">Points (Wins)</th>
         <th scope="col">Faab</th>
         <th scope="col">Team 1</th>
         <th scope="col">Team 2</th>
@@ -76,7 +76,7 @@
         <tr>
           <th scope="row">{{ league_scores_with_names.index(person) + 1 }}</th>
           <td>{{ person[0] }}</td>
-          <td>{{ person[1] }}</td>
+          <td>{{ person[1] }} ({{person[8]}})</td>
           <td>${{ person[7] }}</td>
           <td>{{ person[3] }}</td>
           <td>{{ person[4] }}</td>
@@ -157,7 +157,7 @@
       <tr>
         <th scope="col">#</th>
         <th scope="col">Team</th>
-        <th scope="col">Team Points</th>
+        <th scope="col">Points (Wins)</th>
         <th scope="col">Upcoming Opponent</th>
         <th scope="col">Win Odds</th>
         <th scope="col">Previous Opponent</th>
@@ -199,7 +199,7 @@
       <tr>
         <th scope="col">#</th>
         <th scope="col">Team</th>
-        <th scope="col">Team Points</th>
+        <th scope="col">Points (Wins)</th>
         <th scope="col">Upcoming Opponent</th>
         <th scope="col">Win Odds</th>
         <th scope="col">Previous Opponent</th>

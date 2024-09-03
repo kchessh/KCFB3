@@ -122,8 +122,8 @@ class Player_weekly_info(db.Model):
     league = db.Column(db.Integer, db.ForeignKey('league.id'))
     week = db.Column(db.Integer, default=1)
     faab = db.Column(db.Integer, default=100)
-    previous_weeks_score = db.Column(db.Integer, default=0)
-    this_weeks_score = db.Column(db.Integer, default=0)
+    previous_weeks_score = db.Column(db.Float, default=0)
+    this_weeks_score = db.Column(db.Float, default=0)
     total_wins = db.Column(db.Integer, default=0)
     team_1 = db.Column(db.String(100), nullable=True, default=None)
     team_2 = db.Column(db.String(100), nullable=True, default=None)
@@ -140,28 +140,28 @@ class Football_Teams(db.Model):
     previous_opponent = db.Column(db.String(100), nullable=True, default="")
     previous_result = db.Column(db.String(1), nullable=True, default="")
     date_and_time_of_game = db.Column(db.DateTime)
-    current_score = db.Column(db.Integer, default=0)
+    current_score = db.Column(db.Float, default=0)
     conference = db.Column(db.String(30), nullable=True)
     chance_to_win = db.Column(db.Float, default=0)
     ap_ranking = db.Column(db.Integer, default=None)
     opponent_ap_ranking = db.Column(db.Integer, default=None)
     opponent_p5 = db.Column(db.Boolean, default=False)
-    week0_score = db.Column(db.Integer)
-    week1_score = db.Column(db.Integer)
-    week2_score = db.Column(db.Integer)
-    week3_score = db.Column(db.Integer)
-    week4_score = db.Column(db.Integer)
-    week5_score = db.Column(db.Integer)
-    week6_score = db.Column(db.Integer)
-    week7_score = db.Column(db.Integer)
-    week8_score = db.Column(db.Integer)
-    week9_score = db.Column(db.Integer)
-    week10_score = db.Column(db.Integer)
-    week11_score = db.Column(db.Integer)
-    week12_score = db.Column(db.Integer)
-    week13_score = db.Column(db.Integer)
-    week14_score = db.Column(db.Integer)
-    week15_score = db.Column(db.Integer)
+    week0_score = db.Column(db.Float)
+    week1_score = db.Column(db.Float)
+    week2_score = db.Column(db.Float)
+    week3_score = db.Column(db.Float)
+    week4_score = db.Column(db.Float)
+    week5_score = db.Column(db.Float)
+    week6_score = db.Column(db.Float)
+    week7_score = db.Column(db.Float)
+    week8_score = db.Column(db.Float)
+    week9_score = db.Column(db.Float)
+    week10_score = db.Column(db.Float)
+    week11_score = db.Column(db.Float)
+    week12_score = db.Column(db.Float)
+    week13_score = db.Column(db.Float)
+    week14_score = db.Column(db.Float)
+    week15_score = db.Column(db.Float)
     week0_opponent = db.Column(db.String(50), nullable=True, default="")
     week1_opponent = db.Column(db.String(50), nullable=True, default="")
     week2_opponent = db.Column(db.String(50), nullable=True, default="")
@@ -626,26 +626,19 @@ def league_dashboard(league_id):
 
     # Returns all info for the Standings tab as a list of unions
     # Attribute error means that no one has any teams, which will lead to errors in the html file
-    my_list = []
-        # league_scores_with_names = sorted([(User.query.filter_by(id=member.user_id).first().name, member.this_weeks_score,
-        #                             member.previous_weeks_score, Football_Teams.query.filter_by(id=member.team_1).first().team,
-        #                             Football_Teams.query.filter_by(id=member.team_2).first().team,
-        #                             Football_Teams.query.filter_by(id=member.team_3).first().team,
-        #                             Football_Teams.query.filter_by(id=member.team_4).first().team,
-        #                             Player_weekly_info.query.filter_by(user_id=member.user_id).filter_by(league=league_id).first().faab)
-        #                             for member in league_members_weekly_info], key=lambda kv: kv[1], reverse=True)
-
+    league_scores_with_names_list = []
     for member in league_members_weekly_info:
         try:
-            my_list.append((User.query.filter_by(id=member.user_id).first().name, member.this_weeks_score,
+            league_scores_with_names_list.append((User.query.filter_by(id=member.user_id).first().name, member.this_weeks_score,
                                     member.previous_weeks_score, Football_Teams.query.filter_by(id=member.team_1).first().team,
                                     Football_Teams.query.filter_by(id=member.team_2).first().team,
                                     Football_Teams.query.filter_by(id=member.team_3).first().team,
                                     Football_Teams.query.filter_by(id=member.team_4).first().team,
-                                    Player_weekly_info.query.filter_by(user_id=member.user_id).filter_by(league=league_id).first().faab))
+                                    Player_weekly_info.query.filter_by(user_id=member.user_id).filter_by(league=league_id).first().faab,
+                                    Player_weekly_info.query.filter_by(user_id=member.user_id).filter_by(league=league_id).first().total_wins))
         except AttributeError:
             pass
-    league_scores_with_names = sorted(my_list, key=lambda kv: kv[1], reverse=True)
+    league_scores_with_names = sorted(league_scores_with_names_list, key=lambda kv: kv[1], reverse=True)
     print(f'league_scores_with_names: {league_scores_with_names}')
     # except AttributeError:
     #     league_scores_with_names = []

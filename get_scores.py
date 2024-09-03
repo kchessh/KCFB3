@@ -81,8 +81,8 @@ class Player_weekly_info(db.Model):
     league = db.Column(db.Integer, db.ForeignKey('league.id'))
     week = db.Column(db.Integer, default=1)
     faab = db.Column(db.Integer, default=100)
-    previous_weeks_score = db.Column(db.Integer, default=0)
-    this_weeks_score = db.Column(db.Integer, default=0)
+    previous_weeks_score = db.Column(db.Float, default=0)
+    this_weeks_score = db.Column(db.Float, default=0)
     total_wins = db.Column(db.Integer, default=0)
     team_1 = db.Column(db.String(100), nullable=True, default=None)
     team_2 = db.Column(db.String(100), nullable=True, default=None)
@@ -98,28 +98,28 @@ class Football_Teams(db.Model):
     previous_opponent = db.Column(db.String(100), nullable=True, default="")
     previous_result = db.Column(db.String(1), nullable=True, default="")
     date_and_time_of_game = db.Column(db.DateTime)
-    current_score = db.Column(db.Integer, default=0)
+    current_score = db.Column(db.Float, default=0)
     conference = db.Column(db.String(30), nullable=True)
     chance_to_win = db.Column(db.Float, default=0)
     ap_ranking = db.Column(db.Integer, default=None)
     opponent_ap_ranking = db.Column(db.Integer, default=None)
     opponent_p5 = db.Column(db.Boolean, default=False)
-    week0_score = db.Column(db.Integer)
-    week1_score = db.Column(db.Integer)
-    week2_score = db.Column(db.Integer)
-    week3_score = db.Column(db.Integer)
-    week4_score = db.Column(db.Integer)
-    week5_score = db.Column(db.Integer)
-    week6_score = db.Column(db.Integer)
-    week7_score = db.Column(db.Integer)
-    week8_score = db.Column(db.Integer)
-    week9_score = db.Column(db.Integer)
-    week10_score = db.Column(db.Integer)
-    week11_score = db.Column(db.Integer)
-    week12_score = db.Column(db.Integer)
-    week13_score = db.Column(db.Integer)
-    week14_score = db.Column(db.Integer)
-    week15_score = db.Column(db.Integer)
+    week0_score = db.Column(db.Float)
+    week1_score = db.Column(db.Float)
+    week2_score = db.Column(db.Float)
+    week3_score = db.Column(db.Float)
+    week4_score = db.Column(db.Float)
+    week5_score = db.Column(db.Float)
+    week6_score = db.Column(db.Float)
+    week7_score = db.Column(db.Float)
+    week8_score = db.Column(db.Float)
+    week9_score = db.Column(db.Float)
+    week10_score = db.Column(db.Float)
+    week11_score = db.Column(db.Float)
+    week12_score = db.Column(db.Float)
+    week13_score = db.Column(db.Float)
+    week14_score = db.Column(db.Float)
+    week15_score = db.Column(db.Float)
 
 
 class Executed_Waivers_update1(db.Model):
@@ -164,7 +164,7 @@ print(f"week: {week}")
 today = date.today()
 now = datetime.now()
 print(now)
-week_01_cutoff = datetime(2024, 8, 28)
+week_01_cutoff = datetime(2024, 8, 30)
 
 # time_delta is the value used to determine how far in the future to query games
 # time_correction is to go from central time to gmt
@@ -285,18 +285,21 @@ def get_scores():
                 try:
                     if week == 1 and datetime.now() > week_01_cutoff:
                         if len(game) > 1:
+                            print('entered 1')
                             home_team = game[1]['home_team']
                             away_team = game[1]['away_team']
                             home_score = game[1]['home_points']
                             away_score = game[1]['away_points']
                             game_completed = game[1]['completed']
                         else:
+                            print('entered 2')
                             home_team = game[0]['home_team']
                             away_team = game[0]['away_team']
                             home_score = game[0]['home_points']
                             away_score = game[0]['away_points']
                             game_completed = game[0]['completed']
                     else:
+                        print('entered 3')
                         home_team = game[0]['home_team']
                         away_team = game[0]['away_team']
                         home_score = game[0]['home_points']
@@ -330,9 +333,13 @@ def get_scores():
                                 points_to_add = 1
                                 if session.query(Football_Teams).filter(Football_Teams.team == item.team).first().opponent_ap_ranking is not None:
                                     points_to_add += 0.25
-                                if session.query(Football_Teams).filter(Football_Teams.team == losing_team).first().team is not None:
+                                try:
+                                    opponent = session.query(Football_Teams).filter(Football_Teams.team == losing_team).first().team
                                     if losing_team != "Oregon State" and losing_team != "Washington State":
                                         points_to_add += 0.25
+                                except AttributeError:
+                                    pass
+
                                 print(f"{item.team} won. New score +{points_to_add}")
                                 new_score = session.query(Football_Teams).filter(Football_Teams.team == winning_team).first().current_score + points_to_add
                                 session.query(Football_Teams).filter(Football_Teams.team == winning_team).update(
@@ -384,34 +391,55 @@ def get_scores():
                                 except AttributeError:
                                     pass
                                 if team_1 == winning_team and team_1 == item.team:
-                                    new_player_score = session.query(Player_weekly_info).filter(
-                                        Player_weekly_info.id == info.id).first().this_weeks_score + points_to_add
-                                    new_player_win_total = session.query(Player_weekly_info).filter(
-                                        Player_weekly_info.id == info.id).first().total_wins + 1
+                                    this_weeks_score = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().this_weeks_score
+                                    try:
+                                        old_win_total = session.query(Player_weekly_info).filter(
+                                            Player_weekly_info.id == info.id).first().total_wins
+                                    except AttributeError:
+                                        person = session.query(User).filter(User.id == info.user_id).first().name
+                                        print(f'AttributeError entered. User {person}')
+                                        old_win_total = 0
+                                    new_player_score = this_weeks_score + points_to_add
+                                    new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
                                         {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
-                                    print(f"{user_name} +1 from team_1")
+                                    print(f"{user_name} +1 win from team_1, +{points_to_add} from the win")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
                                     print(f"team_1: {team_1}")
                                     print(f"league: {league}")
                                     print(" ")
                                 elif team_2 == winning_team and team_2 == item.team:
-                                    new_player_score = session.query(Player_weekly_info).filter(
-                                        Player_weekly_info.id == info.id).first().this_weeks_score + 1
+                                    this_weeks_score = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().this_weeks_score
+                                    try:
+                                        old_win_total = session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).first().total_wins
+                                    except AttributeError:
+                                        old_win_total = 0
+                                    new_player_score = this_weeks_score + points_to_add
+                                    new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
-                                        {"this_weeks_score": new_player_score})
-                                    print(f"{user_name} +1 from team_2")
+                                        {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
+                                    print(f"{user_name} +{points_to_add} from team_2")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
                                     print(f"team_2: {team_2}")
                                     print(f"league: {league}")
+                                    print(f'info.id: {info.id}')
                                     print(" ")
                                 elif team_3 == winning_team and team_3 == item.team:
-                                    new_player_score = session.query(Player_weekly_info).filter(
-                                        Player_weekly_info.id == info.id).first().this_weeks_score + 1
+                                    this_weeks_score = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().this_weeks_score
+                                    try:
+                                        old_win_total = session.query(Player_weekly_info).filter(
+                                            Player_weekly_info.id == info.id).first().total_wins
+                                    except AttributeError:
+                                        old_win_total = 0
+                                    new_player_score = this_weeks_score + points_to_add
+                                    new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
-                                        {"this_weeks_score": new_player_score})
+                                        {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
                                     print(f"{user_name} +1 from team_3")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
@@ -419,10 +447,17 @@ def get_scores():
                                     print(f"league: {league}")
                                     print(" ")
                                 elif team_4 == winning_team and team_4 == item.team:
-                                    new_player_score = session.query(Player_weekly_info).filter(
-                                        Player_weekly_info.id == info.id).first().this_weeks_score + 1
+                                    this_weeks_score = session.query(Player_weekly_info).filter(
+                                        Player_weekly_info.id == info.id).first().this_weeks_score
+                                    try:
+                                        old_win_total = session.query(Player_weekly_info).filter(
+                                            Player_weekly_info.id == info.id).first().total_wins
+                                    except AttributeError:
+                                        old_win_total = 0
+                                    new_player_score = this_weeks_score + points_to_add
+                                    new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
-                                        {"this_weeks_score": new_player_score})
+                                        {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
                                     print(f"{user_name} +1 from team_4")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
@@ -497,18 +532,20 @@ run_programs = False
 if run_programs:
     # week = 12
     upcoming_test = False
+    upcoming_exclude = False
+    scores_exclude = False
     print(today.weekday())
-    #This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
-    # if upcoming_test or today.weekday() <= 2 and week != 2:
-    #     print('getting upcoming games1')
-    #     get_upcoming_games()
-    # elif upcoming_test or today.weekday() == 1 and week == 2:
-    #     print('getting upcoming games2')
-    #     get_upcoming_games()
+    # This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
+    if upcoming_test or today.weekday() <= 2 and week != 2 and not upcoming_exclude:
+        print('getting upcoming games1')
+        get_upcoming_games()
+    elif upcoming_test or today.weekday() == 1 and week == 2 and not upcoming_exclude:
+        print('getting upcoming games2')
+        get_upcoming_games()
 
     #Update this to >= 3
     i = 0
-    if today.weekday() >= 1:
+    if today.weekday() >= 1 and not scores_exclude:
         while i < 30:
             print(f"i: {i}")
             cutoff_for_querying_games = datetime.now() + time_delta
@@ -527,6 +564,8 @@ add_waiver_info = False
 reset_waivers = False
 reset_win_probabilities = False
 reset_previous_results = False
+reset_all_teams_scores = False
+reset_all_users_scores = False
 # # Reset Football team/teams's score(s)
 # teams = ["Iowa State", "Virginia"]
 # for team in teams:
@@ -592,6 +631,30 @@ if reset_previous_results:
         print(f"team_id: {every_team.id}")
         session.query(Football_Teams).filter(Football_Teams.id == every_team.id).update(
             {"previous_opponent": "", "previous_result": ""})
+    session.commit()
+
+if reset_all_teams_scores:
+    all_teams = session.query(Football_Teams).order_by(Football_Teams.id)
+    for every_team in all_teams:
+        print(f"team_name: {every_team.team}")
+        print(f"team_id: {every_team.id}")
+        session.query(Football_Teams).filter(Football_Teams.id == every_team.id).update(
+            {"updated_this_week": False, "current_score": 0, "week0_score": 0})
+    session.commit()
+
+if reset_all_users_scores:
+    all_weekly_infos = session.query(Player_weekly_info).order_by(Player_weekly_info.id)
+    for weekly_info in all_weekly_infos:
+        print(f"user_id: {weekly_info.user_id}")
+        week = 1
+        try:
+            print(weekly_info.id)
+            print(weekly_info.this_weeks_score)
+            var = session.query(Player_weekly_info).filter(Player_weekly_info.id == weekly_info.id).first()
+            print(var)
+            session.query(Player_weekly_info).filter(Player_weekly_info.id == weekly_info.id).update({"this_weeks_score": 0})
+        except AttributeError:
+            pass
     session.commit()
 # # Set previous_result for every team already played
 # team = "Utah"
@@ -728,3 +791,15 @@ def commit_schedule(schedule, league_id):
 # initial_player_setup = Player_weekly_info(user_id=member_id, league=league_id)
 # session.add(initial_player_setup)
 # session.commit()
+
+# all_player_weekly_info = session.query(Player_weekly_info).order_by(Player_weekly_info.id)
+# for info in all_player_weekly_info:
+#     user = session.query(User).filter(User.id == info.user_id).first()
+#     user_name = user.name
+#     user_id = info.id
+#     league = info.league
+#     wins = info.total_wins
+#     print(f'{user_name} and {user_id} in league {league} has {wins} wins')
+
+session.query(Player_weekly_info).filter(Player_weekly_info.id == 85).update({"total_wins": 4})
+session.commit()
