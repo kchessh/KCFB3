@@ -157,8 +157,8 @@ class Matchup(db.Model):
 """
 
 year = 2024
-# week, postseason = my_functions.determine_week_number()
-week = 1
+week, postseason = my_functions.determine_week_number()
+# week = 2
 postseason = False
 print(f"week: {week}")
 today = date.today()
@@ -175,8 +175,8 @@ time_correction_delta = timedelta(hours=5)
 
 def get_upcoming_games():
     # Get the rankings for all the teams
-    rankings_response = my_functions.get_rankings(year=2024, week=1)
-    rankings_response_reduced = rankings_response[0]['polls'][0]['ranks']
+    rankings_response = my_functions.get_rankings(year=2024, week=week)
+    rankings_response_reduced = rankings_response[0]['polls'][1]['ranks']
     i = 0
     school_dict = {}
     while i < len(rankings_response_reduced):
@@ -528,9 +528,9 @@ conferences_2024 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC",
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = False
+run_programs = True
 if run_programs:
-    # week = 12
+    # week = 3
     upcoming_test = False
     upcoming_exclude = False
     scores_exclude = False
@@ -539,13 +539,13 @@ if run_programs:
     if upcoming_test or today.weekday() <= 2 and week != 2 and not upcoming_exclude:
         print('getting upcoming games1')
         get_upcoming_games()
-    elif upcoming_test or today.weekday() == 1 and week == 2 and not upcoming_exclude:
+    elif upcoming_test or today.weekday() <= 1 and week == 2 and not upcoming_exclude:
         print('getting upcoming games2')
         get_upcoming_games()
 
     #Update this to >= 3
     i = 0
-    if today.weekday() >= 1 and not scores_exclude:
+    if today.weekday() >= 3 and not scores_exclude:
         while i < 30:
             print(f"i: {i}")
             cutoff_for_querying_games = datetime.now() + time_delta
@@ -801,5 +801,5 @@ def commit_schedule(schedule, league_id):
 #     wins = info.total_wins
 #     print(f'{user_name} and {user_id} in league {league} has {wins} wins')
 
-session.query(Player_weekly_info).filter(Player_weekly_info.id == 85).update({"total_wins": 4})
-session.commit()
+# session.query(Player_weekly_info).filter(Player_weekly_info.id == 85).update({"total_wins": 4})
+# session.commit()

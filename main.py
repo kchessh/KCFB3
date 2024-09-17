@@ -649,8 +649,8 @@ def league_dashboard(league_id):
 
     # Gets all teams that the user can't pickup due to being owned by the user or another user
     ineligible_teams = []
-    try:
-        for member in league_member_ids:
+    for member in league_member_ids:
+        try:
             ineligible_teams.append(Football_Teams.query.filter_by(
                 id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_1)).first().team)
             ineligible_teams.append(Football_Teams.query.filter_by(
@@ -659,8 +659,9 @@ def league_dashboard(league_id):
                 id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_3)).first().team)
             ineligible_teams.append(Football_Teams.query.filter_by(
                 id=int(Player_weekly_info.query.filter_by(league=league_id, user_id=member).first().team_4)).first().team)
-    except TypeError:
-        pass
+        except TypeError:
+            pass
+    print(f'ineligible teams: {ineligible_teams}')
 
     # Gets all the user's teams to get the dict that will be passed in for the standings table
     try:
