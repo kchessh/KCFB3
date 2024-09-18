@@ -809,7 +809,7 @@ def add_team(league_id):
 
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
     eligible_teams_dict = {team.team: [team.current_score, team.conference, team.id, team.date_and_time_of_game] for team in all_teams if
-                           team.team not in ineligible_teams}
+                           team.team not in ineligible_teams if team.team != "Washington State" and team.team != "Oregon State"}
     user_teams_dict = {team.team: [team.current_score, team.conference] for team in all_teams if
                        team.team in user_teams}
     try:

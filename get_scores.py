@@ -528,7 +528,7 @@ conferences_2024 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC",
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = True
+run_programs = False
 if run_programs:
     # week = 3
     upcoming_test = False
@@ -558,7 +558,7 @@ if run_programs:
             i += 1
 
 # ----------------- SANDBOX -------------------
-get_waiver_info = False
+get_waiver_info = True
 edit_user_info = False
 add_waiver_info = False
 reset_waivers = False
@@ -591,7 +591,7 @@ if get_waiver_info:
     all_waivers = session.query(Waiver_Info).all()
     print(len(all_waivers))
     for waiver in all_waivers:
-        print(waiver.league)
+        print(f'in league {waiver.league}, {session.query(User).filter(User.id == waiver.user_id).first().name}, {session.query(Football_Teams).filter(Football_Teams.id == waiver.team_to_add_id).first().team}, {waiver.faab_submitted}')
 
 # Add waiver info for someone
 if add_waiver_info:
