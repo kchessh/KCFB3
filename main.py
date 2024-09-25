@@ -30,7 +30,7 @@ app.config['SECRET_KEY'] = 'secret-key-goes-here'
 #     import no_push
 #     app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
 # Heroku SQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://rtkehelbfufmyx:727fe1bde6ea928e69cc13c697362850d38f84b02328c7a6bc91ec86774401ba@ec2-34-206-79-150.compute-1.amazonaws.com:5432/db8dqi5aldvff'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://urpkh4m7l378b:p0ca7da822b3823177e9879b78d7561c458d2185364439e2a6b51828147a8ee3c@cd5vlri6nnqe17.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1vrtkcrdmm43p'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -823,6 +823,7 @@ def add_team(league_id):
     current_user_teams = list(user_teams_dict_sorted.keys())
     league_name = League.query.filter_by(id=league_id).first().league_name
     already_updated = League.query.filter_by(id=league_id).first().waivers_already_executed
+    print(f'already updated: {already_updated}')
 
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
