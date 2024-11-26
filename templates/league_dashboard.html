@@ -197,13 +197,13 @@
         <th colspan="7" style="text-align:center">Available Teams</th>
       </tr>
       <tr>
-        <th scope="col">#</th>
-        <th scope="col">Team</th>
-        <th scope="col">Points (Wins)</th>
-        <th scope="col">Upcoming Opponent</th>
-        <th scope="col">Win Odds</th>
-        <th scope="col">Previous Opponent</th>
-        <th scope="col">Conference</th>
+        <th scope="col" onclick="sortTable(0)">#</th>
+        <th scope="col" onclick="sortTable(1)">Team</th>
+        <th scope="col" onclick="sortTable(2)">Points (Wins)</th>
+        <th scope="col" onclick="sortTable(3)">Upcoming Opponent</th>
+        <th scope="col" onclick="sortTable(4)">Win Odds</th>
+        <th scope="col" onclick="sortTable(5)">Previous Opponent</th>
+        <th scope="col" onclick="sortTable(6)">Conference</th>
       </tr>
     </thead>
     <tbody class="table-group-divider">
@@ -256,5 +256,24 @@
 
 <br><br>
 
+<script>
+  function sortTable(columnIndex) {
+    const table = document.querySelector(".table tbody");
+    const rows = Array.from(table.rows);
+    const isAscending = table.getAttribute("data-sort-direction") === "asc";
+
+    rows.sort((a, b) => {
+      const aText = a.cells[columnIndex].innerText.trim();
+      const bText = b.cells[columnIndex].innerText.trim();
+
+      return isAscending
+        ? aText.localeCompare(bText, undefined, { numeric: true })
+        : bText.localeCompare(aText, undefined, { numeric: true });
+    });
+
+    table.setAttribute("data-sort-direction", isAscending ? "desc" : "asc");
+    rows.forEach(row => table.appendChild(row));
+  }
+</script>
 
 {% endblock %}

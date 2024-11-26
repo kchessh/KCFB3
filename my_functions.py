@@ -17,9 +17,9 @@ into week 1 of the postseason
 """
 
 def determine_week_number():
-    week_cutoffs = [date(2024, 9, 2), date(2024, 9, 6), date(2024, 9, 15), date(2024, 9, 23), date(2024, 9, 29),
+    week_cutoffs = [date(2024, 9, 2), date(2024, 9, 6), date(2024, 9, 15), date(2024, 9, 23), date(2024, 9, 30),
                     date(2024, 10, 6), date(2024, 10, 13), date(2024, 10, 20), date(2024, 10, 27), date(2024, 11, 3),
-                    date(2024, 11, 10), date(2024, 11, 17), date(2024, 11, 24), date(2023, 12, 1), date(2024, 12, 8)]
+                    date(2024, 11, 10), date(2024, 11, 17), date(2024, 11, 24), date(2024, 12, 2), date(2024, 12, 9)]
     today = date.today()
     week = ""
     postseason = False

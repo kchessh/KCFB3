@@ -179,3 +179,7 @@ h2 {
 th, td {
   font-weight: normal;
 }
+
+th {
+  cursor: pointer;
+}

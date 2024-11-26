@@ -1280,22 +1280,22 @@ def UserDashboard():
     previous_week_points_dict = {}
     team_score_dict = {}
 
-    for team in teams:
-        i = 0
-        points = 0
-        while i < week:
-            points += points_dict[team][i]
-            i += 1
-
-        i = 0
-        previous_points = 0
-        while i < previous_week:
-            previous_points += points_dict[team][i]
-            i += 1
-
-        current_week_points_dict[team] = points
-        previous_week_points_dict[team] = previous_points
-        team_score_dict[team] = points
+    # for team in teams:
+    #     i = 0
+    #     points = 0
+    #     while i < week:
+    #         points += points_dict[team][i]
+    #         i += 1
+    #
+    #     i = 0
+    #     previous_points = 0
+    #     while i < previous_week:
+    #         previous_points += points_dict[team][i]
+    #         i += 1
+    #
+    #     current_week_points_dict[team] = points
+    #     previous_week_points_dict[team] = previous_points
+    #     team_score_dict[team] = points
 
     """
 	The dictionaries generated previously are sorted by score and the places are determined for both the current week
@@ -1333,13 +1333,13 @@ def UserDashboard():
         previous_places[key] = counter
         counter += 1
 
-    for team in teams:
-        team = team.replace("&", "%26")
-        with open(f"Team_Results/{team}.txt", 'r', encoding='ISO-8859-1') as file:
-            text = file.read()
-            games_list = text.split(',')
-            previous_game = games_list[-2]
-            team_data_dict[team.replace("%26", "&")]["last_result"] = previous_game
+    # for team in teams:
+    #     team = team.replace("&", "%26")
+    #     with open(f"Team_Results/{team}.txt", 'r', encoding='ISO-8859-1') as file:
+    #         text = file.read()
+    #         games_list = text.split(',')
+    #         previous_game = games_list[-2]
+    #         team_data_dict[team.replace("%26", "&")]["last_result"] = previous_game
 
     data = pandas.read_csv(f"Leagues/League{league_number}.csv", encoding='latin-1')
     player_teams_initial = data.to_dict()
@@ -1361,7 +1361,7 @@ def UserDashboard():
 	"""
     return render_template("UserDashboard.html", week_num=week, display_num=week, score_dict=current_week_score_dict,
                            places=places, previous_score_dict=previous_week_score_dict, previous_places=previous_places,
-                           team_data_dict=team_data_dict, player_teams_final=player_teams_final,
+                           player_teams_final=player_teams_final,
                            upcoming_team_games=upcoming_team_games, league_number=league_number,
                            user_leagues=user_list_of_leagues,
                            user_list_of_league_members=user_list_of_league_members,

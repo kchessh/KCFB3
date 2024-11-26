@@ -231,23 +231,6 @@
                   <th scope="col font">Player</th>
                 </tr>
               </thead>
-              <tbody>
-                {% for team in team_data_dict: %}
-                  <tr>
-                    <td scope="row">{{ team_data_dict[team]["rank"] }}</td>
-                    <td>{{ team }}</td>
-                    <td>Conference</td>
-                    <td>{{ team_data_dict[team]["points"] }}</td>
-                    <td>{{ team_data_dict[team]["last_result"] }}</td>
-                    <td>{% for person in player_teams_final: %}
-                          {% if team in player_teams_final[person]: %}
-                            {{ person }}
-                          {% endif %}
-                        {% endfor %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
             </table>
           </div>
         </div>

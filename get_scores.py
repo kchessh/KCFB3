@@ -24,8 +24,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
 # Heroku SQL
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://rtkehelbfufmyx:727fe1bde6ea928e69cc13c697362850d38f84b02328c7a6bc91ec86774401ba@ec2-34-206-79-150.compute-1.amazonaws.com:5432/db8dqi5aldvff'
-engine = create_engine('postgresql://rtkehelbfufmyx:727fe1bde6ea928e69cc13c697362850d38f84b02328c7a6bc91ec86774401ba@ec2-34-206-79-150.compute-1.amazonaws.com:5432/db8dqi5aldvff', echo=False)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://urpkh4m7l378b:p0ca7da822b3823177e9879b78d7561c458d2185364439e2a6b51828147a8ee3c@cd5vlri6nnqe17.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1vrtkcrdmm43p'
+engine = create_engine('postgresql://urpkh4m7l378b:p0ca7da822b3823177e9879b78d7561c458d2185364439e2a6b51828147a8ee3c@cd5vlri6nnqe17.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1vrtkcrdmm43p', echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -269,6 +269,11 @@ def get_upcoming_games():
         time.sleep(2)
 
         session.commit()
+
+        all_leagues = session.query(League).all()
+        for the_league in all_leagues:
+            session.query(League).filter(League.id == the_league.id).update({"waivers_already_executed": False})
+            session.commit()
 
 
 def get_scores():
@@ -528,10 +533,10 @@ conferences_2024 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC",
 #     print(f"{every_team.team} is in {every_team.conference}")
 # session.commit()
 
-run_programs = False
+run_programs = True
 if run_programs:
     # week = 3
-    upcoming_test = False
+    upcoming_test = True
     upcoming_exclude = False
     scores_exclude = False
     print(today.weekday())
@@ -558,7 +563,7 @@ if run_programs:
             i += 1
 
 # ----------------- SANDBOX -------------------
-get_waiver_info = True
+get_waiver_info = False
 edit_user_info = False
 add_waiver_info = False
 reset_waivers = False
@@ -581,9 +586,10 @@ reset_all_users_scores = False
 
 # Edit someone's score/info
 if edit_user_info:
-    user_id = 40
+    user_id = 80
     league = 53
-    session.query(Player_weekly_info).filter(Player_weekly_info.user_id == user_id).filter(Player_weekly_info.league == league).update({"this_weeks_score": 4})
+    # session.query(Player_weekly_info).filter(Player_weekly_info.user_id == user_id).filter(Player_weekly_info.league == league).update({"this_weeks_score": 4})
+    session.query(User).filter(User.id == user_id).update({"locked_account": False, "failed_login_attempts": 0})
     session.commit()
 
 # Get waiver info
@@ -591,7 +597,7 @@ if get_waiver_info:
     all_waivers = session.query(Waiver_Info).all()
     print(len(all_waivers))
     for waiver in all_waivers:
-        print(f'in league {waiver.league}, {session.query(User).filter(User.id == waiver.user_id).first().name}, {session.query(Football_Teams).filter(Football_Teams.id == waiver.team_to_add_id).first().team}, {waiver.faab_submitted}')
+        print(f'in league {waiver.league}, {session.query(User).filter(User.id == waiver.user_id).first().name}, add {session.query(Football_Teams).filter(Football_Teams.id == waiver.team_to_add_id).first().team} for {session.query(Football_Teams).filter(Football_Teams.id == waiver.team_to_drop_id).first().team}, {waiver.faab_submitted}')
 
 # Add waiver info for someone
 if add_waiver_info:

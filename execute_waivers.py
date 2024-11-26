@@ -20,8 +20,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
 # Heroku SQL
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://qylursxvbzavwz:87013a2c4de430e9e802f20f1215996ce267f4bdd5f7f9459881f6461187a718@ec2-3-93-160-246.compute-1.amazonaws.com:5432/dbg16caap1t7nk'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://rtkehelbfufmyx:727fe1bde6ea928e69cc13c697362850d38f84b02328c7a6bc91ec86774401ba@ec2-34-206-79-150.compute-1.amazonaws.com:5432/db8dqi5aldvff'
-engine = create_engine('postgresql://rtkehelbfufmyx:727fe1bde6ea928e69cc13c697362850d38f84b02328c7a6bc91ec86774401ba@ec2-34-206-79-150.compute-1.amazonaws.com:5432/db8dqi5aldvff', echo=False)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://urpkh4m7l378b:p0ca7da822b3823177e9879b78d7561c458d2185364439e2a6b51828147a8ee3c@cd5vlri6nnqe17.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1vrtkcrdmm43p'
+engine = create_engine('postgresql://urpkh4m7l378b:p0ca7da822b3823177e9879b78d7561c458d2185364439e2a6b51828147a8ee3c@cd5vlri6nnqe17.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1vrtkcrdmm43p', echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
