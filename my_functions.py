@@ -1,3 +1,4 @@
+import json.decoder
 from datetime import date, datetime
 import pandas
 import requests
@@ -17,9 +18,9 @@ into week 1 of the postseason
 """
 
 def determine_week_number():
-    week_cutoffs = [date(2024, 9, 2), date(2024, 9, 6), date(2024, 9, 15), date(2024, 9, 23), date(2024, 9, 30),
-                    date(2024, 10, 6), date(2024, 10, 13), date(2024, 10, 20), date(2024, 10, 27), date(2024, 11, 3),
-                    date(2024, 11, 10), date(2024, 11, 17), date(2024, 11, 24), date(2024, 12, 2), date(2024, 12, 9)]
+    week_cutoffs = [date(2025, 9, 1), date(2025, 9, 8), date(2025, 9, 15), date(2025, 9, 22), date(2025, 9, 29),
+                    date(2025, 10, 6), date(2025, 10, 13), date(2025, 10, 20), date(2025, 10, 27), date(2025, 11, 3),
+                    date(2025, 11, 10), date(2025, 11, 17), date(2025, 11, 24), date(2025, 12, 1), date(2025, 12, 9)]
     today = date.today()
     week = ""
     postseason = False
@@ -32,7 +33,7 @@ def determine_week_number():
             break
 
     if week == "":
-        if date(2025, 1, 1) < date.today():
+        if date(2026, 1, 1) < date.today():
             week = 2
         else:
             week = 1
@@ -71,15 +72,26 @@ This function requests the college football API to get the game data. It will ta
 team (str)
 """
 
-def get_game_data(year, week, team):
-    url = f"http://api.collegefootballdata.com/games?year={year}&week={week}&seasonType=regular&team={team}"
+def get_game_data(year, week, team, postseason):
+    if postseason:
+        url = f"https://api.collegefootballdata.com/games?year={year}&week={week}&seasonType=postseason&team={team}"
+    else:
+        # url = f"https://api.collegefootballdata.com/games?year={year}&week={week}&seasonType=regular&team={team}"
+        url = f"https://api.collegefootballdata.com/games?year={year}&week={week}&team={team}"
 
     headers = {
+        'accept': 'application/json',
         'Authorization': 'Bearer YuVJiwtjTbmZ+XUvpjipRfpdytZRSr7o29yj5saaXfntEvvVekIkOCcC+nYhPTAH',
     }
 
     response = requests.get(url, headers=headers)
-    data = response.json()
+    try:
+        data = response.json()
+    except json.decoder.JSONDecodeError:
+        print('JSON decode error. maybe it was a timeout. sleeping for 20 secs and trying again')
+        time.sleep(20)
+        response = requests.get(url, headers=headers)
+        data = response.json()
     return data
 
 """
@@ -173,15 +185,23 @@ def upcoming_games_master(teams_dict, year):
             write_data.to_csv(f"This_Weeks_Games/League{league}.csv")
             league += 1
 
-def get_rankings(year, week):
-    url = f"http://api.collegefootballdata.com/rankings?year={year}&week={week}&seasonType=regular"
+def get_rankings(year, week, postseason):
+    # If it's the postseason, API still needs to be queried like regular season. Last reg season AP poll was week 15
+    if postseason:
+        week = 15
+    url = f"https://api.collegefootballdata.com/rankings?year={year}&week={week}&seasonType=regular"
 
     headers = {
+        'accept': 'application/json',
         'Authorization': 'Bearer YuVJiwtjTbmZ+XUvpjipRfpdytZRSr7o29yj5saaXfntEvvVekIkOCcC+nYhPTAH',
     }
 
     response = requests.get(url, headers=headers)
     data = response.json()
+    # print(f'{data=}')
+    # print(data[0]['polls'][2])
+    # print(data[0]['polls'][3])
+    # print(data[0]['polls'][4])
     return data
 
 
