@@ -1851,7 +1851,6 @@ def expected_vs_actual_graphs():
     # Pass all team data to the template for JS to use
     teams_json = json.dumps(wins_dict)
 
-
     return render_template('expected_vs_actual_graphs.html', chart_json=chart_json, teams_json=teams_json, team_names=list(wins_dict.keys()))
 
 
