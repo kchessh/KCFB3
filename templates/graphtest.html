@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>
+</head>
+<body>
+
+    <h1>Graphs for Expected and Actual Wins</h1>
+
+    <div class="selector-container">
+        <label for="team-selector">Select Team:</label>
+        <select id="team-selector">
+            {% for team in team_names %}
+                <option value="{{ team }}">{{ team }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div id="chart-expected"></div>
+    <hr/>
+    <div id="chart-diff"></div>
+
+    <script>
+        const teamsData = {{ teams_json | safe }};
+        const chartData = {{ chart_json | safe }};
+
+        function getXAxisConfig(years) {
+            return {
+                title: { text: 'Year' },
+                tickmode: 'array',
+                tickvals: years,
+                ticktext: years.map(y => String(y)),
+                tickformat: 'd'
+            };
+        }
+
+        function getYAxisConfig() {
+            return {
+                title: { text: 'Expected Wins' },
+                tickformat: '.1f',
+                range: [0, 14],
+                dtick: 1
+            };
+        }
+
+        function getYAxisDiffConfig() {
+            return {
+                title: { text: 'Actual - Expected Wins' },
+                tickformat: '.1f',
+                dtick: 0.5,
+                // let Plotly auto-range, then you can optionally set a margin after render
+                // range: undefined
+                // you can enable autoscale with no range
+                automargin: true
+            };
+        }
+
+
+        // Build the traces for the expected-wins chart
+        function buildExpectedTrace(selectedTeam, teamInfo, years, wins, actualWins) {
+            return [
+                {
+                    x: years,
+                    y: wins.map(w => parseFloat(w)),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Expected Wins',
+                    line: { color: '#1f77b4', dash: 'dot' },
+                    hovertemplate: 'Year: %{x}<br>Expected Wins: %{y:.1f}<extra></extra>'
+                },
+                {
+                    x: years,
+                    y: actualWins.map(w => parseFloat(w)),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Actual Wins',
+                    line: { color: '#ff7f0e' },
+                    hovertemplate: 'Year: %{x}<br>Actual Wins: %{y:.1f}<extra></extra>'
+                }
+            ];
+        }
+
+
+        // Build the traces for the difference chart
+        function buildDiffTrace(selectedTeam, teamInfo, years, actualWins, expectedWins) {
+            const diffs = actualWins.map((a, i) => parseFloat(a) - parseFloat(expectedWins[i]));
+            return [{
+                x: years,
+                y: diffs,
+                type: 'bar',
+                name: selectedTeam,
+                marker: { color: '#ff7f0e' },
+                hovertemplate: 'Year: %{x}<br>Actual - Expected: %{y:.1f}<extra></extra>',
+                text: diffs.map(d => d.toFixed(1)),
+                textposition: 'inside',
+                textfont: {
+                    size: 12,
+                    color: 'black'
+                }
+            }];
+        }
+
+        function buildDiffLayout(years, teamInfo) {
+            return {
+                title: `${teamInfo ? teamInfo.teamName || "" : ""} Actual vs Expected Difference by Year (${teamInfo.conference})`,
+                xaxis: getXAxisConfig(years),
+                yaxis: getYAxisDiffConfig(),
+                barmode: 'group',
+                height: 600,
+                annotations: [
+                    {
+                        x: 0.5,
+                        y: 1.1,
+                        xref: 'paper',
+                        yref: 'paper',
+                        text: `${teamInfo ? (teamInfo.teamName || "") : ""}`,
+                        showarrow: false,
+                        font: {
+                            size: 22,
+                            color: '#000',
+                            family: 'Arial, sans-serif'
+                        },
+                        align: 'center'
+                    }
+                ]
+            };
+        }
+
+
+
+        // Initialize charts for the default/initial selection
+        function renderInitialCharts() {
+            const selectedTeam = document.getElementById('team-selector').value;
+            const teamInfo = teamsData[selectedTeam];
+
+            const years = Object.keys(teamInfo["expected wins"]).map(y => parseInt(y));
+            const expectedWins = Object.values(teamInfo["expected wins"]);
+            // For differences we need actual wins too (assuming your data structure has it)
+            // If actual wins are stored separately, adjust accordingly. Example assumes:
+            // teamInfo["actual wins"] is an object keyed by year with numeric values.
+            const actualWinsMap = teamInfo["actual wins"] || {};
+            const actualWins = years.map(y => actualWinsMap[y] !== undefined ? actualWinsMap[y] : null);
+
+            // Filter out any missing actuals if necessary
+            // Here we assume data aligns; otherwise, you can pre-filter:
+            // const validIdx = actualWins.map((v,i)=> v!=null && expectedWins[i]!=null).map((b,i)=>i).length;
+            const expectedTrace = buildExpectedTrace(selectedTeam, teamInfo, years, expectedWins, actualWins);
+            Plotly.react('chart-expected', expectedTrace, {
+                title: {
+                            text: `${selectedTeam} Expected Wins by Year (${teamInfo.conference})`,
+                            x: 0.5,
+                            xanchor: 'center'
+                        },
+                xaxis: getXAxisConfig(years),
+                yaxis: getYAxisConfig(),
+                height: 600
+            });
+
+            // Build diff chart data
+            const diffTrace = buildDiffTrace(selectedTeam, teamInfo, years, actualWins, expectedWins);
+            Plotly.react('chart-diff', diffTrace, {
+              title: {
+                          text: `${selectedTeam} Actual vs Expected Difference by Year (${teamInfo.conference})`,
+                          x: 0.5,
+                          xanchor: 'center'
+                      },
+                xaxis: getXAxisConfig(years),
+                yaxis: getYAxisDiffConfig(),
+                barmode: 'group',
+                height: 600,
+            });
+        }
+
+        // Update charts when team changes
+        document.getElementById('team-selector').addEventListener('change', function () {
+            const selectedTeam = this.value;
+            const teamInfo = teamsData[selectedTeam];
+
+            const years = Object.keys(teamInfo["expected wins"]).map(y => parseInt(y));
+            const expectedWins = Object.values(teamInfo["expected wins"]);
+            const actualWinsMap = teamInfo["actual wins"] || {};
+            const actualWins = years.map(y => actualWinsMap[y] !== undefined ? actualWinsMap[y] : null);
+
+            // Update expected-wins chart
+            const expectedTrace = buildExpectedTrace(selectedTeam, teamInfo, years, expectedWins, actualWins);
+            Plotly.react('chart-expected', expectedTrace, {
+                title: {
+                            text: `${selectedTeam} Expected Wins by Year (${teamInfo.conference})`,
+                            x: 0.5,
+                            xanchor: 'center'
+                        },
+                xaxis: getXAxisConfig(years),
+                yaxis: getYAxisConfig(),
+                height: 600
+            });
+
+            // Update difference chart
+            const diffTrace = buildDiffTrace(selectedTeam, teamInfo, years, actualWins, expectedWins);
+            Plotly.react('chart-diff', diffTrace, {
+              title: {
+                          text: `${selectedTeam} Actual vs Expected Difference by Year (${teamInfo.conference})`,
+                          x: 0.5,
+                          xanchor: 'center'
+                      },
+                xaxis: getXAxisConfig(years),
+                yaxis: getYAxisDiffConfig(),
+                barmode: 'group',
+                height: 600
+            });
+        });
+
+        // Initial render
+        renderInitialCharts();
+    </script>
+
+</body>
+</html>
