@@ -90,7 +90,7 @@ teams_db = {"Alabama Crimson Tide": 61, "Arizona Wildcats": 44, "Arizona State S
          "UCLA Bruins": 31, "USC Trojans": 30, "Utah Utes": 51, "Vanderbilt Commodores": 60, "Virginia Cavaliers": 12, "Virginia Tech Hokies": 13, "Wake Forest Demon Deacons": 14, "Washington Huskies": 52,
          "Washington State Cougars": 53, "West Virginia Mountaineers": 39, "Wisconsin Badgers": 29, "SMU Mustangs": 70}
 
-last_date = date(2025, 12, 9)
+last_date = date(2025, 9, 3)
 team_probabilities = []
 for matchup in data:
     home_team = matchup['home_team']

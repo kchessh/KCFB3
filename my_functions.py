@@ -18,7 +18,7 @@ into week 1 of the postseason
 """
 
 def determine_week_number():
-    week_cutoffs = [date(2025, 9, 1), date(2025, 9, 8), date(2025, 9, 14), date(2025, 9, 22), date(2025, 9, 29),
+    week_cutoffs = [date(2025, 9, 1), date(2025, 9, 8), date(2025, 9, 15), date(2025, 9, 22), date(2025, 9, 29),
                     date(2025, 10, 6), date(2025, 10, 13), date(2025, 10, 20), date(2025, 10, 27), date(2025, 11, 3),
                     date(2025, 11, 10), date(2025, 11, 17), date(2025, 11, 24), date(2025, 12, 1), date(2025, 12, 9)]
     today = date.today()
@@ -79,15 +79,9 @@ def get_game_data(year, week, team, postseason):
         # url = f"https://api.collegefootballdata.com/games?year={year}&week={week}&seasonType=regular&team={team}"
         url = f"https://api.collegefootballdata.com/games?year={year}&week={week}&team={team}"
 
-    #
-    # headers = {
-    #     'accept': 'application/json',
-    #     'Authorization': 'Bearer YuVJiwtjTbmZ+XUvpjipRfpdytZRSr7o29yj5saaXfntEvvVekIkOCcC+nYhPTAH',
-    # }
-
     headers = {
         'accept': 'application/json',
-        'Authorization': 'Bearer aXrfENcHOds0AZtuPlYL5NwzoFIwa6q1JqXs3R9HMI/cVzux+X224WFASdM9O1hY',
+        'Authorization': 'Bearer YuVJiwtjTbmZ+XUvpjipRfpdytZRSr7o29yj5saaXfntEvvVekIkOCcC+nYhPTAH',
     }
 
     response = requests.get(url, headers=headers)
@@ -98,7 +92,6 @@ def get_game_data(year, week, team, postseason):
         time.sleep(20)
         response = requests.get(url, headers=headers)
         data = response.json()
-
     return data
 
 """
@@ -191,7 +184,6 @@ def upcoming_games_master(teams_dict, year):
             write_data = pandas.DataFrame(league_games, index=["opponent", "start_day", "sort_points"])
             write_data.to_csv(f"This_Weeks_Games/League{league}.csv")
             league += 1
-
 
 def get_rankings(year, week, postseason):
     # If it's the postseason, API still needs to be queried like regular season. Last reg season AP poll was week 15

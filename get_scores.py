@@ -158,13 +158,13 @@ class Matchup(db.Model):
 
 year = 2025
 week, postseason = my_functions.determine_week_number()
-# week = 1
+# week = 0
 # postseason = True
 print(f"week: {week}, {postseason=}")
 today = date.today()
 now = datetime.now()
 print(now)
-week_01_cutoff = datetime(2025, 8, 28)
+week_01_cutoff = datetime(2025, 8, 29)
 
 # time_delta is the value used to determine how far in the future to query games
 # time_correction is to go from central time to gmt
@@ -176,9 +176,8 @@ time_correction_delta = timedelta(hours=5)
 def get_upcoming_games():
     # Get the rankings for all the teams
     rankings_response = my_functions.get_rankings(year=2025, week=week, postseason=postseason)
-    rankings_response_reduced = rankings_response[0]['polls'][1]['ranks']
-    # rankings_response_reduced = rankings_response[0]['polls'][3]['ranks']
-    # rankings_response_reduced = rankings_response[0]['polls'][2]['ranks']
+    # rankings_response_reduced = rankings_response[0]['polls'][1]['ranks']
+    rankings_response_reduced = rankings_response[0]['polls'][3]['ranks']
     i = 0
     school_dict = {}
     while i < len(rankings_response_reduced):
@@ -263,8 +262,6 @@ def get_upcoming_games():
             # IndexError occurs when a team is on a Bye since the returned result is None
             except IndexError:
                 upcoming_opponent = "BYE"
-                upcoming_opponent_ap_ranking = None
-                opponent_p5 = False
                 game_time = datetime.utcnow() + timedelta(days=10)
 
         session.query(Football_Teams).filter_by(team=team_to_query).update({"upcoming_opponent": upcoming_opponent,
@@ -272,11 +269,12 @@ def get_upcoming_games():
             "opponent_p5": opponent_p5})
         time.sleep(2)
 
+        session.commit()
+
         all_leagues = session.query(League).all()
         for the_league in all_leagues:
             session.query(League).filter(League.id == the_league.id).update({"waivers_already_executed": False})
-
-    session.commit()
+            session.commit()
 
 
 def get_scores():
@@ -413,7 +411,7 @@ def get_scores():
                                     new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
                                         {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
-                                    print(f"{user_name} +{points_to_add} from team_1")
+                                    print(f"{user_name} +1 win from team_1, +{points_to_add} from the win")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
                                     print(f"team_1: {team_1}")
@@ -449,7 +447,7 @@ def get_scores():
                                     new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
                                         {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
-                                    print(f"{user_name} +{points_to_add} from team_3")
+                                    print(f"{user_name} +1 from team_3")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
                                     print(f"team_3: {team_3}")
@@ -467,7 +465,7 @@ def get_scores():
                                     new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
                                         {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
-                                    print(f"{user_name} +{points_to_add} from team_4")
+                                    print(f"{user_name} +1 from team_4")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
                                     print(f"team_4: {team_4}")
@@ -492,7 +490,7 @@ def get_scores():
             session.query(Football_Teams).filter(Football_Teams.team == item.team).update(
                 {"updated_this_week": True, "previous_result": None, "previous_opponent": "BYE", f"week{week}_score": 0})
         time.sleep(2)
-        session.commit()
+    session.commit()
 
 # scores_2022 = {"Clemson": 11, "Florida State": 10, "Syracuse": 7, "Louisville": 8, "NC State": 8, "Wake Forest": 8,
 #                "Boston College": 3, "North Carolina": 9, "Pittsburgh": 9, "Duke": 9, "Georgia Tech": 5, "Miami": 5,
@@ -539,10 +537,10 @@ conferences_2024 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC",
 
 run_programs = True
 if run_programs:
-    # week = 14
+    # week = 3
     upcoming_test = False
-    upcoming_exclude = True
-    scores_exclude = False
+    upcoming_exclude = False
+    scores_exclude = True
     scores_include = False
     print(today.weekday())
     # This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
@@ -560,9 +558,6 @@ if run_programs:
             print(f"i: {i}")
             cutoff_for_querying_games = datetime.now() + time_delta
             teams_to_update = session.query(Football_Teams).filter_by(updated_this_week=False).all()
-            print(f'{teams_to_update=}')
-            for team in teams_to_update:
-                print(team.team)
             if len(teams_to_update) > 0:
                 get_scores()
                 print(" ")
@@ -571,7 +566,7 @@ if run_programs:
             i += 1
 
 # ----------------- SANDBOX -------------------
-get_waiver_info = True
+get_waiver_info = False
 edit_user_info = False
 add_waiver_info = False
 reset_waivers = False
@@ -602,11 +597,10 @@ if edit_user_info:
 
 # Get waiver info
 if get_waiver_info:
-    all_waivers = session.query(Waiver_Info).order_by(Waiver_Info.league, Waiver_Info.faab_submitted.desc()).all()
+    all_waivers = session.query(Waiver_Info).all()
     print(len(all_waivers))
     for waiver in all_waivers:
         print(f'in league {waiver.league}, {session.query(User).filter(User.id == waiver.user_id).first().name}, add {session.query(Football_Teams).filter(Football_Teams.id == waiver.team_to_add_id).first().team} for {session.query(Football_Teams).filter(Football_Teams.id == waiver.team_to_drop_id).first().team}, {waiver.faab_submitted}')
-    session.commit()
 
 # Add waiver info for someone
 if add_waiver_info:
@@ -691,10 +685,6 @@ if reset_all_users_scores:
 #     print(f"team_name: {every_team.team}")
 #     print(f"team_id: {every_team.id}")
 #     print(f"team_conference: {every_team.conference}")
-
-# # Set a team's score
-# team_to_update = session.query(Football_Teams).filter_by(team="Michigan State").update({"current_score": 1.0})
-# session.commit()
 
 # # Reset everyones teams
 # all_users = session.query(Player_weekly_info).all()

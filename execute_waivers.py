@@ -172,6 +172,7 @@ else:
                     team_to_add_id=waiver.team_to_add_id, team_to_drop_id=waiver.team_to_drop_id,
                     faab_submitted=waiver.faab_submitted, priority=waiver.priority)
                 session.add(waiver_to_add_to_history)
+            session.commit()
 
             if len(all_waivers) > 0:
                 print(all_waivers)
@@ -185,7 +186,7 @@ else:
                     # Create waiver list to iterate through for assigning teams to the highest bidder
                     waiver_list.append([waiver.user_id, waiver.team_to_add_id, waiver.team_to_drop_id, waiver.faab_submitted, waiver.id, waiver.league,
                                         session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver.user_id).first().this_weeks_score])
-                waiver_list_sorted = sorted(waiver_list, key=lambda waiver: (waiver[3], -waiver[6]), reverse=True)
+                waiver_list_sorted = sorted(waiver_list, key=lambda waiver: (waiver[3], waiver[6]), reverse=True)
                 while len(waiver_list_sorted) > 0:
                     # Get the highest bid data. User's priorities are determined by amount of faab bid (i.e. if a user bid 10 on team1 and 12 on team2, it will try to give them team2 before team 1
                     print(f"waiver_list_sorted: {waiver_list_sorted}")
@@ -209,11 +210,7 @@ else:
                                 highest_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == highest_bidder).first().this_weeks_score
                                 other_bidder_league_points = session.query(Player_weekly_info).filter(Player_weekly_info.league == league.id).filter(Player_weekly_info.user_id == waiver_list_sorted[match_counter][0]).first().this_weeks_score
                                 if highest_bidder_league_points > other_bidder_league_points:
-                                    print(f'tie going to {waiver_list_sorted[0][0]}')
-                                    highest_bid = waiver_list_sorted[0]
-                                # else:
-                                #     print(f'going to {waiver_list_sorted[match_counter][0]}')
-                                #     highest_bid = waiver_list_sorted[match_counter]
+                                    highest_bid = waiver_list_sorted[match_counter]
                             else:
                                 go_on = False
                         # IndexError will occur when there's only one waiver claim left
@@ -264,8 +261,7 @@ else:
                 print(waiver_list_sorted)
                 print(completed_waiver_list)
             session.query(League).filter(League.id == league.id).update({"waivers_already_executed": True})
-    input("Press enter if all the changes are good to go:")
-    session.commit()
+        session.commit()
 
 # player_11 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 11, Player_weekly_info.league == 48).first()
 # player_13 = session.query(Player_weekly_info).filter(Player_weekly_info.user_id == 13, Player_weekly_info.league == 48).first()
