@@ -18,7 +18,7 @@ import random
 import math
 # from main import User, League, League_members_update1, List_of_leagues_update1, Player_weekly_info, Football_Teams
 
-scores_test = False
+scores_test = True
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
@@ -156,27 +156,29 @@ class Matchup(db.Model):
 1s represent a win, 0s represent a loss or no game played
 """
 
-year = 2024
+year = 2025
 week, postseason = my_functions.determine_week_number()
-# week = 2
-postseason = False
-print(f"week: {week}")
+# week = 1
+# postseason = True
+print(f"week: {week}, {postseason=}")
 today = date.today()
 now = datetime.now()
 print(now)
-week_01_cutoff = datetime(2024, 8, 30)
+week_01_cutoff = datetime(2025, 8, 28)
 
 # time_delta is the value used to determine how far in the future to query games
 # time_correction is to go from central time to gmt
-time_correction = 5
+time_correction = 6
 time_delta = timedelta(hours=0 + time_correction)
 time_correction_delta = timedelta(hours=5)
 
 
 def get_upcoming_games():
     # Get the rankings for all the teams
-    rankings_response = my_functions.get_rankings(year=2024, week=week)
+    rankings_response = my_functions.get_rankings(year=2025, week=week, postseason=postseason)
     rankings_response_reduced = rankings_response[0]['polls'][1]['ranks']
+    # rankings_response_reduced = rankings_response[0]['polls'][3]['ranks']
+    # rankings_response_reduced = rankings_response[0]['polls'][2]['ranks']
     i = 0
     school_dict = {}
     while i < len(rankings_response_reduced):
@@ -192,17 +194,17 @@ def get_upcoming_games():
     for item in all_teams:
         print(item.team)
         team_to_query = item.team.replace("&", "%26")
-        game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
+        game = my_functions.get_game_data(year=year, week=week, team=team_to_query, postseason=postseason)
         team_to_query = team_to_query.replace("%26", "&")
         number_of_games = len(game)
         try:
             ap_ranking = school_dict[item.team]
         except KeyError:
             ap_ranking = None
-        if number_of_games > 1 and datetime.now() > datetime.combine(date(2024, 8, 28), datetime.min.time()):
-            home_team = game[1]['home_team']
-            away_team = game[1]['away_team']
-            game_time = game[1]['start_date']
+        if number_of_games > 1 and datetime.now() > datetime.combine(date(2025, 8, 25), datetime.min.time()):
+            home_team = game[1]['homeTeam']
+            away_team = game[1]['awayTeam']
+            game_time = game[1]['startDate']
             print(game_time)
             if team_to_query == home_team:
                 upcoming_opponent = away_team
@@ -230,9 +232,9 @@ def get_upcoming_games():
                     print(f'upcoming opponent info41: {upcoming_opponent_ap_ranking} {upcoming_opponent}')
         else:
             try:
-                home_team = game[0]['home_team']
-                away_team = game[0]['away_team']
-                game_time = game[0]['start_date']
+                home_team = game[0]['homeTeam']
+                away_team = game[0]['awayTeam']
+                game_time = game[0]['startDate']
                 print(game_time)
                 if team_to_query == home_team:
                     upcoming_opponent = away_team
@@ -261,6 +263,8 @@ def get_upcoming_games():
             # IndexError occurs when a team is on a Bye since the returned result is None
             except IndexError:
                 upcoming_opponent = "BYE"
+                upcoming_opponent_ap_ranking = None
+                opponent_p5 = False
                 game_time = datetime.utcnow() + timedelta(days=10)
 
         session.query(Football_Teams).filter_by(team=team_to_query).update({"upcoming_opponent": upcoming_opponent,
@@ -268,12 +272,11 @@ def get_upcoming_games():
             "opponent_p5": opponent_p5})
         time.sleep(2)
 
-        session.commit()
-
         all_leagues = session.query(League).all()
         for the_league in all_leagues:
             session.query(League).filter(League.id == the_league.id).update({"waivers_already_executed": False})
-            session.commit()
+
+    session.commit()
 
 
 def get_scores():
@@ -283,7 +286,8 @@ def get_scores():
         try:
             if cutoff_for_querying_games > item.date_and_time_of_game or scores_test is True:
                 team_to_query = item.team.replace("&", "%26")
-                game = my_functions.get_game_data(year=year, week=week, team=team_to_query)
+                print(f'{year=}, {week=}, {team_to_query=}')
+                game = my_functions.get_game_data(year=year, week=week, team=team_to_query, postseason=postseason)
                 print(game)
 
                 # Get scores of all games that are currently going on if they should be currently playing or playing soon
@@ -291,24 +295,24 @@ def get_scores():
                     if week == 1 and datetime.now() > week_01_cutoff:
                         if len(game) > 1:
                             print('entered 1')
-                            home_team = game[1]['home_team']
-                            away_team = game[1]['away_team']
-                            home_score = game[1]['home_points']
-                            away_score = game[1]['away_points']
+                            home_team = game[1]['homeTeam']
+                            away_team = game[1]['awayTeam']
+                            home_score = game[1]['homePoints']
+                            away_score = game[1]['awayPoints']
                             game_completed = game[1]['completed']
                         else:
                             print('entered 2')
-                            home_team = game[0]['home_team']
-                            away_team = game[0]['away_team']
-                            home_score = game[0]['home_points']
-                            away_score = game[0]['away_points']
+                            home_team = game[0]['homeTeam']
+                            away_team = game[0]['awayTeam']
+                            home_score = game[0]['homePoints']
+                            away_score = game[0]['awayPoints']
                             game_completed = game[0]['completed']
                     else:
                         print('entered 3')
-                        home_team = game[0]['home_team']
-                        away_team = game[0]['away_team']
-                        home_score = game[0]['home_points']
-                        away_score = game[0]['away_points']
+                        home_team = game[0]['homeTeam']
+                        away_team = game[0]['awayTeam']
+                        home_score = game[0]['homePoints']
+                        away_score = game[0]['awayPoints']
                         game_completed = game[0]['completed']
                     try:
                         print(f"home_score: {home_score}")
@@ -409,7 +413,7 @@ def get_scores():
                                     new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
                                         {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
-                                    print(f"{user_name} +1 win from team_1, +{points_to_add} from the win")
+                                    print(f"{user_name} +{points_to_add} from team_1")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
                                     print(f"team_1: {team_1}")
@@ -445,7 +449,7 @@ def get_scores():
                                     new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
                                         {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
-                                    print(f"{user_name} +1 from team_3")
+                                    print(f"{user_name} +{points_to_add} from team_3")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
                                     print(f"team_3: {team_3}")
@@ -463,7 +467,7 @@ def get_scores():
                                     new_player_win_total = old_win_total + 1
                                     session.query(Player_weekly_info).filter(Player_weekly_info.id == info.id).update(
                                         {"this_weeks_score": new_player_score, "total_wins": new_player_win_total})
-                                    print(f"{user_name} +1 from team_4")
+                                    print(f"{user_name} +{points_to_add} from team_4")
                                     print(f"winning_team: {winning_team}")
                                     print(f"losing_team: {losing_team}")
                                     print(f"team_4: {team_4}")
@@ -488,7 +492,7 @@ def get_scores():
             session.query(Football_Teams).filter(Football_Teams.team == item.team).update(
                 {"updated_this_week": True, "previous_result": None, "previous_opponent": "BYE", f"week{week}_score": 0})
         time.sleep(2)
-    session.commit()
+        session.commit()
 
 # scores_2022 = {"Clemson": 11, "Florida State": 10, "Syracuse": 7, "Louisville": 8, "NC State": 8, "Wake Forest": 8,
 #                "Boston College": 3, "North Carolina": 9, "Pittsburgh": 9, "Duke": 9, "Georgia Tech": 5, "Miami": 5,
@@ -535,10 +539,11 @@ conferences_2024 = {"Clemson": "ACC", "Florida State": "ACC", "Syracuse": "ACC",
 
 run_programs = True
 if run_programs:
-    # week = 3
-    upcoming_test = True
-    upcoming_exclude = False
+    # week = 14
+    upcoming_test = False
+    upcoming_exclude = True
     scores_exclude = False
+    scores_include = False
     print(today.weekday())
     # This should be <= 1 to work properly (normally on Mondays) but should be == 1 for week 2 since teams play on Monday on week 1
     if upcoming_test or today.weekday() <= 2 and week != 2 and not upcoming_exclude:
@@ -550,11 +555,14 @@ if run_programs:
 
     #Update this to >= 3
     i = 0
-    if today.weekday() >= 3 and not scores_exclude:
+    if today.weekday() >= 3 and not scores_exclude or scores_include:
         while i < 30:
             print(f"i: {i}")
             cutoff_for_querying_games = datetime.now() + time_delta
             teams_to_update = session.query(Football_Teams).filter_by(updated_this_week=False).all()
+            print(f'{teams_to_update=}')
+            for team in teams_to_update:
+                print(team.team)
             if len(teams_to_update) > 0:
                 get_scores()
                 print(" ")
@@ -563,7 +571,7 @@ if run_programs:
             i += 1
 
 # ----------------- SANDBOX -------------------
-get_waiver_info = False
+get_waiver_info = True
 edit_user_info = False
 add_waiver_info = False
 reset_waivers = False
@@ -594,10 +602,11 @@ if edit_user_info:
 
 # Get waiver info
 if get_waiver_info:
-    all_waivers = session.query(Waiver_Info).all()
+    all_waivers = session.query(Waiver_Info).order_by(Waiver_Info.league, Waiver_Info.faab_submitted.desc()).all()
     print(len(all_waivers))
     for waiver in all_waivers:
         print(f'in league {waiver.league}, {session.query(User).filter(User.id == waiver.user_id).first().name}, add {session.query(Football_Teams).filter(Football_Teams.id == waiver.team_to_add_id).first().team} for {session.query(Football_Teams).filter(Football_Teams.id == waiver.team_to_drop_id).first().team}, {waiver.faab_submitted}')
+    session.commit()
 
 # Add waiver info for someone
 if add_waiver_info:
@@ -658,7 +667,7 @@ if reset_all_users_scores:
             print(weekly_info.this_weeks_score)
             var = session.query(Player_weekly_info).filter(Player_weekly_info.id == weekly_info.id).first()
             print(var)
-            session.query(Player_weekly_info).filter(Player_weekly_info.id == weekly_info.id).update({"this_weeks_score": 0})
+            session.query(Player_weekly_info).filter(Player_weekly_info.id == weekly_info.id).update({"this_weeks_score": 0, "total_wins": 0})
         except AttributeError:
             pass
     session.commit()
@@ -683,6 +692,10 @@ if reset_all_users_scores:
 #     print(f"team_id: {every_team.id}")
 #     print(f"team_conference: {every_team.conference}")
 
+# # Set a team's score
+# team_to_update = session.query(Football_Teams).filter_by(team="Michigan State").update({"current_score": 1.0})
+# session.commit()
+
 # # Reset everyones teams
 # all_users = session.query(Player_weekly_info).all()
 # for user in all_users:
@@ -699,27 +712,27 @@ if reset_all_users_scores:
 # league_members = session.query(League_members_update1).filter(League_members_update1.league_id == league_id)
 # league_member_ids = [member.member for member in league_members]
 
-def round_robin_schedule(num_people):
-    participants = sorted(league_member_ids, key=lambda x: random.random())
-    schedule = []
-    if num_people % 2 != 0:
-        participants.append("Bye")  # Add a "Bye" week
-        num_people += 1
-
-    for round in range(num_people - 1):
-        round_matchups = []
-        for i in range(num_people // 2):
-            p1 = participants[i]
-            p2 = participants[num_people - 1 - i]
-            if "Bye" in (p1, p2):
-                bye_team = p1 if p1 != "Bye" else p2
-                round_matchups.append((bye_team, "Bye"))
-            else:
-                round_matchups.append((p1, p2))
-        schedule.append(round_matchups)
-        participants.insert(1, participants.pop())  # Rotate participants except the first one
-
-    return schedule
+# def round_robin_schedule(num_people):
+#     participants = sorted(league_member_ids, key=lambda x: random.random())
+#     schedule = []
+#     if num_people % 2 != 0:
+#         participants.append("Bye")  # Add a "Bye" week
+#         num_people += 1
+#
+#     for round in range(num_people - 1):
+#         round_matchups = []
+#         for i in range(num_people // 2):
+#             p1 = participants[i]
+#             p2 = participants[num_people - 1 - i]
+#             if "Bye" in (p1, p2):
+#                 bye_team = p1 if p1 != "Bye" else p2
+#                 round_matchups.append((bye_team, "Bye"))
+#             else:
+#                 round_matchups.append((p1, p2))
+#         schedule.append(round_matchups)
+#         participants.insert(1, participants.pop())  # Rotate participants except the first one
+#
+#     return schedule
 
 
 def extend_schedule(schedule, num_weeks):
@@ -776,12 +789,12 @@ def commit_schedule(schedule, league_id):
 #     session.query(Football_Teams).filter(Football_Teams.id == every_team.id).update(
 #         {"current_score": 0, "week0_score": 0, "week1_score": 0, "week2_score": 0, "week3_score": 0, "week4_score": 0,
 #          "week5_score": 0, "week6_score": 0, "week7_score": 0, "week8_score": 0, "week9_score": 0, "week10_score": 0,
-#          "week11_score": 0, "week12_score": 0, "week13_score": 0, "week14_score": 0, "week15_score": 0})
+#          "week11_score": 0, "week12_score": 0, "week13_score": 0, "week14_score": 0, "week15_score": 0, "previous_opponent": "", "previous_result": "", "updated_this_week": False})
 # session.commit()
 
 # # Put someone into a league
-# league_id = 57
-# member_id = 31
+# league_id = 128
+# member_id = 65
 # league = session.query(League).filter_by(id=league_id).first()
 # league_member = League_members_update1(league_id=league_id, member=member_id)
 # member_name = session.query(User).filter_by(id=member_id).first().name
@@ -808,4 +821,8 @@ def commit_schedule(schedule, league_id):
 #     print(f'{user_name} and {user_id} in league {league} has {wins} wins')
 
 # session.query(Player_weekly_info).filter(Player_weekly_info.id == 85).update({"total_wins": 4})
+# session.commit()
+
+# Unlock someone's account
+# session.query(User).filter(User.id == 121).update({"locked_account": False})
 # session.commit()
