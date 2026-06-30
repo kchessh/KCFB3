@@ -9,14 +9,14 @@ from wtforms import StringField, SubmitField, PasswordField, BooleanField, Valid
 from wtforms.validators import DataRequired, EqualTo, Length, InputRequired
 # from flask_bootstrap import Bootstrap
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.test import create_environ
+# from werkzeug.test import create_environ
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
-from sqlalchemy import select, delete, update, inspect
+# from sqlalchemy import select, delete, update, inspect
 from flask_migrate import Migrate
 import time
 import random
-import MySQLdb
+# import MySQLdb
 import plotly
 import plotly.express as px
 import json
