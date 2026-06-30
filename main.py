@@ -7,7 +7,7 @@ import my_functions
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, EmailField, IntegerField, \
     SelectField
 from wtforms.validators import DataRequired, EqualTo, Length, InputRequired
-from flask_bootstrap import Bootstrap
+# from flask_bootstrap import Bootstrap
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.test import create_environ
 from flask_sqlalchemy import SQLAlchemy
@@ -39,7 +39,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://urpkh4m7l378b:p0ca7da822b3
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, compare_type=True)
-Bootstrap(app)
+# Bootstrap(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
