@@ -56,8 +56,10 @@
         }
 
 
+        const teamColors = {{ wins_dict | tojson }}
         // Build the traces for the expected-wins chart...
         function buildExpectedTrace(selectedTeam, teamInfo, years, wins, actualWins) {
+            const primaryColor = teamColors[selectedTeam]["primary color"];
             return [
                 {
                     x: years,
@@ -65,7 +67,7 @@
                     type: 'scatter',
                     mode: 'lines+markers',
                     name: 'Expected Wins',
-                    line: { color: '#1f77b4', dash: 'dot' },
+                    line: { color: '#000000', dash: 'dot' },
                     hovertemplate: 'Year: %{x}<br>Expected Wins: %{y:.1f}<extra></extra>'
                 },
                 {
@@ -74,7 +76,7 @@
                     type: 'scatter',
                     mode: 'lines+markers',
                     name: 'Actual Wins',
-                    line: { color: '#ff7f0e' },
+                    line: { color: primaryColor },
                     hovertemplate: 'Year: %{x}<br>Actual Wins: %{y:.1f}<extra></extra>'
                 }
             ];
@@ -84,12 +86,13 @@
         // Build the traces for the difference chart
         function buildDiffTrace(selectedTeam, teamInfo, years, actualWins, expectedWins) {
             const diffs = actualWins.map((a, i) => parseFloat(a) - parseFloat(expectedWins[i]));
+            const primaryColor = teamColors[selectedTeam]["primary color"];
             return [{
                 x: years,
                 y: diffs,
                 type: 'bar',
                 name: selectedTeam,
-                marker: { color: '#ff7f0e' },
+                marker: { color: primaryColor },
                 hovertemplate: 'Year: %{x}<br>Actual - Expected: %{y:.1f}<extra></extra>',
                 text: diffs.map(d => d.toFixed(1)),
                 textposition: 'inside',
