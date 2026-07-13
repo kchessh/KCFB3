@@ -252,7 +252,7 @@ class DraftRoom(db.Model):
 class DraftNomination(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     draft_room_id = db.Column(db.Integer, db.ForeignKey('draft_room.id'))
-    nominated_team_id = db.Column(db.Integer, db.ForeignKey('Football_teams.id'))
+    nominated_team_id = db.Column(db.Integer, db.ForeignKey('Football_Teams.id'))
     nominated_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     current_bid = db.Column(db.Integer, default=1)
     current_winner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
