@@ -13,6 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 from sqlalchemy import select, delete, update, inspect
 from flask_migrate import Migrate
+from sqlalchemy.orm import Session
 import time
 import random
 import MySQLdb
@@ -147,7 +148,7 @@ class Player_weekly_info(db.Model):
 
 
 class Football_Teams(db.Model):
-    __tablename__ = 'Football_Teams' #explicitly tell SQLAlchemy that the table name is Football_Teams
+    # __tablename__ = 'Football_Teams' #explicitly tell SQLAlchemy that the table name is Football_Teams
     id = db.Column(db.Integer, primary_key=True)
     team = db.Column(db.String(100), nullable=True)
     updated_this_week = db.Column(db.Boolean, default=False)
@@ -709,6 +710,12 @@ def league_dashboard(league_id):
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                            if member.league_id == league_id]
     week, postseason = my_functions.determine_week_number()
+    # all_teams = football_teams.query.all()
+    # print(f'{all_teams=}')
+    # for team in all_teams:
+    #     print(team.id)
+    #     print(team.team)
+    #     print(team.conference)
 
     # Gets all teams that the user can't pickup due to being owned by the user or another user
     ineligible_teams = []
@@ -743,7 +750,7 @@ def league_dashboard(league_id):
         user_teams = []
 
     # Pass in dict where team is the key and values are a list made for the standings table (points, conference, next opponent, previous opponent)
-    time_correction_delta = datetime.timedelta(hours=6)
+    time_correction_delta = timedelta(hours=6)
     all_teams = Football_Teams.query.order_by(Football_Teams.id)
     eligible_teams_dict = {}
     user_teams_dict = {}
