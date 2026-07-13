@@ -381,12 +381,14 @@ def page_not_found(e):
 def home():
     return render_template("index.html")
 
+
 def redirect_dest(fallback):
     dest_url = request.args.get('next')
     print(dest_url)
     if not dest_url:
         dest_url = url_for(fallback)
     return redirect(dest_url)
+
 
 @login_manager.unauthorized_handler
 def handle_needs_login():
