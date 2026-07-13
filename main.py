@@ -1,15 +1,14 @@
-from flask import Flask, render_template, request, url_for, redirect, flash, send_from_directory
+from flask import Flask, render_template, request, url_for, redirect, flash, send_from_directory, Blueprint, session
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_wtf import FlaskForm
 import pandas
-import datetime
-from datetime import date
+from datetime import datetime, timedelta
 import my_functions
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, EmailField, IntegerField, \
     SelectField
 from wtforms.validators import DataRequired, EqualTo, Length, InputRequired
 from flask_bootstrap import Bootstrap
 from werkzeug.security import generate_password_hash, check_password_hash
-# from werkzeug.test import create_environ
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 from sqlalchemy import select, delete, update, inspect
@@ -21,9 +20,15 @@ import plotly
 import plotly.express as px
 import json
 import plotly.io as pio
+import threading
 
 test = True
 app = Flask(__name__)
+draft_bp = Blueprint('draft', __name__)
+socketio = SocketIO()  # Initialize in app factory
+
+# --- Timer Management ---
+nomination_timers = {}  # nomination_id: threading.Timer
 
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
 # Old SQLite DB
@@ -67,7 +72,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(100), nullable=False)
     name = db.Column(db.String(1000), nullable=False)
-    date_added = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+    date_added = db.Column(db.DateTime, default=datetime.utcnow())
     failed_login_attempts = db.Column(db.Integer, default=0)
     locked_account = db.Column(db.Boolean, default=False)
     league_manager = db.relationship('League', backref='manager', cascade="all, delete-orphan")
@@ -94,7 +99,7 @@ class User(db.Model, UserMixin):
 class League(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     league_name = db.Column(db.String(100), nullable=False)
-    date_created = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+    date_created = db.Column(db.DateTime, default=datetime.utcnow())
     league_manager = db.Column(db.Integer, db.ForeignKey('user.id'))
     league_id_for_list_of_leagues = db.relationship('List_of_leagues_update1', backref='league_id',
                                                     cascade="all, delete-orphan")
@@ -200,7 +205,7 @@ class Executed_Waivers_update1(db.Model):
     added_team = db.Column(db.Integer, nullable=False)
     dropped_team = db.Column(db.Integer, nullable=False)
     faab_used = db.Column(db.Integer, nullable=False)
-    date_and_time_added = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+    date_and_time_added = db.Column(db.DateTime, default=datetime.utcnow())
 
 
 class HistoryOfWaivers(db.Model):
@@ -211,7 +216,7 @@ class HistoryOfWaivers(db.Model):
     team_to_drop_id = db.Column(db.Integer, nullable=False)
     faab_submitted = db.Column(db.Integer, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
-    date_and_time_added = db.Column(db.DateTime, default=datetime.datetime.utcnow(), nullable=True)
+    date_and_time_added = db.Column(db.DateTime, default=datetime.utcnow(), nullable=True)
 
 
 class Matchup(db.Model):
@@ -229,6 +234,42 @@ class Analysis(db.Model):
     num_of_visits = db.Column(db.Integer)
     league = db.Column(db.Integer, nullable=True)
     endpoint = db.Column(db.String(100))
+
+
+class DraftRoom(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'))
+    status = db.Column(db.String(20), default='waiting')  # waiting, active, complete
+    created_at = db.Column(db.DateTime, default=datetime.utcnow())
+
+
+class DraftNomination(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    draft_room_id = db.Column(db.Integer, db.ForeignKey('draft_room.id'))
+    nominated_team_id = db.Column(db.Integer, db.ForeignKey('team.id'))
+    nominated_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    current_bid = db.Column(db.Integer, default=1)
+    current_winner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    status = db.Column(db.String(20), default='active')  # active, sold, cancelled
+    timer_end = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow())
+
+
+class DraftBid(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nomination_id = db.Column(db.Integer, db.ForeignKey('draft_nomination.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    amount = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow())
+
+
+class DraftParticipant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    draft_room_id = db.Column(db.Integer, db.ForeignKey('draft_room.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    budget_remaining = db.Column(db.Integer, default=1000)
+    is_commissioner = db.Column(db.Boolean, default=False)
+    is_connected = db.Column(db.Boolean, default=False)
 
 
 class UserForm(FlaskForm):
@@ -274,12 +315,17 @@ class DropComplete(FlaskForm):
     faab = IntegerField("Faab", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
+
 class AlreadyUpdatedDropComplete(FlaskForm):
     submit = SubmitField("Submit")
+
 
 class UpdateFaab(FlaskForm):
     faab = IntegerField("Faab", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
+
+
 
 
 with app.app_context():
@@ -705,7 +751,7 @@ def league_dashboard(league_id):
         if team.team not in ineligible_teams:
             if team.date_and_time_of_game is not None:
                 eligible_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                                       team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"),
+                                       team.previous_result, datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"),
                                                   team.chance_to_win, upcoming_opponent_ranking, team.ap_ranking]
             else:
                 eligible_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
@@ -713,15 +759,15 @@ def league_dashboard(league_id):
         if team.team in user_teams:
             if team.date_and_time_of_game is not None:
                 user_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-                               team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"),
+                               team.previous_result, datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p"),
                                               team.chance_to_win, upcoming_opponent_ranking, team.ap_ranking]
             else:
                 user_teams_dict[team.team] = [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
                                               team.previous_result, "no game", team.chance_to_win, upcoming_opponent_ranking, team.ap_ranking]
     # eligible_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-    #                                    team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team not in ineligible_teams}
+    #                                    team.previous_result, datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team not in ineligible_teams}
     # user_teams_dict = {team.team: [team.current_score, team.conference, team.upcoming_opponent, team.previous_opponent,
-    #                                team.previous_result, datetime.datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team in user_teams}
+    #                                team.previous_result, datetime.strftime(team.date_and_time_of_game - time_correction_delta, "%a %I:%M%p")] for team in all_teams if team.team in user_teams}
     try:
         eligible_teams_dict_sorted = dict(sorted(eligible_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
         user_teams_dict_sorted = dict(sorted(user_teams_dict.items(), key=lambda kv: kv[1], reverse=True))
@@ -835,7 +881,7 @@ def add_team(league_id):
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
                     leagues]
-    now = datetime.datetime.now()
+    now = datetime.now()
 
     return render_template("add_team.html", league_members=league_members, league_id=league_id,
                            eligible_teams=eligible_teams, current_user_teams=current_user_teams,
@@ -878,7 +924,7 @@ def drop_team(league_id, team_id):
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
                     leagues]
     already_updated = League.query.filter_by(id=league_id).first().waivers_already_executed
-    now = datetime.datetime.now()
+    now = datetime.now()
     print(now)
     print(user_teams_dict_sorted)
     for team in user_teams_dict_sorted:
@@ -896,11 +942,11 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
     team_to_add = Football_Teams.query.filter_by(id=int(addteam_id)).first()
     team_to_drop = Football_Teams.query.filter_by(id=int(dropteam_id)).first()
     already_updated = League.query.filter_by(id=league_id).first().waivers_already_executed
-    now = datetime.datetime.utcnow()
+    now = datetime.utcnow()
     print(already_updated)
     print(team_to_add.date_and_time_of_game)
     print(team_to_drop.date_and_time_of_game)
-    print(datetime.datetime.utcnow() - datetime.timedelta(hours=6))
+    print(datetime.utcnow() - datetime.timedelta(hours=6))
     if already_updated and team_to_add.date_and_time_of_game > now and team_to_drop.date_and_time_of_game > now:
         print('not waivers')
         form = AlreadyUpdatedDropComplete()
@@ -967,7 +1013,7 @@ def confirm_drop(league_id, dropteam_id, addteam_id):
                                                      Player_weekly_info.league == league_id).update(
                 {str(winner_teams_dict[dropteam_id]): addteam_id})
             executed_waiver = Executed_Waivers_update1(user_id=current_user.id, league=league_id, added_team=team_to_add,
-                                                       dropped_team=team_to_drop, faab_used=0, date_and_time_added=datetime.datetime.now())
+                                                       dropped_team=team_to_drop, faab_used=0, date_and_time_added=datetime.now())
             db.session.add(executed_waiver)
             db.session.commit()
             return redirect(url_for('league_dashboard', league_id=league_id, leagues_list=leagues_list))
@@ -1853,6 +1899,198 @@ def expected_vs_actual_graphs():
 
     return render_template('expected_vs_actual_graphs.html', chart_json=chart_json, teams_json=teams_json, team_names=list(wins_dict.keys()), wins_dict=wins_dict)
 
+
+def end_nomination(nomination_id, room_id):
+    """Called when the timer runs out — finalizes the sale."""
+    nomination = DraftNomination.query.get(nomination_id)
+    if nomination and nomination.status == 'active':
+        nomination.status = 'sold'
+        db.session.commit()
+
+        winner = None
+        if nomination.current_winner_id:
+            # Deduct budget from winner
+            participant = DraftParticipant.query.filter_by(
+                draft_room_id=room_id,
+                user_id=nomination.current_winner_id
+            ).first()
+            if participant:
+                participant.budget_remaining -= nomination.current_bid
+                db.session.commit()
+            winner = nomination.current_winner_id
+
+        # Notify all users in the room
+        socketio.emit('nomination_sold', {
+            'nomination_id': nomination_id,
+            'team_id': nomination.nominated_team_id,
+            'winner_id': winner,
+            'final_price': nomination.current_bid
+        }, room=str(room_id))
+
+
+def start_timer(nomination_id, room_id, seconds=30):
+    """Start or reset the countdown timer."""
+    # Cancel existing timer if present
+    if nomination_id in nomination_timers:
+        nomination_timers[nomination_id].cancel()
+
+    timer = threading.Timer(seconds, end_nomination, args=[nomination_id, room_id])
+    timer.start()
+    nomination_timers[nomination_id] = timer
+
+    # Update the DB with the timer end time
+    nomination = DraftNomination.query.get(nomination_id)
+    nomination.timer_end = datetime.utcnow() + timedelta(seconds=seconds)
+    db.session.commit()
+
+    # Broadcast the new timer end to all clients
+    socketio.emit('timer_update', {
+        'nomination_id': nomination_id,
+        'timer_end': nomination.timer_end.isoformat()
+    }, room=str(room_id))
+
+
+# --- HTTP Routes for draft ---
+@draft_bp.route('/draft/<int:room_id>')
+def draft_room(room_id):
+    room = DraftRoom.query.get_or_404(room_id)
+    participant = DraftParticipant.query.filter_by(
+        draft_room_id=room_id,
+        user_id=session['user_id']
+    ).first_or_404()
+
+    active_nomination = DraftNomination.query.filter_by(
+        draft_room_id=room_id,
+        status='active'
+    ).first()
+
+    participants = DraftParticipant.query.filter_by(draft_room_id=room_id).all()
+
+    return render_template('draft/room.html',
+        room=room,
+        participant=participant,
+        active_nomination=active_nomination,
+        participants=participants
+    )
+
+# --- SocketIO Events ---
+@socketio.on('join_draft')
+def on_join(data):
+    room_id = data['room_id']
+    user_id = session.get('user_id')
+
+    participant = DraftParticipant.query.filter_by(
+        draft_room_id=room_id,
+        user_id=user_id
+    ).first()
+
+    if not participant:
+        emit('error', {'message': 'You are not a participant in this draft.'})
+        return
+
+    join_room(str(room_id))
+    participant.is_connected = True
+    db.session.commit()
+
+    emit('user_joined', {'user_id': user_id}, room=str(room_id))
+
+@socketio.on('nominate_team')
+def on_nominate(data):
+    room_id = data['room_id']
+    team_id = data['team_id']
+    starting_bid = data.get('starting_bid', 1)
+    user_id = session.get('user_id')
+
+    # Validate no active nomination exists
+    existing = DraftNomination.query.filter_by(
+        draft_room_id=room_id,
+        status='active'
+    ).first()
+    if existing:
+        emit('error', {'message': 'A nomination is already in progress.'})
+        return
+
+    # Create new nomination
+    nomination = DraftNomination(
+        draft_room_id=room_id,
+        nominated_team_id=team_id,
+        nominated_by_user_id=user_id,
+        current_bid=starting_bid,
+        current_winner_id=user_id,
+        status='active'
+    )
+    db.session.add(nomination)
+    db.session.commit()
+
+    start_timer(nomination.id, room_id, seconds=30)
+
+    emit('nomination_started', {
+        'nomination_id': nomination.id,
+        'team_id': team_id,
+        'nominated_by': user_id,
+        'current_bid': starting_bid,
+        'current_winner': user_id,
+        'timer_end': nomination.timer_end.isoformat()
+    }, room=str(room_id))
+
+@socketio.on('place_bid')
+def on_bid(data):
+    room_id = data['room_id']
+    nomination_id = data['nomination_id']
+    bid_amount = int(data['amount'])
+    user_id = session.get('user_id')
+
+    nomination = DraftNomination.query.get(nomination_id)
+    participant = DraftParticipant.query.filter_by(
+        draft_room_id=room_id,
+        user_id=user_id
+    ).first()
+
+    # --- Validation ---
+    if not nomination or nomination.status != 'active':
+        emit('error', {'message': 'No active nomination.'})
+        return
+    if bid_amount <= nomination.current_bid:
+        emit('error', {'message': f'Bid must be greater than {nomination.current_bid}.'})
+        return
+    if bid_amount > participant.budget_remaining:
+        emit('error', {'message': 'Insufficient budget.'})
+        return
+    if user_id == nomination.current_winner_id:
+        emit('error', {'message': 'You are already the highest bidder.'})
+        return
+
+    # Record the bid
+    bid = DraftBid(
+        nomination_id=nomination_id,
+        user_id=user_id,
+        amount=bid_amount
+    )
+    db.session.add(bid)
+
+    # Update nomination
+    nomination.current_bid = bid_amount
+    nomination.current_winner_id = user_id
+    db.session.commit()
+
+    # Reset timer on new bid
+    start_timer(nomination_id, room_id, seconds=15)
+
+    emit('bid_placed', {
+        'nomination_id': nomination_id,
+        'user_id': user_id,
+        'amount': bid_amount,
+        'current_winner': user_id
+    }, room=str(room_id))
+
+@socketio.on('disconnect')
+def on_disconnect():
+    user_id = session.get('user_id')
+    if user_id:
+        participant = DraftParticipant.query.filter_by(user_id=user_id).first()
+        if participant:
+            participant.is_connected = False
+            db.session.commit()
 
 """
 This route shows the dashboard from any given week that the person wants to see. It's the exact same thing as the main
