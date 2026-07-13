@@ -147,6 +147,7 @@ class Player_weekly_info(db.Model):
 
 
 class Football_Teams(db.Model):
+    __tablename__ = 'Football_Teams' #explicitly tell SQLAlchemy that the table name is Football_Teams
     id = db.Column(db.Integer, primary_key=True)
     team = db.Column(db.String(100), nullable=True)
     updated_this_week = db.Column(db.Boolean, default=False)
@@ -193,6 +194,7 @@ class Football_Teams(db.Model):
     week13_opponent = db.Column(db.String(50), nullable=True, default="")
     week14_opponent = db.Column(db.String(50), nullable=True, default="")
     week15_opponent = db.Column(db.String(50), nullable=True, default="")
+
 
 class Waiver_Info(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -252,7 +254,7 @@ class DraftRoom(db.Model):
 class DraftNomination(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     draft_room_id = db.Column(db.Integer, db.ForeignKey('draft_room.id'))
-    nominated_team_id = db.Column(db.Integer, db.ForeignKey('football_teams.id'))
+    nominated_team_id = db.Column(db.Integer, db.ForeignKey('Football_Teams.id'))
     nominated_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     current_bid = db.Column(db.Integer, default=1)
     current_winner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
