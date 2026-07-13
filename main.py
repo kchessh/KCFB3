@@ -25,7 +25,12 @@ import threading
 test = True
 app = Flask(__name__)
 draft_bp = Blueprint('draft', __name__)
-socketio = SocketIO()  # Initialize in app factory
+socketio = SocketIO(
+    app,
+    async_mode='gevent',          # Change from 'eventlet' to 'gevent'
+    message_queue=os.environ.get('REDIS_URL'),
+    cors_allowed_origins='*'
+)
 
 # --- Timer Management ---
 nomination_timers = {}  # nomination_id: threading.Timer
