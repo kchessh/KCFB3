@@ -1,0 +1,71 @@
+<!-- templates/draft/room.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auction Draft</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/draft.css') }}">
+</head>
+<body>
+    <div id="draft-container">
+
+        <!-- Active Nomination Panel -->
+        <div id="nomination-panel">
+            <h2>🏆 Current Nomination</h2>
+            <div id="current-team">Waiting for nomination...</div>
+            <div id="current-bid">-</div>
+            <div id="current-winner">-</div>
+            <div id="timer-display">--</div>
+
+            <!-- Bid Controls -->
+            <div id="bid-controls" style="display:none;">
+                <input type="number" id="bid-input" placeholder="Enter bid amount" min="1">
+                <button onclick="placeBid()">Place Bid 💰</button>
+                <!-- Quick bid buttons -->
+                <button onclick="quickBid(1)">+1</button>
+                <button onclick="quickBid(5)">+5</button>
+                <button onclick="quickBid(10)">+10</button>
+            </div>
+        </div>
+
+        <!-- Nomination Controls (for your turn) -->
+        <div id="nominate-panel">
+            <h2>Nominate a Team</h2>
+            <select id="team-select">
+                {% for team in available_teams %}
+                <option value="{{ team.id }}">{{ team.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="number" id="starting-bid" value="1" min="1">
+            <button onclick="nominateTeam()">Nominate</button>
+        </div>
+
+        <!-- Participants / Budget Tracker -->
+        <div id="participants-panel">
+            <h2>Participants</h2>
+            <ul id="participants-list">
+                {% for p in participants %}
+                <li id="user-{{ p.user_id }}" class="participant {% if p.is_connected %}connected{% endif %}">
+                    {{ p.user.username }} — ${{ p.budget_remaining }} remaining
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Bid History Log -->
+        <div id="bid-log">
+            <h2>Bid Log</h2>
+            <ul id="log-list"></ul>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/draft.js') }}"></script>
+    <script>
+        // Pass Jinja variables to JS
+        const ROOM_ID = {{ room.id }};
+        const USER_ID = {{ session['user_id'] }};
+        const CURRENT_NOMINATION = {{ active_nomination.id if active_nomination else 'null' }};
+    </script>
+</body>
+</html>
