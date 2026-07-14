@@ -1982,6 +1982,7 @@ def MasterDashboard():
     return render_template("MasterDashboard.html", all_members=all_members, all_leagues=all_leagues,
                            all_league_members=all_league_members, leagues_list=leagues_list)
 	
+app.register_blueprint(draft_bp)
 
 if __name__ == "__main__":
     app.run(debug=True)
