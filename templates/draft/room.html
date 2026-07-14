@@ -11,10 +11,28 @@
 
         <!-- Active Nomination Panel -->
         <div id="nomination-panel">
-            <h2>🏆 Current Nomination</h2>
-            <div id="current-team">Waiting for nomination...</div>
-            <div id="current-bid">-</div>
-            <div id="current-winner">-</div>
+            <h2>Current Nomination</h2>
+            <div id="current-team">
+              {% if active_nomination %}
+                {{ active_nomination.nominated_team.name }}  {# adjust attribute to match your Team model #}
+              {% else %}
+                  Waiting for nomination...
+              {% endif %}
+            </div>
+            <div id="current-bid">
+              {% if active_nomination %}
+                ${{ active_nomination.current_bid }}
+              {% else %}
+                  -
+              {% endif %}
+            </div>
+            <div id="current-winner">
+              {% if active_nomination %}
+                {{ active_nomination.current_winner_id }}  {# replace with username if you have the relationship #}
+              {% else %}
+                  -
+              {% endif %}
+            </div>
             <div id="timer-display">--</div>
 
             <!-- Bid Controls -->

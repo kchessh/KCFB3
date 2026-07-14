@@ -5,26 +5,26 @@ let currentNominationId = CURRENT_NOMINATION;
 
 // ─── Connection ───────────────────────────────────────────────
 socket.on('connect', () => {
-    socket.emit('join_draft', { room_id: ROOM_ID });
+    socket.emit('join_draft', { league_id: ROOM_ID });
     console.log('Connected to draft room:', ROOM_ID);
 });
 
 // ─── Incoming Events ──────────────────────────────────────────
 socket.on('nomination_started', (data) => {
     currentNominationId = data.nomination_id;
-    document.getElementById('current-team').textContent = `Team ID: ${data.team_id}`;
+    document.getElementById('current-team').textContent = data.team_name;
     document.getElementById('current-bid').textContent = `Current Bid: $${data.current_bid}`;
-    document.getElementById('current-winner').textContent = `Leader: User ${data.current_winner}`;
+    document.getElementById('current-winner').textContent = `Leader: ${data.current_winner_name}`;
     document.getElementById('bid-controls').style.display = 'block';
 
-    addLogEntry(`🏷️ Team ${data.team_id} nominated! Starting at $${data.current_bid}`);
+    addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`);
     startCountdown(data.timer_end);
 });
 
 socket.on('bid_placed', (data) => {
     document.getElementById('current-bid').textContent = `Current Bid: $${data.amount}`;
-    document.getElementById('current-winner').textContent = `Leader: User ${data.user_id}`;
-    addLogEntry(`💰 User ${data.user_id} bid $${data.amount}`);
+    document.getElementById('current-winner').textContent = `Leader: ${data.username}`;
+    addLogEntry(`💰 ${data.username} bid $${data.amount}`);
 });
 
 socket.on('timer_update', (data) => {
@@ -37,13 +37,16 @@ socket.on('nomination_sold', (data) => {
     currentNominationId = null;
     clearInterval(countdownInterval);
     document.getElementById('timer-display').textContent = 'SOLD!';
+    document.getElementById('timer-display').style.color = 'inherit'; //reset color on sold
     document.getElementById('bid-controls').style.display = 'none';
 
     const msg = data.winner_id
-        ? `✅ Team ${data.team_id} sold to User ${data.winner_id} for $${data.final_price}!`
+        ? `✅ ${data.team_name} sold to ${data.winner_name} for $${data.final_price}!`
         : `❌ No bids — nomination cancelled.`;
 
     document.getElementById('current-team').textContent = msg;
+    document.getElementById('current-bid').textContent = '-';
+    document.getElementById('current-winner').textContent = '-';
     addLogEntry(msg);
 
     // Update winner's displayed budget
@@ -118,7 +121,7 @@ function updateBudgetDisplay(userId, amountSpent) {
     if (el) {
         const match = el.textContent.match(/\$(\d+)/);
         if (match) {
-            const newBudget = parseInt(match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>) - amountSpent;
+            const newBudget = parseInt(match[1]) - amountSpent;
             el.textContent = el.textContent.replace(/\$\d+/, `$${newBudget}`);
         }
     }
