@@ -259,15 +259,15 @@ class DraftNomination(db.Model):
     current_winner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     status = db.Column(db.String(20), default='active')  # active, sold, cancelled
     timer_end = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow())
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class DraftBid(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    nomination_id = db.Column(db.Integer, db.ForeignKey('draft_nomination.id'))
+    nomination_id = db.Column(db.Integer, db.ForeignKey('draft_nomination.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     amount = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow())
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class DraftParticipant(db.Model):
@@ -1817,6 +1817,7 @@ def start_timer(nomination_id, room_id, seconds=30):
 
 # --- HTTP Routes for draft ---
 @draft_bp.route('/draft/<int:league_id>')
+@login_required
 def draft_room(league_id):
     # Get the existing draft room or create one if it doesn't exist
     room = DraftRoom.query.filter_by(league_id=league_id).first()
@@ -1826,7 +1827,7 @@ def draft_room(league_id):
         db.session.add(room)
         db.session.commit()
 
-    participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=session['user_id']).first_or_404()
+    participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=current_user.id).first_or_404()
 
     active_nomination = DraftNomination.query.filter_by(draft_room_id=room.id, status='active').first()
 
@@ -1837,13 +1838,10 @@ def draft_room(league_id):
 # --- SocketIO Events ---
 @socketio.on('join_draft')
 def on_join(data):
-    room_id = data['room_id']
-    user_id = session.get('user_id')
+    room_id = data['league_id']
+    user_id = current_user.id
 
-    participant = DraftParticipant.query.filter_by(
-        draft_room_id=room_id,
-        user_id=user_id
-    ).first()
+    participant = DraftParticipant.query.filter_by(draft_room_id=room_id,user_id=user_id).first()
 
     if not participant:
         emit('error', {'message': 'You are not a participant in this draft.'})
@@ -1857,55 +1855,36 @@ def on_join(data):
 
 @socketio.on('nominate_team')
 def on_nominate(data):
-    room_id = data['room_id']
+    room_id = data['league_id']
     team_id = data['team_id']
     starting_bid = data.get('starting_bid', 1)
-    user_id = session.get('user_id')
+    user_id = current_user.id
 
     # Validate no active nomination exists
-    existing = DraftNomination.query.filter_by(
-        draft_room_id=room_id,
-        status='active'
-    ).first()
+    existing = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
     if existing:
         emit('error', {'message': 'A nomination is already in progress.'})
         return
 
     # Create new nomination
-    nomination = DraftNomination(
-        draft_room_id=room_id,
-        nominated_team_id=team_id,
-        nominated_by_user_id=user_id,
-        current_bid=starting_bid,
-        current_winner_id=user_id,
-        status='active'
-    )
+    nomination = DraftNomination(draft_room_id=room_id, nominated_team_id=team_id, nominated_by_user_id=user_id, current_bid=starting_bid, current_winner_id=user_id, status='active')
     db.session.add(nomination)
     db.session.commit()
 
     start_timer(nomination.id, room_id, seconds=30)
 
-    emit('nomination_started', {
-        'nomination_id': nomination.id,
-        'team_id': team_id,
-        'nominated_by': user_id,
-        'current_bid': starting_bid,
-        'current_winner': user_id,
-        'timer_end': nomination.timer_end.isoformat()
-    }, room=str(room_id))
+    emit('nomination_started', {'nomination_id': nomination.id, 'team_id': team_id, 'nominated_by': user_id, 'current_bid': starting_bid, 'current_winner': user_id,
+                                'timer_end': nomination.timer_end.isoformat()}, room=str(room_id))
 
 @socketio.on('place_bid')
 def on_bid(data):
     room_id = data['room_id']
     nomination_id = data['nomination_id']
     bid_amount = int(data['amount'])
-    user_id = session.get('user_id')
+    user_id = current_user.id
 
     nomination = DraftNomination.query.get(nomination_id)
-    participant = DraftParticipant.query.filter_by(
-        draft_room_id=room_id,
-        user_id=user_id
-    ).first()
+    participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()
 
     # --- Validation ---
     if not nomination or nomination.status != 'active':
@@ -1922,11 +1901,7 @@ def on_bid(data):
         return
 
     # Record the bid
-    bid = DraftBid(
-        nomination_id=nomination_id,
-        user_id=user_id,
-        amount=bid_amount
-    )
+    bid = DraftBid(nomination_id=nomination_id, user_id=user_id, amount=bid_amount)
     db.session.add(bid)
 
     # Update nomination
@@ -1937,16 +1912,11 @@ def on_bid(data):
     # Reset timer on new bid
     start_timer(nomination_id, room_id, seconds=15)
 
-    emit('bid_placed', {
-        'nomination_id': nomination_id,
-        'user_id': user_id,
-        'amount': bid_amount,
-        'current_winner': user_id
-    }, room=str(room_id))
+    emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id}, room=str(room_id))
 
 @socketio.on('disconnect')
 def on_disconnect():
-    user_id = session.get('user_id')
+    user_id = current_user.id
     if user_id:
         participant = DraftParticipant.query.filter_by(user_id=user_id).first()
         if participant:

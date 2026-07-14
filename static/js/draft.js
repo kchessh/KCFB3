@@ -64,7 +64,7 @@ function nominateTeam() {
     const teamId = document.getElementById('team-select').value;
     const startingBid = parseInt(document.getElementById('starting-bid').value);
     socket.emit('nominate_team', {
-        room_id: ROOM_ID,
+        league_id: ROOM_ID,
         team_id: teamId,
         starting_bid: startingBid
     });
@@ -74,7 +74,7 @@ function placeBid() {
     const amount = parseInt(document.getElementById('bid-input').value);
     if (!amount || amount < 1) return alert('Enter a valid bid.');
     socket.emit('place_bid', {
-        room_id: ROOM_ID,
+        league_id: ROOM_ID,
         nomination_id: currentNominationId,
         amount: amount
     });

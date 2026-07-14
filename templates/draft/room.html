@@ -63,8 +63,8 @@
     <script src="{{ url_for('static', filename='js/draft.js') }}"></script>
     <script>
         // Pass Jinja variables to JS
-        const ROOM_ID = {{ room.id }};
-        const USER_ID = {{ session['user_id'] }};
+        const ROOM_ID = {{ room.league_id }};
+        const USER_ID = {{ current_user.id }};
         const CURRENT_NOMINATION = {{ active_nomination.id if active_nomination else 'null' }};
     </script>
 </body>
