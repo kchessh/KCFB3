@@ -246,9 +246,8 @@ class Analysis(db.Model):
 
 class DraftRoom(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    league_id = db.Column(db.Integer, db.ForeignKey('league.id'))
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False, unique=True)
     status = db.Column(db.String(20), default='waiting')  # waiting, active, complete
-    created_at = db.Column(db.DateTime, default=datetime.utcnow())
 
 
 class DraftNomination(db.Model):
@@ -1817,27 +1816,23 @@ def start_timer(nomination_id, room_id, seconds=30):
 
 
 # --- HTTP Routes for draft ---
-@draft_bp.route('/draft/<int:room_id>')
-def draft_room(room_id):
-    room = DraftRoom.query.get_or_404(room_id)
-    participant = DraftParticipant.query.filter_by(
-        draft_room_id=room_id,
-        user_id=session['user_id']
-    ).first_or_404()
+@draft_bp.route('/draft/<int:league_id>')
+def draft_room(league_id):
+    # Get the existing draft room or create one if it doesn't exist
+    room = DraftRoom.query.filter_by(league_id=league_id).first()
 
-    active_nomination = DraftNomination.query.filter_by(
-        draft_room_id=room_id,
-        status='active'
-    ).first()
+    if room is None:
+        room = DraftRoom(league_id=league_id, status='waiting')
+        db.session.add(room)
+        db.session.commit()
 
-    participants = DraftParticipant.query.filter_by(draft_room_id=room_id).all()
+    participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=session['user_id']).first_or_404()
 
-    return render_template('draft/room.html',
-        room=room,
-        participant=participant,
-        active_nomination=active_nomination,
-        participants=participants
-    )
+    active_nomination = DraftNomination.query.filter_by(draft_room_id=room.id, status='active').first()
+
+    participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
+
+    return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants)
 
 # --- SocketIO Events ---
 @socketio.on('join_draft')
