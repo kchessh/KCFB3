@@ -1821,14 +1821,17 @@ def start_timer(nomination_id, room_id, seconds=30):
 def draft_room(league_id):
     # Get the existing draft room or create one if it doesn't exist
     room = DraftRoom.query.filter_by(league_id=league_id).first()
+    print('going to draft room')
 
     if room is None:
+        print('room is none')
         room = DraftRoom(league_id=league_id, status='waiting')
         db.session.add(room)
         db.session.commit()
 
     participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=current_user.id).first_or_404()
     if participant is None:
+        print('participant is none')
         participant = DraftParticipant(draft_room_id=room.id, user_id=current_user.id)
         db.session.add(participant)
         db.session.commit()
