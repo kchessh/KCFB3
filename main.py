@@ -277,6 +277,7 @@ class DraftParticipant(db.Model):
     budget_remaining = db.Column(db.Integer, default=1000)
     is_commissioner = db.Column(db.Boolean, default=False)
     is_connected = db.Column(db.Boolean, default=False)
+    user = db.relationship('User', backref='draft_participants')
 
 
 class UserForm(FlaskForm):
