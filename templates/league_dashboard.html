@@ -41,8 +41,8 @@
       {% endfor %}
     </p>
     <p class="card-text">
+      <a href="{{ url_for('/draft/room', room_id=league_id) }}" class="btn btn-secondary btn-small">Join Draft</a>
       {% if current_user.id == league_manager %}
-        <a href="{{ url_for('schedule_draft', league_id=league_id) }}" class="btn btn-secondary btn-small">Schedule Draft</a>
         <a href="{{ url_for('league_setup', league_id=league_id) }}" class="btn btn-secondary btn-small">League Setup</a>
       {% endif %}
       <h5 class="card-title">Info</h5>

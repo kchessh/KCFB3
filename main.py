@@ -47,7 +47,6 @@ app.config['SECRET_KEY'] = 'secret-key-goes-here'
 #     app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
 # Heroku SQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://urpkh4m7l378b:p0ca7da822b3823177e9879b78d7561c458d2185364439e2a6b51828147a8ee3c@cd5vlri6nnqe17.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1vrtkcrdmm43p'
-
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, compare_type=True)
@@ -710,12 +709,6 @@ def league_dashboard(league_id):
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                            if member.league_id == league_id]
     week, postseason = my_functions.determine_week_number()
-    # all_teams = football_teams.query.all()
-    # print(f'{all_teams=}')
-    # for team in all_teams:
-    #     print(team.id)
-    #     print(team.team)
-    #     print(team.conference)
 
     # Gets all teams that the user can't pickup due to being owned by the user or another user
     ineligible_teams = []
@@ -1447,78 +1440,6 @@ def graphtest():
         'Expenses': [80, 150, 120, 200]
     }
 
-    # old dictionary before AI wrote the new one
-    # wins_dict = {
-    #     'Clemson': {'conference': 'ACC', 'expected wins': {'2021': 11.5, '2022': 10.5, '2023': 10, '2024': 9.5, '2025': 9.5}},
-    #     'Alabama': {'conference': 'SEC', 'expected wins': {'2021': 11.5, '2022': 10.5, '2023': 10.5, '2024': 9.5, '2025': 9.5}},
-    #     'Ohio State': {'conference': 'BIG 10', 'expected wins': {'2021': 11, '2022': 10.5, '2023': 10.5, '2024': 10.5, '2025': 10.5}},
-    #     'Oklahoma': {'conference': 'SEC', 'expected wins': {'2021': 11, '2022': 9.5, '2023': 9.5, '2024': 7.5, '2025': 6.5}},
-    #     'Georgia': {'conference': 'SEC', 'expected wins': {'2021': 10.5, '2022': 10.5, '2023': 11.5, '2024': 10.5, '2025': 9.5}},
-    #     'North Carolina': {'conference': 'ACC', 'expected wins': {'2021': 10, '2022': 7.5, '2023': 8, '2024': 7.5, '2025': 7.5}},
-    #     'Cincinnati': {'conference': 'BIG 12', 'expected wins': {'2021': 10, '2022': 9, '2023': 5.5, '2024': 5, '2025': 6.5}},
-    #     'Miami': {'conference': 'ACC', 'expected wins': {'2021': 9.5, '2022': 8.5, '2023': 7.5, '2024': 9, '2025': 9.5}},
-    #     'Texas A&M': {'conference': 'SEC', 'expected wins': {'2021': 9.5, '2022': 8.5, '2023': 8, '2024': 8.5, '2025': 8.5}},
-    #     'Iowa State': {'conference': 'BIG 12', 'expected wins': {'2021': 9.5, '2022': 6.5, '2023': 5.5, '2024': 7.5, '2025': 7.5}},
-    #     'Wisconsin': {'conference': 'BIG 10', 'expected wins': {'2021': 9.5, '2022': 8.5, '2023': 8.5, '2024': 7, '2025': 5.5}},
-    #     'UCF': {'conference': 'BIG 12', 'expected wins': {'2021': 9.5, '2022': 8.5, '2023': 6.5, '2024': 7.5, '2025': 5.5}},
-    #     'Washington': {'conference': 'BIG 10', 'expected wins': {'2021': 9, '2022': 7.5, '2023': 9.5, '2024': 6.5, '2025': 7.5}},
-    #     'Penn State': {'conference': 'BIG 10', 'expected wins': {'2021': 9, '2022': 8.5, '2023': 9.5, '2024': 10.5, '2025': 10.5}},
-    #     'Florida': {'conference': 'SEC', 'expected wins': {'2021': 9, '2022': 7, '2023': 5.5, '2024': 4.5, '2025': 7.5}},
-    #     'Notre Dame': {'conference': 'IND', 'expected wins': {'2021': 9, '2022': 8.5, '2023': 8.5, '2024': 10, '2025': 10.5}},
-    #     'Arizona State': {'conference': 'BIG 12', 'expected wins': {'2021': 9, '2022': 6.5, '2023': 5, '2024': 4.5, '2025': 8.5}},
-    #     'Oregon': {'conference': 'BIG 10', 'expected wins': {'2021': 9, '2022': 8.5, '2023': 9.5, '2024': 10.5, '2025': 10.5}},
-    #     'USC': {'conference': 'BIG 10', 'expected wins': {'2021': 8.5, '2022': 9.5, '2023': 10, '2024': 7, '2025': 7.5}},
-    #     'Utah': {'conference': 'BIG 12', 'expected wins': {'2021': 8.5, '2022': 9, '2023': 8.5, '2024': 9.5, '2025': 7.5}},
-    #     'LSU': {'conference': 'SEC', 'expected wins': {'2021': 8.5, '2022': 7, '2023': 9.5, '2024': 9, '2025': 8.5}},
-    #     'Iowa': {'conference': 'BIG 12', 'expected wins': {'2021': 8.5, '2022': 7.5, '2023': 8, '2024': 8, '2025': 7.5}},
-    #     'Texas': {'conference': 'SEC', 'expected wins': {'2021': 8, '2022': 8, '2023': 9.5, '2024': 10.5, '2025': 9.5}},
-    #     'Houston': {'conference': 'BIG 12', 'expected wins': {'2021': 8, '2022': 9, '2023': 4.5, '2024': 3.5, '2025': 6.5}},
-    #     'Ole Miss': {'conference': 'SEC', 'expected wins': {'2021': 7.5, '2022': 7.5, '2023': 7.5, '2024': 9.5, '2025': 8.5}},
-    #     'Indiana': {'conference': 'BIG 10', 'expected wins': {'2021': 7.5, '2022': 4, '2023': 3.5, '2024': 5.5, '2025': 8.5}},
-    #     'Oklahoma State': {'conference': 'BIG 12', 'expected wins': {'2021': 7.5, '2022': 8.5, '2023': 6.5, '2024': 8, '2025': 4.5}},
-    #     'TCU': {'conference': 'BIG 12', 'expected wins': {'2021': 7.5, '2022': 6.5, '2023': 7.5, '2024': 7.5, '2025': 6.5}},
-    #     'Auburn': {'conference': 'SEC', 'expected wins': {'2021': 7, '2022': 6.5, '2023': 6.5, '2024': 7.5, '2025': 7.5}},
-    #     'Virginia Tech': {'conference': 'ACC', 'expected wins': {'2021': 7, '2022': 6.5, '2023': 5, '2024': 8.5, '2025': 6.5}},
-    #     'Boston College': {'conference': 'ACC', 'expected wins': {'2021': 7, '2022': 6.5, '2023': 5.5, '2024': 5, '2025': 5.5}},
-    #     'Kentucky': {'conference': 'SEC', 'expected wins': {'2021': 7, '2022': 7.5, '2023': 7, '2024': 6.5, '2025': 4.5}},
-    #     'Missouri': {'conference': 'SEC', 'expected wins': {'2021': 7, '2022': 5.5, '2023': 6.5, '2024': 9.5, '2025': 7.5}},
-    #     'UCLA': {'conference': 'BIG 10', 'expected wins': {'2021': 7, '2022': 8.5, '2023': 8.5, '2024': 5, '2025': 5.5}},
-    #     'Pittsburgh': {'conference': 'ACC', 'expected wins': {'2021': 7, '2022': 8.5, '2023': 6.5, '2024': 5.5, '2025': 6.5}},
-    #     'Wake Forest': {'conference': 'ACC', 'expected wins': {'2021': 6.5, '2022': 8.5, '2023': 6, '2024': 4.5, '2025': 4.5}},
-    #     'NC State': {'conference': 'ACC', 'expected wins': {'2021': 6.5, '2022': 6.5, '2023': 6.5, '2024': 8.5, '2025': 6.5}},
-    #     'West Virginia': {'conference': 'BIG 12', 'expected wins': {'2021': 6.5, '2022': 5.5, '2023': 4.5, '2024': 6.5, '2025': 5.5}},
-    #     'Louisville': {'conference': 'ACC', 'expected wins': {'2021': 6.5, '2022': 6.5, '2023': 8, '2024': 8.5, '2025': 8.5}},
-    #     'BYU': {'conference': 'BIG 12', 'expected wins': {'2021': 6.5, '2022': 8.5, '2023': 5.5, '2024': 4.5, '2025': 6.5}},
-    #     'Northwestern': {'conference': 'BIG 10', 'expected wins': {'2021': 6.5, '2022': 4, '2023': 3, '2024': 4.5, '2025': 3.5}},
-    #     'SMU': {'conference': 'ACC', 'expected wins': {'2021': 6, '2022': 8.5, '2023': 8.5, '2024': 8.5, '2025': 8.5}},
-    #     'Tennessee': {'conference': 'SEC', 'expected wins': {'2021': 6, '2022': 7.5, '2023': 9.5, '2024': 8.5, '2025': 8.5}},
-    #     'Nebraska': {'conference': 'BIG 10', 'expected wins': {'2021': 6, '2022': 7.5, '2023': 6, '2024': 7.5, '2025': 7.5}},
-    #     'Maryland': {'conference': 'ACC', 'expected wins': {'2021': 6, '2022': 6, '2023': 7, '2024': 6.5, '2025': 4.5}},
-    #     'California': {'conference': 'ACC', 'expected wins': {'2021': 6, '2022': 5.5, '2023': 5, '2024': 6, '2025': 5.5}},
-    #     'Virginia': {'conference': 'ACC', 'expected wins': {'2021': 6, '2022': 7.5, '2023': 3.5, '2024': 4.5, '2025': 6.5}},
-    #     'Mississippi State': {'conference': 'SEC', 'expected wins': {'2021': 6, '2022': 6.5, '2023': 6.5, '2024': 4, '2025': 3.5}},
-    #     'Florida State': {'conference': 'ACC', 'expected wins': {'2021': 5.5, '2022': 6.5, '2023': 10, '2024': 9.5, '2025': 6.5}},
-    #     'Kansas State': {'conference': 'BIG 12', 'expected wins': {'2021': 5.5, '2022': 6.5, '2023': 8.5, '2024': 9.5, '2025': 8.5}},
-    #     'Baylor': {'conference': 'BIG 12', 'expected wins': {'2021': 5.5, '2022': 7.5, '2023': 7, '2024': 5.5, '2025': 7.5}},
-    #     'Arkansas': {'conference': 'SEC', 'expected wins': {'2021': 5.5, '2022': 7.5, '2023': 7, '2024': 4.5, '2025': 5.5}},
-    #     'Georgia Tech': {'conference': 'ACC', 'expected wins': {'2021': 5, '2022': 3.5, '2023': 4.5, '2024': 5, '2025': 7.5}},
-    #     'Purdue': {'conference': 'BIG 10', 'expected wins': {'2021': 5, '2022': 7.5, '2023': 5.5, '2024': 4.5, '2025': 2.5}},
-    #     'Texas Tech': {'conference': 'BIG 12', 'expected wins': {'2021': 4.5, '2022': 5.5, '2023': 7.5, '2024': 7.5, '2025': 8.5}},
-    #     'Michigan State': {'conference': 'BIG 10', 'expected wins': {'2021': 4.5, '2022': 7.5, '2023': 5.5, '2024': 5, '2025': 5.5}},
-    #     'Colorado': {'conference': 'BIG 12', 'expected wins': {'2021': 4.5, '2022': 3.5, '2023': 3.5, '2024': 5.5, '2025': 6.5}},
-    #     'Rutgers': {'conference': 'BIG 10', 'expected wins': {'2021': 4, '2022': 4, '2023': 4.5, '2024': 4.5, '2025': 5.5}},
-    #     'Stanford': {'conference': 'ACC', 'expected wins': {'2021': 3.5, '2022': 4.5, '2023': 3, '2024': 3.5, '2025': 3.5}},
-    #     'South Carolina': {'conference': 'SEC', 'expected wins': {'2021': 3.5, '2022': 6, '2023': 6.5, '2024': 5.5, '2025': 7.5}},
-    #     'Illinois': {'conference': 'BIG 10', 'expected wins': {'2021': 3.5, '2022': 4.5, '2023': 6.5, '2024': 5.5, '2025': 7.5}},
-    #     'Duke': {'conference': 'ACC', 'expected wins': {'2021': 3.5, '2022': 3, '2023': 6.5, '2024': 5.5, '2025': 6.5}},
-    #     'Vanderbilt': {'conference': 'SEC', 'expected wins': {'2021': 3, '2022': 2.5, '2023': 3.5, '2024': 3, '2025': 5.5}},
-    #     'Syracuse': {'conference': 'ACC', 'expected wins': {'2021': 3, '2022': 5, '2023': 6.5, '2024': 7, '2025': 5.5}},
-    #     'Arizona': {'conference': 'BIG 12', 'expected wins': {'2021': 2.5, '2022': 2.5, '2023': 5, '2024': 8, '2025': 4.5}},
-    #     'Kansas': {'conference': 'BIG 12', 'expected wins': {'2021': 1.5, '2022': 2.5, '2023': 6.5, '2024': 8, '2025': 6.5}},
-    #     'Michigan': {'conference': 'BIG 10', 'expected wins': {'2021': 7.5, '2022': 9.5, '2023': 10.5, '2024': 9, '2025': 8.5}},
-    #     'Minnesota': {'conference': 'BIG 10', 'expected wins': {'2021': 7, '2022': 7.5, '2023': 7, '2024': 5, '2025': 7.5}},
-    # }
-
     wins_dict = {
         'Clemson': {'conference': 'ACC', 'expected wins': {'2021': 11.5, '2022': 10.5, '2023': 10, '2024': 9.5, '2025': 9.5},
                     'actual wins': {'2021': 9, '2022': 10, '2023': 8, '2024': 9, '2025': 7}},
@@ -1683,78 +1604,6 @@ def graphtest():
 
 @app.route('/expected_vs_actual_graphs')
 def expected_vs_actual_graphs():
-    # old dictionary before AI wrote the new one
-    # wins_dict = {
-    #     'Clemson': {'conference': 'ACC', 'expected wins': {'2021': 11.5, '2022': 10.5, '2023': 10, '2024': 9.5, '2025': 9.5}},
-    #     'Alabama': {'conference': 'SEC', 'expected wins': {'2021': 11.5, '2022': 10.5, '2023': 10.5, '2024': 9.5, '2025': 9.5}},
-    #     'Ohio State': {'conference': 'BIG 10', 'expected wins': {'2021': 11, '2022': 10.5, '2023': 10.5, '2024': 10.5, '2025': 10.5}},
-    #     'Oklahoma': {'conference': 'SEC', 'expected wins': {'2021': 11, '2022': 9.5, '2023': 9.5, '2024': 7.5, '2025': 6.5}},
-    #     'Georgia': {'conference': 'SEC', 'expected wins': {'2021': 10.5, '2022': 10.5, '2023': 11.5, '2024': 10.5, '2025': 9.5}},
-    #     'North Carolina': {'conference': 'ACC', 'expected wins': {'2021': 10, '2022': 7.5, '2023': 8, '2024': 7.5, '2025': 7.5}},
-    #     'Cincinnati': {'conference': 'BIG 12', 'expected wins': {'2021': 10, '2022': 9, '2023': 5.5, '2024': 5, '2025': 6.5}},
-    #     'Miami': {'conference': 'ACC', 'expected wins': {'2021': 9.5, '2022': 8.5, '2023': 7.5, '2024': 9, '2025': 9.5}},
-    #     'Texas A&M': {'conference': 'SEC', 'expected wins': {'2021': 9.5, '2022': 8.5, '2023': 8, '2024': 8.5, '2025': 8.5}},
-    #     'Iowa State': {'conference': 'BIG 12', 'expected wins': {'2021': 9.5, '2022': 6.5, '2023': 5.5, '2024': 7.5, '2025': 7.5}},
-    #     'Wisconsin': {'conference': 'BIG 10', 'expected wins': {'2021': 9.5, '2022': 8.5, '2023': 8.5, '2024': 7, '2025': 5.5}},
-    #     'UCF': {'conference': 'BIG 12', 'expected wins': {'2021': 9.5, '2022': 8.5, '2023': 6.5, '2024': 7.5, '2025': 5.5}},
-    #     'Washington': {'conference': 'BIG 10', 'expected wins': {'2021': 9, '2022': 7.5, '2023': 9.5, '2024': 6.5, '2025': 7.5}},
-    #     'Penn State': {'conference': 'BIG 10', 'expected wins': {'2021': 9, '2022': 8.5, '2023': 9.5, '2024': 10.5, '2025': 10.5}},
-    #     'Florida': {'conference': 'SEC', 'expected wins': {'2021': 9, '2022': 7, '2023': 5.5, '2024': 4.5, '2025': 7.5}},
-    #     'Notre Dame': {'conference': 'IND', 'expected wins': {'2021': 9, '2022': 8.5, '2023': 8.5, '2024': 10, '2025': 10.5}},
-    #     'Arizona State': {'conference': 'BIG 12', 'expected wins': {'2021': 9, '2022': 6.5, '2023': 5, '2024': 4.5, '2025': 8.5}},
-    #     'Oregon': {'conference': 'BIG 10', 'expected wins': {'2021': 9, '2022': 8.5, '2023': 9.5, '2024': 10.5, '2025': 10.5}},
-    #     'USC': {'conference': 'BIG 10', 'expected wins': {'2021': 8.5, '2022': 9.5, '2023': 10, '2024': 7, '2025': 7.5}},
-    #     'Utah': {'conference': 'BIG 12', 'expected wins': {'2021': 8.5, '2022': 9, '2023': 8.5, '2024': 9.5, '2025': 7.5}},
-    #     'LSU': {'conference': 'SEC', 'expected wins': {'2021': 8.5, '2022': 7, '2023': 9.5, '2024': 9, '2025': 8.5}},
-    #     'Iowa': {'conference': 'BIG 12', 'expected wins': {'2021': 8.5, '2022': 7.5, '2023': 8, '2024': 8, '2025': 7.5}},
-    #     'Texas': {'conference': 'SEC', 'expected wins': {'2021': 8, '2022': 8, '2023': 9.5, '2024': 10.5, '2025': 9.5}},
-    #     'Houston': {'conference': 'BIG 12', 'expected wins': {'2021': 8, '2022': 9, '2023': 4.5, '2024': 3.5, '2025': 6.5}},
-    #     'Ole Miss': {'conference': 'SEC', 'expected wins': {'2021': 7.5, '2022': 7.5, '2023': 7.5, '2024': 9.5, '2025': 8.5}},
-    #     'Indiana': {'conference': 'BIG 10', 'expected wins': {'2021': 7.5, '2022': 4, '2023': 3.5, '2024': 5.5, '2025': 8.5}},
-    #     'Oklahoma State': {'conference': 'BIG 12', 'expected wins': {'2021': 7.5, '2022': 8.5, '2023': 6.5, '2024': 8, '2025': 4.5}},
-    #     'TCU': {'conference': 'BIG 12', 'expected wins': {'2021': 7.5, '2022': 6.5, '2023': 7.5, '2024': 7.5, '2025': 6.5}},
-    #     'Auburn': {'conference': 'SEC', 'expected wins': {'2021': 7, '2022': 6.5, '2023': 6.5, '2024': 7.5, '2025': 7.5}},
-    #     'Virginia Tech': {'conference': 'ACC', 'expected wins': {'2021': 7, '2022': 6.5, '2023': 5, '2024': 8.5, '2025': 6.5}},
-    #     'Boston College': {'conference': 'ACC', 'expected wins': {'2021': 7, '2022': 6.5, '2023': 5.5, '2024': 5, '2025': 5.5}},
-    #     'Kentucky': {'conference': 'SEC', 'expected wins': {'2021': 7, '2022': 7.5, '2023': 7, '2024': 6.5, '2025': 4.5}},
-    #     'Missouri': {'conference': 'SEC', 'expected wins': {'2021': 7, '2022': 5.5, '2023': 6.5, '2024': 9.5, '2025': 7.5}},
-    #     'UCLA': {'conference': 'BIG 10', 'expected wins': {'2021': 7, '2022': 8.5, '2023': 8.5, '2024': 5, '2025': 5.5}},
-    #     'Pittsburgh': {'conference': 'ACC', 'expected wins': {'2021': 7, '2022': 8.5, '2023': 6.5, '2024': 5.5, '2025': 6.5}},
-    #     'Wake Forest': {'conference': 'ACC', 'expected wins': {'2021': 6.5, '2022': 8.5, '2023': 6, '2024': 4.5, '2025': 4.5}},
-    #     'NC State': {'conference': 'ACC', 'expected wins': {'2021': 6.5, '2022': 6.5, '2023': 6.5, '2024': 8.5, '2025': 6.5}},
-    #     'West Virginia': {'conference': 'BIG 12', 'expected wins': {'2021': 6.5, '2022': 5.5, '2023': 4.5, '2024': 6.5, '2025': 5.5}},
-    #     'Louisville': {'conference': 'ACC', 'expected wins': {'2021': 6.5, '2022': 6.5, '2023': 8, '2024': 8.5, '2025': 8.5}},
-    #     'BYU': {'conference': 'BIG 12', 'expected wins': {'2021': 6.5, '2022': 8.5, '2023': 5.5, '2024': 4.5, '2025': 6.5}},
-    #     'Northwestern': {'conference': 'BIG 10', 'expected wins': {'2021': 6.5, '2022': 4, '2023': 3, '2024': 4.5, '2025': 3.5}},
-    #     'SMU': {'conference': 'ACC', 'expected wins': {'2021': 6, '2022': 8.5, '2023': 8.5, '2024': 8.5, '2025': 8.5}},
-    #     'Tennessee': {'conference': 'SEC', 'expected wins': {'2021': 6, '2022': 7.5, '2023': 9.5, '2024': 8.5, '2025': 8.5}},
-    #     'Nebraska': {'conference': 'BIG 10', 'expected wins': {'2021': 6, '2022': 7.5, '2023': 6, '2024': 7.5, '2025': 7.5}},
-    #     'Maryland': {'conference': 'ACC', 'expected wins': {'2021': 6, '2022': 6, '2023': 7, '2024': 6.5, '2025': 4.5}},
-    #     'California': {'conference': 'ACC', 'expected wins': {'2021': 6, '2022': 5.5, '2023': 5, '2024': 6, '2025': 5.5}},
-    #     'Virginia': {'conference': 'ACC', 'expected wins': {'2021': 6, '2022': 7.5, '2023': 3.5, '2024': 4.5, '2025': 6.5}},
-    #     'Mississippi State': {'conference': 'SEC', 'expected wins': {'2021': 6, '2022': 6.5, '2023': 6.5, '2024': 4, '2025': 3.5}},
-    #     'Florida State': {'conference': 'ACC', 'expected wins': {'2021': 5.5, '2022': 6.5, '2023': 10, '2024': 9.5, '2025': 6.5}},
-    #     'Kansas State': {'conference': 'BIG 12', 'expected wins': {'2021': 5.5, '2022': 6.5, '2023': 8.5, '2024': 9.5, '2025': 8.5}},
-    #     'Baylor': {'conference': 'BIG 12', 'expected wins': {'2021': 5.5, '2022': 7.5, '2023': 7, '2024': 5.5, '2025': 7.5}},
-    #     'Arkansas': {'conference': 'SEC', 'expected wins': {'2021': 5.5, '2022': 7.5, '2023': 7, '2024': 4.5, '2025': 5.5}},
-    #     'Georgia Tech': {'conference': 'ACC', 'expected wins': {'2021': 5, '2022': 3.5, '2023': 4.5, '2024': 5, '2025': 7.5}},
-    #     'Purdue': {'conference': 'BIG 10', 'expected wins': {'2021': 5, '2022': 7.5, '2023': 5.5, '2024': 4.5, '2025': 2.5}},
-    #     'Texas Tech': {'conference': 'BIG 12', 'expected wins': {'2021': 4.5, '2022': 5.5, '2023': 7.5, '2024': 7.5, '2025': 8.5}},
-    #     'Michigan State': {'conference': 'BIG 10', 'expected wins': {'2021': 4.5, '2022': 7.5, '2023': 5.5, '2024': 5, '2025': 5.5}},
-    #     'Colorado': {'conference': 'BIG 12', 'expected wins': {'2021': 4.5, '2022': 3.5, '2023': 3.5, '2024': 5.5, '2025': 6.5}},
-    #     'Rutgers': {'conference': 'BIG 10', 'expected wins': {'2021': 4, '2022': 4, '2023': 4.5, '2024': 4.5, '2025': 5.5}},
-    #     'Stanford': {'conference': 'ACC', 'expected wins': {'2021': 3.5, '2022': 4.5, '2023': 3, '2024': 3.5, '2025': 3.5}},
-    #     'South Carolina': {'conference': 'SEC', 'expected wins': {'2021': 3.5, '2022': 6, '2023': 6.5, '2024': 5.5, '2025': 7.5}},
-    #     'Illinois': {'conference': 'BIG 10', 'expected wins': {'2021': 3.5, '2022': 4.5, '2023': 6.5, '2024': 5.5, '2025': 7.5}},
-    #     'Duke': {'conference': 'ACC', 'expected wins': {'2021': 3.5, '2022': 3, '2023': 6.5, '2024': 5.5, '2025': 6.5}},
-    #     'Vanderbilt': {'conference': 'SEC', 'expected wins': {'2021': 3, '2022': 2.5, '2023': 3.5, '2024': 3, '2025': 5.5}},
-    #     'Syracuse': {'conference': 'ACC', 'expected wins': {'2021': 3, '2022': 5, '2023': 6.5, '2024': 7, '2025': 5.5}},
-    #     'Arizona': {'conference': 'BIG 12', 'expected wins': {'2021': 2.5, '2022': 2.5, '2023': 5, '2024': 8, '2025': 4.5}},
-    #     'Kansas': {'conference': 'BIG 12', 'expected wins': {'2021': 1.5, '2022': 2.5, '2023': 6.5, '2024': 8, '2025': 6.5}},
-    #     'Michigan': {'conference': 'BIG 10', 'expected wins': {'2021': 7.5, '2022': 9.5, '2023': 10.5, '2024': 9, '2025': 8.5}},
-    #     'Minnesota': {'conference': 'BIG 10', 'expected wins': {'2021': 7, '2022': 7.5, '2023': 7, '2024': 5, '2025': 7.5}},
-    # }
-
     wins_dict = {
         'Clemson': {'conference': 'ACC', 'expected wins': {'2021': 11.5, '2022': 10.5, '2023': 10, '2024': 9.5, '2025': 9.5},
                     'actual wins': {'2021': 9, '2022': 10, '2023': 8, '2024': 9, '2025': 7}, 'primary color': '#F56600'},
