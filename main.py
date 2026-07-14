@@ -1830,7 +1830,7 @@ def draft_room(league_id):
         db.session.commit()
 
     print('getting participant')
-    participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=current_user.id).first_or_404()
+    participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=current_user.id).first()
     if participant is None:
         print('participant is none')
         participant = DraftParticipant(draft_room_id=room.id, user_id=current_user.id)
