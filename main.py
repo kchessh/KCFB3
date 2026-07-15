@@ -1894,6 +1894,7 @@ def on_nominate(data):
     if existing:
         emit('error', {'message': 'A nomination is already in progress.'})
         return
+    print(Football_Teams.__tablename__)
 
     # Create new nomination
     nomination = DraftNomination(draft_room_id=room_id, nominated_team_id=team_id, nominated_by_user_id=user_id, current_bid=starting_bid, current_winner_id=user_id, status='active')
