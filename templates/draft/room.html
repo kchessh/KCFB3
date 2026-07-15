@@ -14,7 +14,7 @@
             <h2>Current Nomination</h2>
             <div id="current-team">
               {% if active_nomination %}
-                {{ active_nomination.nominated_team.name }}  {# adjust attribute to match your Team model #}
+                {{ active_nomination.nominated_team_id.name }}  {# adjust attribute to match your Team model #}
               {% else %}
                   Waiting for nomination...
               {% endif %}
