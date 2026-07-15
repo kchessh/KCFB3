@@ -1852,12 +1852,7 @@ def draft_room(league_id):
         if team_4 is not None:
             teams_to_remove.append(team_4.id)
 
-    available_teams = []
     all_football_teams = Football_Teams.query.all()
-    for football_team in all_football_teams:
-        team_id = Football_Teams.query.filter_by(team=football_team.team).first().id
-        available_teams.append({"name": football_team.team, "id": team_id})
-
     available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
     print(f'{available_teams=}')
@@ -1897,7 +1892,7 @@ def on_nominate(data):
         emit('error', {'message': 'Draft room not found.'})
         return
 
-    room_id = draft_room.id  # ✅ Use the actual draft_room primary key
+    room_id = draft_room.id
 
     # Validate no active nomination exists
     existing = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
