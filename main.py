@@ -1831,7 +1831,7 @@ def draft_room(league_id):
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
 
-    all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league_id=league_id).all()
+    all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
     teams_to_remove = []
     for table in all_player_weekly_info_tables:
         team_1_name = table.team_1
@@ -1839,18 +1839,18 @@ def draft_room(league_id):
         team_3_name = table.team_3
         team_4_name = table.team_4
 
-        team_1_id = Football_Teams.query.filter_by(team=team_1_name).first().id
-        if team_1_id is not None:
-            teams_to_remove.append(team_1_id)
-        team_2_id = Football_Teams.query.filter_by(team=team_2_name).first().id
-        if team_2_id is not None:
-            teams_to_remove.append(team_2_id)
-        team_3_id = Football_Teams.query.filter_by(team=team_3_name).first().id
-        if team_3_id is not None:
-            teams_to_remove.append(team_3_id)
-        team_4_id = Football_Teams.query.filter_by(team=team_4_name).first().id
-        if team_4_id is not None:
-            teams_to_remove.append(team_4_id)
+        team_1 = Football_Teams.query.filter_by(team=team_1_name).first()
+        if team_1 is not None:
+            teams_to_remove.append(team_1.id)
+        team_2 = Football_Teams.query.filter_by(team=team_2_name).first()
+        if team_2 is not None:
+            teams_to_remove.append(team_2.id)
+        team_3 = Football_Teams.query.filter_by(team=team_3_name).first()
+        if team_3 is not None:
+            teams_to_remove.append(team_3.id)
+        team_4 = Football_Teams.query.filter_by(team=team_4_name).first()
+        if team_4 is not None:
+            teams_to_remove.append(team_4.id)
 
     available_teams = []
     all_football_teams = Football_Teams.query.all()
@@ -1858,6 +1858,8 @@ def draft_room(league_id):
         available_teams.append(football_team)
 
     available_teams = [football_team.team for football_team in all_football_teams if football_team.id not in teams_to_remove]
+    available_teams = sorted(available_teams, key=lambda team: team.lower())
+    print(f'{available_teams=}')
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams)
 
