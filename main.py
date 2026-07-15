@@ -147,7 +147,7 @@ class Player_weekly_info(db.Model):
 
 
 class Football_Teams(db.Model):
-    __tablename__ = 'Football_Teams' #explicitly tell SQLAlchemy that the table name is Football_Teams
+    # __tablename__ = 'Football_Teams' #explicitly tell SQLAlchemy that the table name is Football_Teams
     id = db.Column(db.Integer, primary_key=True)
     team = db.Column(db.String(100), nullable=True)
     updated_this_week = db.Column(db.Boolean, default=False)
