@@ -1859,7 +1859,7 @@ def draft_room(league_id):
         available_teams.append({"name": football_team.team, "id": team_id})
 
     available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
-    available_teams = sorted(available_teams, key=lambda team: team.lower())
+    available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
     print(f'{available_teams=}')
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams)
