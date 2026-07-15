@@ -1886,7 +1886,7 @@ def on_join(data):
 @socketio.on('nominate_team')
 def on_nominate(data):
     league_id = data['league_id']
-    team_id = data['team_id']
+    team_id = int(data['team_id'])
     starting_bid = data.get('starting_bid', 1)
     user_id = current_user.id
     print(f'{data=}')
