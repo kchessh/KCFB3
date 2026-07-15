@@ -253,7 +253,7 @@ class DraftRoom(db.Model):
 class DraftNomination(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     draft_room_id = db.Column(db.Integer, db.ForeignKey('draft_room.id'))
-    nominated_team_id = db.Column(db.Integer, db.ForeignKey('Football_Teams.id'))
+    nominated_team_id = db.Column(db.Integer, db.ForeignKey(f'{Football_Teams.__tablename__}.id'))
     nominated_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     current_bid = db.Column(db.Integer, default=1)
     current_winner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -1855,7 +1855,8 @@ def draft_room(league_id):
     available_teams = []
     all_football_teams = Football_Teams.query.all()
     for football_team in all_football_teams:
-        available_teams.append(football_team)
+        team_id = Football_Teams.query.filter_by(team=football_team).first().id
+        available_teams.append({"name": football_team, "id": team_id})
 
     available_teams = [football_team.team for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team.lower())

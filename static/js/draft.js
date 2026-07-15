@@ -68,7 +68,7 @@ function nominateTeam() {
     const startingBid = parseInt(document.getElementById('starting-bid').value);
     socket.emit('nominate_team', {
         league_id: ROOM_ID,
-        team_id: teamId,
+        team_id: team.id,
         starting_bid: startingBid
     });
 }

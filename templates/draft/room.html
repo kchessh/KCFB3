@@ -51,7 +51,7 @@
             <h2>Nominate a Team</h2>
             <select id="team-select">
                 {% for team in available_teams %}
-                <option value="{{ team.id }}">{{ team }}</option>
+                <option value="{{ team.id }}">{{ team.name }}</option>
                 {% endfor %}
             </select>
             <input type="number" id="starting-bid" value="1" min="1">
