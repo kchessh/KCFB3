@@ -1776,22 +1776,15 @@ def end_nomination(nomination_id, room_id):
         winner = None
         if nomination.current_winner_id:
             # Deduct budget from winner
-            participant = DraftParticipant.query.filter_by(
-                draft_room_id=room_id,
-                user_id=nomination.current_winner_id
-            ).first()
+            participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=nomination.current_winner_id).first()
             if participant:
                 participant.budget_remaining -= nomination.current_bid
                 db.session.commit()
             winner = nomination.current_winner_id
 
         # Notify all users in the room
-        socketio.emit('nomination_sold', {
-            'nomination_id': nomination_id,
-            'team_id': nomination.nominated_team_id,
-            'winner_id': winner,
-            'final_price': nomination.current_bid
-        }, room=str(room_id))
+        socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner, 'winner_name': winner.username if winner else None,
+                                           'final_price': nomination.current_bid}, room=str(room_id))
 
 
 def start_timer(nomination_id, room_id, seconds=30):
@@ -1822,28 +1815,51 @@ def start_timer(nomination_id, room_id, seconds=30):
 def draft_room(league_id):
     # Get the existing draft room or create one if it doesn't exist
     room = DraftRoom.query.filter_by(league_id=league_id).first()
-    print('going to draft room')
 
     if room is None:
-        print('room is none')
         room = DraftRoom(league_id=league_id, status='waiting')
         db.session.add(room)
         db.session.commit()
 
-    print('getting participant')
     participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=current_user.id).first()
     if participant is None:
-        print('participant is none')
         participant = DraftParticipant(draft_room_id=room.id, user_id=current_user.id)
         db.session.add(participant)
         db.session.commit()
 
-    print('got here')
     active_nomination = DraftNomination.query.filter_by(draft_room_id=room.id, status='active').first()
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
 
-    return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants)
+    all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league_id=league_id).all()
+    teams_to_remove = []
+    for table in all_player_weekly_info_tables:
+        team_1_name = table.team_1
+        team_2_name = table.team_2
+        team_3_name = table.team_3
+        team_4_name = table.team_4
+
+        team_1_id = Football_Teams.query.filter_by(team=team_1_name).first().id
+        if team_1_id is not None:
+            teams_to_remove.append(team_1_id)
+        team_2_id = Football_Teams.query.filter_by(team=team_2_name).first().id
+        if team_2_id is not None:
+            teams_to_remove.append(team_2_id)
+        team_3_id = Football_Teams.query.filter_by(team=team_3_name).first().id
+        if team_3_id is not None:
+            teams_to_remove.append(team_3_id)
+        team_4_id = Football_Teams.query.filter_by(team=team_4_name).first().id
+        if team_4_id is not None:
+            teams_to_remove.append(team_4_id)
+
+    available_teams = []
+    all_football_teams = Football_Teams.query.all()
+    for football_team in all_football_teams:
+        available_teams.append(football_team)
+
+    available_teams = [football_team.team for football_team in all_football_teams if football_team.id not in teams_to_remove]
+
+    return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams)
 
 # --- SocketIO Events ---
 @socketio.on('join_draft')
@@ -1922,7 +1938,7 @@ def on_bid(data):
     # Reset timer on new bid
     start_timer(nomination_id, room_id, seconds=15)
 
-    emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id}, room=str(room_id))
+    emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id, 'username': current_user.username}, room=str(room_id))
 
 @socketio.on('disconnect')
 def on_disconnect():
