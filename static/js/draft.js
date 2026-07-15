@@ -66,9 +66,10 @@ socket.on('error', (data) => {
 function nominateTeam() {
     const teamId = document.getElementById('team-select').value;
     const startingBid = parseInt(document.getElementById('starting-bid').value);
+    console.log('Nominating team:', teamId, 'Starting bid:', startingBid);
     socket.emit('nominate_team', {
         league_id: ROOM_ID,
-        team_id: team.id,
+        team_id: teamId,
         starting_bid: startingBid
     });
 }
