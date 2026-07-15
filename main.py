@@ -1882,13 +1882,22 @@ def on_join(data):
 
     emit('user_joined', {'user_id': user_id}, room=str(room_id))
 
+
 @socketio.on('nominate_team')
 def on_nominate(data):
-    room_id = data['league_id']
+    league_id = data['league_id']
     team_id = data['team_id']
     starting_bid = data.get('starting_bid', 1)
     user_id = current_user.id
     print(f'{data=}')
+
+    # Look up the draft room by league_id
+    draft_room = DraftRoom.query.filter_by(league_id=league_id).first()
+    if not draft_room:
+        emit('error', {'message': 'Draft room not found.'})
+        return
+
+    room_id = draft_room.id  # ✅ Use the actual draft_room primary key
 
     # Validate no active nomination exists
     existing = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
@@ -1903,8 +1912,9 @@ def on_nominate(data):
 
     start_timer(nomination.id, room_id, seconds=30)
 
-    emit('nomination_started', {'nomination_id': nomination.id, 'team_id': team_id, 'nominated_by': user_id, 'current_bid': starting_bid, 'current_winner': user_id,
-                                'timer_end': nomination.timer_end.isoformat()}, room=str(room_id))
+    emit('nomination_started', {'nomination_id': nomination.id, 'team_id': team_id, 'nominated_by': user_id, 'current_bid': starting_bid, 'current_winner': user_id, 'timer_end': nomination.timer_end.isoformat()
+    }, room=str(room_id))
+
 
 @socketio.on('place_bid')
 def on_bid(data):
