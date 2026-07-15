@@ -147,7 +147,7 @@ class Player_weekly_info(db.Model):
 
 
 class Football_Teams(db.Model):
-    # __tablename__ = 'Football_Teams' #explicitly tell SQLAlchemy that the table name is Football_Teams
+    __tablename__ = 'Football_Teams' if os.environ.get('FLASK_ENV') == 'development' else 'football__teams'
     id = db.Column(db.Integer, primary_key=True)
     team = db.Column(db.String(100), nullable=True)
     updated_this_week = db.Column(db.Boolean, default=False)
@@ -1894,7 +1894,6 @@ def on_nominate(data):
     if existing:
         emit('error', {'message': 'A nomination is already in progress.'})
         return
-    print(Football_Teams.__tablename__)
 
     # Create new nomination
     nomination = DraftNomination(draft_room_id=room_id, nominated_team_id=team_id, nominated_by_user_id=user_id, current_bid=starting_bid, current_winner_id=user_id, status='active')
