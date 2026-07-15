@@ -1858,7 +1858,7 @@ def draft_room(league_id):
         team_id = Football_Teams.query.filter_by(team=football_team.team).first().id
         available_teams.append({"name": football_team.team, "id": team_id})
 
-    available_teams = [football_team.team for football_team in all_football_teams if football_team.id not in teams_to_remove]
+    available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team.lower())
     print(f'{available_teams=}')
 
