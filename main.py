@@ -1887,6 +1887,7 @@ def on_nominate(data):
     team_id = data['team_id']
     starting_bid = data.get('starting_bid', 1)
     user_id = current_user.id
+    print(f'{data=}')
 
     # Validate no active nomination exists
     existing = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
