@@ -79,7 +79,7 @@ function placeBid() {
     const amount = parseInt(document.getElementById('bid-input').value);
     if (!amount || amount < 1) return alert('Enter a valid bid.');
     socket.emit('place_bid', {
-        league_id: ROOM_ID,
+        room_id: ROOM_ID,
         nomination_id: currentNominationId,
         amount: amount
     });
