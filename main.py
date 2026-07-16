@@ -1922,6 +1922,7 @@ def on_bid(data):
     nomination_id = data['nomination_id']
     bid_amount = int(data['amount'])
     user_id = current_user.id
+    print(f'{data=}')
 
     nomination = DraftNomination.query.get(nomination_id)
     participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()

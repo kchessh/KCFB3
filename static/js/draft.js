@@ -88,7 +88,7 @@ function placeBid() {
 function quickBid(increment) {
     const currentBidText = document.getElementById('current-bid').textContent;
     const currentBid = parseInt(currentBidText.replace(/\D/g, '')) || 0;
-    document.getElementById('bid-input').value = currentBid + increment;
+    document.getElementById('bid-input').value = increment === 0 ? 1 : currentBid + increment;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────
