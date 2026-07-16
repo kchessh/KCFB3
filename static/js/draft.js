@@ -70,7 +70,8 @@ function nominateTeam() {
     socket.emit('nominate_team', {
         league_id: ROOM_ID,
         team_id: teamId,
-        starting_bid: startingBid
+        starting_bid: startingBid,
+        user_id: USER_ID,
     });
 }
 

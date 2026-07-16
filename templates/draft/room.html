@@ -14,7 +14,7 @@
             <h2>Current Nomination</h2>
             <div id="current-team">
               {% if active_nomination %}
-                {{ active_nomination.nominated_team_id.name }}  {# adjust attribute to match your Team model #}
+                {{ active_nomination.nominated_team_id.name }}
               {% else %}
                   Waiting for nomination...
               {% endif %}
@@ -28,7 +28,7 @@
             </div>
             <div id="current-winner">
               {% if active_nomination %}
-                {{ active_nomination.current_winner_id }}  {# replace with username if you have the relationship #}
+                {{ active_nomination.current_winner_id }}
               {% else %}
                   -
               {% endif %}
