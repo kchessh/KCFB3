@@ -274,7 +274,7 @@ class DraftParticipant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     draft_room_id = db.Column(db.Integer, db.ForeignKey('draft_room.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    budget_remaining = db.Column(db.Integer, default=1000)
+    budget_remaining = db.Column(db.Integer, default=100)
     is_commissioner = db.Column(db.Boolean, default=False)
     is_connected = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref='draft_participants')

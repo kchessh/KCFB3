@@ -152,6 +152,42 @@ class Matchup(db.Model):
     user2_score = db.Column(db.Integer, default=0)
 
 
+class DraftRoom(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False, unique=True)
+    status = db.Column(db.String(20), default='waiting')  # waiting, active, complete
+
+
+class DraftNomination(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    draft_room_id = db.Column(db.Integer, db.ForeignKey('draft_room.id'))
+    nominated_team_id = db.Column(db.Integer, db.ForeignKey(f'{Football_Teams.__tablename__}.id'))
+    nominated_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    current_bid = db.Column(db.Integer, default=1)
+    current_winner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    status = db.Column(db.String(20), default='active')  # active, sold, cancelled
+    timer_end = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class DraftBid(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nomination_id = db.Column(db.Integer, db.ForeignKey('draft_nomination.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    amount = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class DraftParticipant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    draft_room_id = db.Column(db.Integer, db.ForeignKey('draft_room.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    budget_remaining = db.Column(db.Integer, default=100)
+    is_commissioner = db.Column(db.Boolean, default=False)
+    is_connected = db.Column(db.Boolean, default=False)
+    user = db.relationship('User', backref='draft_participants')
+
+
 """
 1s represent a win, 0s represent a loss or no game played
 """
@@ -816,3 +852,8 @@ def commit_schedule(schedule, league_id):
 # Unlock someone's account
 # session.query(User).filter(User.id == 121).update({"locked_account": False})
 # session.commit()
+
+all_draft_participants = DraftParticipant.query.all()
+for table in all_draft_participants:
+    session.query(DraftParticipant).filter(DraftParticipant.id == table.id).update({"budget_remaining": 100})
+session.commit()
