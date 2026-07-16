@@ -14,7 +14,7 @@
             <h2>Current Nomination</h2>
             <div id="current-team">
               {% if active_nomination %}
-                {{ active_nomination.nominated_team_id.name }}
+                {{ active_nomination.nominated_team_name }}
               {% else %}
                   Waiting for nomination...
               {% endif %}
@@ -28,7 +28,7 @@
             </div>
             <div id="current-winner">
               {% if active_nomination %}
-                {{ active_nomination.current_winner_id }}
+                {{ active_nomination.current_winner_name }}
               {% else %}
                   -
               {% endif %}

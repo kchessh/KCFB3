@@ -1828,6 +1828,8 @@ def draft_room(league_id):
         db.session.commit()
 
     active_nomination = DraftNomination.query.filter_by(draft_room_id=room.id, status='active').first()
+    current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
+    nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
 
@@ -1857,7 +1859,8 @@ def draft_room(league_id):
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
     print(f'{available_teams=}')
 
-    return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams)
+    return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
+                           current_winner_name=current_winner_name, nominated_team_name=nominated_team_name)
 
 # --- SocketIO Events ---
 @socketio.on('join_draft')
