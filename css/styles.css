@@ -183,3 +183,52 @@ th, td {
 th {
   cursor: pointer;
 }
+
+#team-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+
+#team-table th, #team-table td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+#team-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+#team-table tbody tr:hover {
+    background-color: #f0f8ff;
+    cursor: pointer;
+}
+
+#team-table tbody tr.selected {
+    background-color: #c8e6c9;
+    font-weight: bold;
+}
+
+#team-search {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+#pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+#selected-team-display {
+    margin: 10px 0;
+    padding: 8px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}

@@ -49,15 +49,50 @@
 
         <!-- Nomination Controls (for your turn) -->
         <div id="nominate-panel">
-            <h2>Nominate a Team</h2>
-            <select id="team-select">
-                {% for team in available_teams %}
-                <option value="{{ team.id }}">{{ team.name }}</option>
-                {% endfor %}
-            </select>
-            <input type="number" id="starting-bid" value="1" min="1">
-            <button onclick="nominateTeam()">Nominate</button>
+          <h2>Nominate a Team</h2>
+
+          <!-- Search bar for filtering -->
+          <input type="text" id="team-search" placeholder="Search teams..." oninput="filterTeams()">
+
+          <!-- Team Table -->
+          <table id="team-table">
+              <thead>
+                  <tr>
+                      <th>#</th>
+                      <th>Team Name</th>
+                      <th>Select</th>
+                  </tr>
+              </thead>
+              <tbody id="team-table-body">
+                  {% for team in available_teams %}
+                  <tr class="team-row" data-id="{{ team.id }}" data-name="{{ team.name }}">
+                      <td>{{ loop.index }}</td>
+                      <td>{{ team.name }}</td>
+                      <td>
+                          <button onclick="selectTeam('{{ team.id }}', '{{ team.name }}')">Select</button>
+                      </td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
+
+          <!-- Pagination Controls -->
+          <div id="pagination-controls">
+              <button onclick="changePage(-1)" id="prev-btn">Previous</button>
+              <span id="page-indicator">Page 1</span>
+              <button onclick="changePage(1)" id="next-btn">Next</button>
+          </div>
+
+          <!-- Selected Team Display -->
+          <div id="selected-team-display">
+              <strong>Selected Team:</strong> <span id="selected-team-name">None</span>
+          </div>
+
+          <input type="hidden" id="team-select" value="">
+          <input type="number" id="starting-bid" value="1" min="1">
+          <button onclick="nominateTeam()">Nominate</button>
         </div>
+
 
         <!-- Participants / Budget Tracker -->
         <div id="participants-panel">

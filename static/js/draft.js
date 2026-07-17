@@ -1,7 +1,10 @@
 // static/js/draft.js
 const socket = io();
+const rowsPerPage = 10;
 let countdownInterval = null;
 let currentNominationId = CURRENT_NOMINATION;
+let currentPage = 1;
+let filteredRows = [];
 
 // ─── Connection ───────────────────────────────────────────────
 socket.on('connect', () => {
@@ -77,12 +80,8 @@ function nominateTeam() {
 
 function placeBid() {
     const amount = parseInt(document.getElementById('bid-input').value);
-    alert('Amount parsed: ' + amount);
-    alert('currentNominationId: ' + currentNominationId);  // ← what does this show?
-    alert('ROOM_ID: ' + ROOM_ID);                          // ← and this?
     if (!currentNominationId) return alert('No active nomination.');
     if (!amount || amount < 1) return alert('Enter a valid bid.');
-    alert('About to emit!');
     socket.emit('place_bid', {
         room_id: ROOM_ID,
         nomination_id: currentNominationId,
@@ -96,6 +95,64 @@ function quickBid(increment) {
     const currentBid = parseInt(currentBidText.replace(/\D/g, '')) || 0;
     document.getElementById('bid-input').value = currentBid + increment;
 }
+
+function initTable() {
+    filteredRows = Array.from(document.querySelectorAll('.team-row'));
+    renderTable();
+}
+
+function filterTeams() {
+    const query = document.getElementById('team-search').value.toLowerCase();
+    const allRows = Array.from(document.querySelectorAll('.team-row'));
+
+    filteredRows = allRows.filter(row =>
+        row.dataset.name.toLowerCase().includes(query)
+    );
+
+    currentPage = 1;
+    renderTable();
+}
+
+function renderTable() {
+    const allRows = Array.from(document.querySelectorAll('.team-row'));
+
+    // Hide all rows first
+    allRows.forEach(row => row.style.display = 'none');
+
+    // Calculate the slice of rows to show
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageRows = filteredRows.slice(start, end);
+
+    // Show only the current page's rows
+    pageRows.forEach(row => row.style.display = '');
+
+    // Update pagination info
+    const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
+    document.getElementById('page-indicator').textContent = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById('prev-btn').disabled = currentPage === 1;
+    document.getElementById('next-btn').disabled = currentPage === totalPages;
+}
+
+function changePage(direction) {
+    const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
+    currentPage = Math.min(Math.max(1, currentPage + direction), totalPages);
+    renderTable();
+}
+
+function selectTeam(id, name) {
+    // Highlight the selected row
+    document.querySelectorAll('.team-row').forEach(row => row.classList.remove('selected'));
+    const selectedRow = document.querySelector(`.team-row[data-id="${id}"]`);
+    if (selectedRow) selectedRow.classList.add('selected');
+
+    // Update hidden input and display
+    document.getElementById('team-select').value = id;
+    document.getElementById('selected-team-name').textContent = name;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', initTable);
 
 // ─── Helpers ──────────────────────────────────────────────────
 function startCountdown(timerEndISO) {

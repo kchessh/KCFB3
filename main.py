@@ -1877,7 +1877,7 @@ def on_join(data):
         print('room is none')
 
     participant = DraftParticipant.query.filter_by(draft_room_id=room.id,user_id=user_id).first()
-    print(f'on_join{participant=}')
+    # print(f'on_join{participant=}')
 
     if not participant:
         emit('error', {'message': 'You are not a participant in this draft.'})
@@ -1930,7 +1930,7 @@ def on_bid(data):
     nomination_id = data['nomination_id']
     bid_amount = int(data['amount'])
     user_id = current_user.id
-    print(f'{room_id=}')
+    # print(f'{room_id=}')
     room = DraftRoom.query.filter_by(league_id=room_id).first()
     if room is None:
         print('room is none')
