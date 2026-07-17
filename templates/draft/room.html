@@ -49,38 +49,34 @@
 
         <!-- Nomination Controls (for your turn) -->
         <div id="nominate-panel">
-          <h2>Nominate a Team</h2>
+            <div id="nominate-header">
+                <h2>Nominate a Team</h2>
+                <div id="nominate-controls">
+                    <input type="number" id="starting-bid" value="1" min="1">
+                    <button onclick="nominateTeam()">Nominate</button>
+                </div>
+            </div>
 
-          <!-- Team Table -->
-          <div id="team-table-wrapper">
-              <table id="team-table">
-                  <thead>
-                      <tr>
-                          <th>#</th>
-                          <th>Team Name</th>
-                      </tr>
-                  </thead>
-                  <tbody id="team-table-body">
-                      {% for team in available_teams %}
-                      <tr class="team-row" data-id="{{ team.id }}" onclick="selectTeam('{{ team.id }}', '{{ team.name }}')">
-                          <td>{{ loop.index }}</td>
-                          <td>{{ team.name }}</td>
-                      </tr>
-                      {% endfor %}
-                  </tbody>
-              </table>
-          </div>
+            <!-- Team Table -->
+            <div id="team-table-wrapper">
+                <table id="team-table">
+                    <thead>
+                        <tr>
+                            <th>Team Name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-table-body">
+                        {% for team in available_teams %}
+                        <tr class="team-row" data-id="{{ team.id }}" onclick="selectTeam('{{ team.id }}', '{{ team.name }}')">
+                            <td>{{ team.name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
-          <!-- Selected Team Display -->
-          <div id="selected-team-display">
-              <strong>Selected:</strong> <span id="selected-team-name">None</span>
-          </div>
-
-          <input type="hidden" id="team-select" value="">
-          <input type="number" id="starting-bid" value="1" min="1">
-          <button onclick="nominateTeam()">Nominate</button>
+            <input type="hidden" id="team-select" value="">
         </div>
-
 
 
         <!-- Participants / Budget Tracker -->

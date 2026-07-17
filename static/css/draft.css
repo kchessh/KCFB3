@@ -9,13 +9,66 @@
     margin: auto;
 }
 
-#nomination-panel {
-    grid-column: 1 / 3;
-    background: #1e1e2e;
-    color: white;
-    padding: 20px;
-    border-radius: 12px;
-    text-align: center;
+#nominate-panel {
+    width: 350px; /* Adjust this to make the panel wider or narrower */
+}
+
+#nominate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+#nominate-header h2 {
+    margin: 0;
+}
+
+#nominate-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#nominate-controls input[type="number"] {
+    width: 60px;
+    padding: 4px;
+}
+
+#team-table-wrapper {
+    max-height: 300px;
+    overflow-y: scroll;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#team-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#team-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f4f4f4;
+    z-index: 1;
+}
+
+#team-table th, #team-table td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+#team-table tbody tr:hover {
+    background-color: #f0f8ff;
+    cursor: pointer;
+}
+
+#team-table tbody tr.selected {
+    background-color: #c8e6c9;
+    font-weight: bold;
 }
 
 #timer-display {
@@ -98,12 +151,4 @@
 #team-table tbody tr.selected {
     background-color: #c8e6c9;
     font-weight: bold;
-}
-
-#selected-team-display {
-    margin: 10px 0;
-    padding: 8px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
 }
