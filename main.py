@@ -1872,8 +1872,11 @@ def draft_room(league_id):
 def on_join(data):
     room_id = data['league_id']
     user_id = current_user.id
+    room = DraftRoom.query.filter_by(league_id=room_id).first()
+    if room is None:
+        print('room is none')
 
-    participant = DraftParticipant.query.filter_by(draft_room_id=room_id,user_id=user_id).first()
+    participant = DraftParticipant.query.filter_by(draft_room_id=room.id,user_id=user_id).first()
     print(f'on_join{participant=}')
 
     if not participant:
