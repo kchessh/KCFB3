@@ -1863,9 +1863,6 @@ def draft_room(league_id):
     print(f'{available_teams=}')
     print(f'{current_winner_name=}')
     print(f'{nominated_team_name=}')
-    nomination_to_delete = DraftNomination.query.filter_by(id=2).first()
-    db.session.delete(nomination_to_delete)
-    db.commit()
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
                            current_winner_name=current_winner_name, nominated_team_name=nominated_team_name)
