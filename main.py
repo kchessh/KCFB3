@@ -1833,6 +1833,8 @@ def draft_room(league_id):
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
     print(f'{participants=}')
+    for single_participant in participants:
+        print(f'{single_participant.id=}, {single_participant.draft_room_id=}, {single_participant.user_id=}, {single_participant.is_commissioner=}, {single_participant.user=}')
 
     all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
     teams_to_remove = []
