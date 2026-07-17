@@ -1815,18 +1815,14 @@ def start_timer(nomination_id, room_id, seconds=30):
 def draft_room(league_id):
     # Get the existing draft room or create one if it doesn't exist
     room = DraftRoom.query.filter_by(league_id=league_id).first()
-    print(f'{room=}')
 
     if room is None:
-        print('room is none')
         room = DraftRoom(league_id=league_id, status='waiting')
         db.session.add(room)
         db.session.commit()
 
     participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=current_user.id).first()
-    print(f'{participant=}')
     if participant is None:
-        print('participant is none')
         participant = DraftParticipant(draft_room_id=room.id, user_id=current_user.id)
         db.session.add(participant)
         db.session.commit()
@@ -1925,14 +1921,18 @@ def on_nominate(data):
 
 @socketio.on('place_bid')
 def on_bid(data):
-    print(f'{data=}')
+    print(f'on_bid {data=}')
     room_id = data['room_id']
     nomination_id = data['nomination_id']
     bid_amount = int(data['amount'])
     user_id = current_user.id
+    print(f'{room_id=}')
+    room = DraftRoom.query.filter_by(league_id=room_id).first()
+    if room is None:
+        print('room is none')
 
     nomination = DraftNomination.query.get(nomination_id)
-    participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()
+    participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=user_id).first()
 
     # --- Validation ---
     if not nomination or nomination.status != 'active':
