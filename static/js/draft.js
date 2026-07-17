@@ -76,6 +76,7 @@ function nominateTeam() {
 }
 
 function placeBid() {
+    alert ('placeBid sent');
     const amount = parseInt(document.getElementById('bid-input').value);
     if (!amount || amount < 1) return alert('Enter a valid bid.');
     socket.emit('place_bid', {
