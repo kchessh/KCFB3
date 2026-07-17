@@ -1918,11 +1918,11 @@ def on_nominate(data):
 
 @socketio.on('place_bid')
 def on_bid(data):
+    print(f'{data=}')
     room_id = data['room_id']
     nomination_id = data['nomination_id']
     bid_amount = int(data['amount'])
     user_id = current_user.id
-    print(f'{data=}')
 
     nomination = DraftNomination.query.get(nomination_id)
     participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()
