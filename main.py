@@ -1832,6 +1832,7 @@ def draft_room(league_id):
     nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
+    print(f'{participants=}')
 
     all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
     teams_to_remove = []
