@@ -141,8 +141,10 @@ function changePage(direction) {
 }
 
 function selectTeam(id, name) {
-    // Highlight the selected row
+    // Remove highlight from all rows
     document.querySelectorAll('.team-row').forEach(row => row.classList.remove('selected'));
+
+    // Highlight the clicked row
     const selectedRow = document.querySelector(`.team-row[data-id="${id}"]`);
     if (selectedRow) selectedRow.classList.add('selected');
 
@@ -150,6 +152,7 @@ function selectTeam(id, name) {
     document.getElementById('team-select').value = id;
     document.getElementById('selected-team-name').textContent = name;
 }
+
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', initTable);

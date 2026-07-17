@@ -176,29 +176,31 @@ h2 {
   overflow: auto;
 }
 
-th, td {
-  font-weight: normal;
-}
-
-th {
-  cursor: pointer;
+#team-table-wrapper {
+    height: 300px; /* Shows roughly 10 rows at a time */
+    overflow-y: scroll;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
 }
 
 #team-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 10px 0;
+}
+
+/* Sticky header so it stays visible while scrolling */
+#team-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f4f4f4;
+    z-index: 1;
 }
 
 #team-table th, #team-table td {
     border: 1px solid #ddd;
     padding: 8px 12px;
     text-align: left;
-}
-
-#team-table th {
-    background-color: #f4f4f4;
-    font-weight: bold;
 }
 
 #team-table tbody tr:hover {
@@ -209,20 +211,6 @@ th {
 #team-table tbody tr.selected {
     background-color: #c8e6c9;
     font-weight: bold;
-}
-
-#team-search {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-}
-
-#pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 10px 0;
 }
 
 #selected-team-display {
