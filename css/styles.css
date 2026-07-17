@@ -177,8 +177,8 @@ h2 {
 }
 
 #team-table-wrapper {
-    height: 300px; /* Shows roughly 10 rows at a time */
-    overflow-y: scroll;
+    max_height: 300px !important; /* Shows roughly 10 rows at a time */
+    overflow-y: scroll !important;
     border: 1px solid #ddd;
     border-radius: 4px;
     margin-bottom: 10px;
