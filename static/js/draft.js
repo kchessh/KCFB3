@@ -77,16 +77,19 @@ function nominateTeam() {
 
 function placeBid() {
     const amount = parseInt(document.getElementById('bid-input').value);
-    alert('Amount parsed! ' + amount);
+    alert('Amount parsed: ' + amount);
+    alert('currentNominationId: ' + currentNominationId);  // ← what does this show?
+    alert('ROOM_ID: ' + ROOM_ID);                          // ← and this?
     if (!currentNominationId) return alert('No active nomination.');
     if (!amount || amount < 1) return alert('Enter a valid bid.');
-    alert(`room_id: ${ROOM_ID}, nomination_id: ${currentNominationId}, amount: ${amount}`);
+    alert('About to emit!');
     socket.emit('place_bid', {
         room_id: ROOM_ID,
         nomination_id: currentNominationId,
         amount: amount
     });
 }
+
 
 function quickBid(increment) {
     const currentBidText = document.getElementById('current-bid').textContent;
