@@ -1870,7 +1870,7 @@ def draft_room(league_id):
 # --- SocketIO Events ---
 @socketio.on('join_draft')
 def on_join(data):
-    room_id = data['league_id']
+    room_id = data['league.id']
     user_id = current_user.id
 
     participant = DraftParticipant.query.filter_by(draft_room_id=room_id,user_id=user_id).first()
