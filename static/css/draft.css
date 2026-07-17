@@ -1,16 +1,21 @@
 /* static/css/draft.css */
 #draft-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
+    grid-template-areas:
+        "nomination nomination nomination"
+        "nominate participants log";
+    grid-template-columns: 300px 1fr 1fr;
+    grid-template-rows: auto 1fr;
     gap: 20px;
     padding: 20px;
-    max-width: 1200px;
-    margin: auto;
+}
+
+#nomination-panel {
+    grid-area: nomination;
 }
 
 #nominate-panel {
-    width: 350px; /* Adjust this to make the panel wider or narrower */
+    grid-area: nominate;
 }
 
 #nominate-header {
