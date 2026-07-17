@@ -96,50 +96,6 @@ function quickBid(increment) {
     document.getElementById('bid-input').value = currentBid + increment;
 }
 
-function initTable() {
-    filteredRows = Array.from(document.querySelectorAll('.team-row'));
-    renderTable();
-}
-
-function filterTeams() {
-    const query = document.getElementById('team-search').value.toLowerCase();
-    const allRows = Array.from(document.querySelectorAll('.team-row'));
-
-    filteredRows = allRows.filter(row =>
-        row.dataset.name.toLowerCase().includes(query)
-    );
-
-    currentPage = 1;
-    renderTable();
-}
-
-function renderTable() {
-    const allRows = Array.from(document.querySelectorAll('.team-row'));
-
-    // Hide all rows first
-    allRows.forEach(row => row.style.display = 'none');
-
-    // Calculate the slice of rows to show
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    const pageRows = filteredRows.slice(start, end);
-
-    // Show only the current page's rows
-    pageRows.forEach(row => row.style.display = '');
-
-    // Update pagination info
-    const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
-    document.getElementById('page-indicator').textContent = `Page ${currentPage} of ${totalPages}`;
-    document.getElementById('prev-btn').disabled = currentPage === 1;
-    document.getElementById('next-btn').disabled = currentPage === totalPages;
-}
-
-function changePage(direction) {
-    const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
-    currentPage = Math.min(Math.max(1, currentPage + direction), totalPages);
-    renderTable();
-}
-
 function selectTeam(id, name) {
     // Remove highlight from all rows
     document.querySelectorAll('.team-row').forEach(row => row.classList.remove('selected'));
