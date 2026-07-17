@@ -110,9 +110,6 @@ function selectTeam(id, name) {
 }
 
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', initTable);
-
 // ─── Helpers ──────────────────────────────────────────────────
 function startCountdown(timerEndISO) {
     clearInterval(countdownInterval);
