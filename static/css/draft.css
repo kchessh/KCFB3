@@ -40,6 +40,16 @@
     padding: 4px;
 }
 
+#nominate-controls button {
+  padding: 4px 6px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 4px;
+}
+
 #team-table-wrapper {
     max-height: 300px;
     overflow-y: scroll;
