@@ -167,3 +167,19 @@
     background-color: #c8e6c9;
     font-weight: bold;
 }
+
+#reset-draft-btn {
+    margin-top: 16px;
+    width: 100%;
+    padding: 8px 14px;
+    background: #c62828;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#reset-draft-btn:hover {
+    background: #e53935;
+}

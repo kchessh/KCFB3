@@ -109,6 +109,32 @@ function selectTeam(id, name) {
     document.getElementById('selected-team-name').textContent = name;
 }
 
+function resetDraft() {
+    if (!confirm("Are you sure you want to reset the draft? This will clear all bids, nominations, and reset all budgets.")) {
+        return;
+    }
+
+    fetch(`/draft/${ROOM_ID}/reset`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("Draft has been reset.");
+            location.reload();
+        } else {
+            alert("Error resetting draft: " + data.error);
+        }
+    })
+    .catch(err => {
+        console.error("Reset failed:", err);
+        alert("Something went wrong.");
+    });
+}
+
 
 // ─── Helpers ──────────────────────────────────────────────────
 function startCountdown(timerEndISO) {

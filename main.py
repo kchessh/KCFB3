@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, flash, send_from_directory, Blueprint, session
+from flask import Flask, render_template, request, url_for, redirect, flash, send_from_directory, Blueprint, session, jsonify
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_wtf import FlaskForm
 import pandas
@@ -1866,6 +1866,47 @@ def draft_room(league_id):
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
                            current_winner_name=current_winner_name, nominated_team_name=nominated_team_name)
+
+@draft_bp.route('/draft/<int:league_id>/reset', methods=['POST'])
+@login_required
+def reset_draft(league_id):
+    room = DraftRoom.query.filter_by(league_id=league_id).first_or_404()
+
+    # Verify the current user is a commissioner
+    participant = DraftParticipant.query.filter_by(
+        draft_room_id=room.id,
+        user_id=current_user.id,
+        is_commissioner=True
+    ).first()
+
+    if not participant:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    try:
+        # Delete all bids
+        nominations = DraftNomination.query.filter_by(draft_room_id=room.id).all()
+        for nomination in nominations:
+            DraftBid.query.filter_by(nomination_id=nomination.id).delete()
+
+        # Delete all nominations
+        DraftNomination.query.filter_by(draft_room_id=room.id).delete()
+
+        # Reset all participant budgets
+        DraftParticipant.query.filter_by(draft_room_id=room.id).update({
+            'budget_remaining': 100
+        })
+
+        # Reset draft room status
+        room.status = 'waiting'
+
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 # --- SocketIO Events ---
 @socketio.on('join_draft')
