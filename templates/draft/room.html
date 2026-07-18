@@ -1,12 +1,16 @@
 <!-- templates/draft/room.html -->
+{% extends 'base.html' %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Auction Draft</title>
+    <title>Draft Room</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/draft.css') }}">
+    {% block styles %}
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/draft.css') }}">
+    {% endblock %}
 </head>
 <body>
+  {% block content %}
     <div id="draft-container">
 
         <!-- Active Nomination Panel -->
@@ -98,7 +102,9 @@
         </div>
 
     </div>
+  {% endblock %}
 
+  {% block scripts %}
     <script>
         // Pass Jinja variables to JS
         const ROOM_ID = {{ room.league_id }};
@@ -106,5 +112,6 @@
         const CURRENT_NOMINATION = {{ active_nomination.id if active_nomination else 'null' }};
     </script>
     <script src="{{ url_for('static', filename='js/draft.js') }}"></script>
+  {% endblock %}
 </body>
 </html>
