@@ -4,7 +4,6 @@
 <html>
 <head>
     <title>Draft Room</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
     {% block styles %}
       {{ super() }}
       <link rel="stylesheet" href="{{ url_for('static', filename='css/draft.css') }}">
@@ -115,6 +114,7 @@
 
   {% block scripts %}
     {{ super() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
     <script>
         // Pass Jinja variables to JS
         const ROOM_ID = {{ room.league_id }};
