@@ -1840,7 +1840,9 @@ def draft_room(league_id):
     if participant is None:
         participant = DraftParticipant(draft_room_id=room.id, user_id=current_user.id, is_commissioner=is_commissioner)
         db.session.add(participant)
-        db.session.commit()
+    else:
+        participant.is_commissioner = is_commissioner
+    db.session.commit()
 
     active_nomination = DraftNomination.query.filter_by(draft_room_id=room.id, status='active').first()
     if active_nomination:
