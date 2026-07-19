@@ -14,6 +14,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 from sqlalchemy import select, delete, update, inspect
 from flask_migrate import Migrate
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 import time
 import random
 import MySQLdb
@@ -46,7 +47,8 @@ app.config['SECRET_KEY'] = 'secret-key-goes-here'
 #     import no_push
 #     app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
 # Heroku SQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://urpkh4m7l378b:p0ca7da822b3823177e9879b78d7561c458d2185364439e2a6b51828147a8ee3c@cd5vlri6nnqe17.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1vrtkcrdmm43p'
+load_dotenv()
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_pre_ping": True,
