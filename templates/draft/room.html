@@ -95,11 +95,11 @@
             </ul>
 
             <!-- Only visible to the commissioner -->
-            {% for p in participants %}
-                {% if p.user_id == current_user.id and p.is_commissioner %}
-                    <button id="reset-draft-btn" onclick="resetDraft()">Reset Draft</button>
-                {% endif %}
-            {% endfor %}
+            {% set current_participant = participants | selectattr('user_id', 'equalto', current_user.id) | first %}
+            {% if current_participant and current_participant.is_commissioner %}
+                <button id="reset-draft-btn" onclick="resetDraft()">🔄 Reset Draft</button>
+            {% endif %}
+
         </div>
 
 
