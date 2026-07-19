@@ -1832,15 +1832,23 @@ def draft_room(league_id):
         db.session.add(room)
         db.session.commit()
 
+    # Check if current user is the league manager
+    league = League.query.filter_by(id=league_id).first()
+    is_commissioner = (league.league_manager == current_user.id)
+
     participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=current_user.id).first()
     if participant is None:
-        participant = DraftParticipant(draft_room_id=room.id, user_id=current_user.id)
+        participant = DraftParticipant(draft_room_id=room.id, user_id=current_user.id, is_commissioner=is_commissioner)
         db.session.add(participant)
         db.session.commit()
 
     active_nomination = DraftNomination.query.filter_by(draft_room_id=room.id, status='active').first()
-    current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
-    nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
+    if active_nomination:
+        current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
+        nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
+    else:
+        current_winner_name = None
+        nominated_team_name = None
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
     print(f'{participants=}')
