@@ -1885,7 +1885,7 @@ def draft_room(league_id):
     print(f'{current_winner_name=}')
     print(f'{nominated_team_name=}')
 
-    return render_template('draft/room.html', room=str(room), participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
+    return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
                            current_winner_name=current_winner_name, nominated_team_name=nominated_team_name)
 
 @draft_bp.route('/draft/<int:league_id>/reset', methods=['POST'])
