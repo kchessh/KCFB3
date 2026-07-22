@@ -1795,7 +1795,7 @@ def end_nomination(nomination_id, room_id):
 
         # Notify all users in the room
         socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner, 'winner_name': winner.username if winner else None,
-                                           'final_price': nomination.current_bid}, room=str(room_id))
+                                           'final_price': nomination.current_bid}, room=str(room_id), include_self=True)
 
 
 def start_timer(nomination_id, room_id, seconds=30):
@@ -1817,7 +1817,7 @@ def start_timer(nomination_id, room_id, seconds=30):
     socketio.emit('timer_update', {
         'nomination_id': nomination_id,
         'timer_end': nomination.timer_end.isoformat()
-    }, room=str(room_id))
+    }, room=str(room_id), include_self=True)
 
 
 # --- HTTP Routes for draft ---
@@ -1949,7 +1949,7 @@ def on_join(data):
     participant.is_connected = True
     db.session.commit()
 
-    emit('user_joined', {'user_id': user_id}, room=str(room_id))
+    emit('user_joined', {'user_id': user_id}, room=str(room_id), include_self=True)
 
 
 @socketio.on('nominate_team')
@@ -1982,7 +1982,7 @@ def on_nominate(data):
     start_timer(nomination.id, room_id, seconds=30)
 
     emit('nomination_started', {'nomination_id': nomination.id, 'team_id': team_id, 'nominated_by': user_id, 'current_bid': starting_bid, 'current_winner': user_id, 'timer_end': nomination.timer_end.isoformat()
-    }, room=str(room_id))
+    }, room=str(room_id), include_self=True)
 
 
 @socketio.on('place_bid')
@@ -2002,16 +2002,16 @@ def on_bid(data):
 
     # --- Validation ---
     if not nomination or nomination.status != 'active':
-        emit('error', {'message': 'No active nomination.'})
+        emit('error', {'message': 'No active nomination.'}, include_self=True)
         return
     if bid_amount <= nomination.current_bid:
-        emit('error', {'message': f'Bid must be greater than {nomination.current_bid}.'})
+        emit('error', {'message': f'Bid must be greater than {nomination.current_bid}.'}, include_self=True)
         return
     if bid_amount > participant.budget_remaining:
-        emit('error', {'message': 'Insufficient budget.'})
+        emit('error', {'message': 'Insufficient budget.'}, include_self=True)
         return
     if user_id == nomination.current_winner_id:
-        emit('error', {'message': 'You are already the highest bidder.'})
+        emit('error', {'message': 'You are already the highest bidder.'}, include_self=True)
         return
 
     # Record the bid
@@ -2026,7 +2026,7 @@ def on_bid(data):
     # Reset timer on new bid
     start_timer(nomination_id, room_id, seconds=15)
 
-    emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id, 'username': current_user.username}, room=str(room_id))
+    emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id, 'username': current_user.username}, room=str(room_id), include_self=True)
 
 @socketio.on('disconnect')
 def on_disconnect():
