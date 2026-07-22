@@ -1955,6 +1955,8 @@ def on_nominate(data):
     team_id = int(data['team_id'])
     starting_bid = data.get('starting_bid', 1)
     user_id = current_user.id
+    team = Football_Teams.query.get(id=team_id)
+    winner = User.query.get(user_id)
 
     draft_room = DraftRoom.query.filter_by(league_id=league_id).first()
     if not draft_room:
@@ -1989,9 +1991,11 @@ def on_nominate(data):
     emit('nomination_started', {
         'nomination_id': nomination.id,
         'team_id': team_id,
+        'team_name': team.name,
         'nominated_by': user_id,
         'current_bid': starting_bid,
         'current_winner': user_id,
+        'current_winner_name': winner.username,
         'timer_end': nomination.timer_end.isoformat()  # Will never be None now
     }, room=str(room_id), include_self=True)
 
