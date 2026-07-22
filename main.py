@@ -1958,10 +1958,11 @@ def on_nominate(data):
     team_id = int(data['team_id'])
     starting_bid = data.get('starting_bid', 1)
     user_id = current_user.id
-    print(f'{data=}')
+    print(f'on_nominate {data=}')
 
     # Look up the draft room by league_id
     draft_room = DraftRoom.query.filter_by(league_id=league_id).first()
+    print(f'on_nominate {draft_room=}')
     if not draft_room:
         emit('error', {'message': 'Draft room not found.'})
         return
@@ -1970,19 +1971,24 @@ def on_nominate(data):
 
     # Validate no active nomination exists
     existing = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
+    print(f'on_nominate {existing=}')
     if existing:
         emit('error', {'message': 'A nomination is already in progress.'})
         return
 
     # Create new nomination
     nomination = DraftNomination(draft_room_id=room_id, nominated_team_id=team_id, nominated_by_user_id=user_id, current_bid=starting_bid, current_winner_id=user_id, status='active')
+    print(f'on_nominate {nomination=}')
     db.session.add(nomination)
     db.session.commit()
 
+    print('starting timer')
     start_timer(nomination.id, room_id, seconds=30)
+    print('started timer')
 
     emit('nomination_started', {'nomination_id': nomination.id, 'team_id': team_id, 'nominated_by': user_id, 'current_bid': starting_bid, 'current_winner': user_id, 'timer_end': nomination.timer_end.isoformat()
     }, room=str(room_id), include_self=True)
+    print('emitted')
 
 
 @socketio.on('place_bid')
