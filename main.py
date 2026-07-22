@@ -1985,6 +1985,8 @@ def on_nominate(data):
 
     print('starting timer')
     start_timer(nomination.id, room_id, seconds=30)
+    # Refresh nomination from DB to get the updated timer_end
+    db.session.refresh(nomination)
     print('started timer')
 
     emit('nomination_started', {'nomination_id': nomination.id, 'team_id': team_id, 'nominated_by': user_id, 'current_bid': starting_bid, 'current_winner': user_id, 'timer_end': nomination.timer_end.isoformat()
