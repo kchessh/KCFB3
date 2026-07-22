@@ -1761,11 +1761,7 @@ def expected_vs_actual_graphs():
     years = list(first_data['expected wins'].keys())
     wins = list(first_data['expected wins'].values())
 
-    fig = px.line(
-        x=years,
-        y=wins,
-        title=f'{first_team} Expected Wins by Year',
-        labels={'x': 'Year', 'y': 'Expected Wins'}
+    fig = px.line(x=years, y=wins, title=f'{first_team} Expected Wins by Year', labels={'x': 'Year', 'y': 'Expected Wins'}
     )
     fig.update_traces(name=first_team, showlegend=True)
 
@@ -1779,23 +1775,28 @@ def expected_vs_actual_graphs():
 
 def end_nomination(nomination_id, room_id):
     """Called when the timer runs out — finalizes the sale."""
-    nomination = DraftNomination.query.get(nomination_id)
-    if nomination and nomination.status == 'active':
-        nomination.status = 'sold'
-        db.session.commit()
+    with app.app_context():
+        nomination = DraftNomination.query.get(nomination_id)
+        if nomination and nomination.status == 'active':
+            nomination.status = 'sold'
+            db.session.commit()
 
-        winner = None
-        if nomination.current_winner_id:
-            # Deduct budget from winner
-            participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=nomination.current_winner_id).first()
-            if participant:
-                participant.budget_remaining -= nomination.current_bid
-                db.session.commit()
-            winner = nomination.current_winner_id
+            winner_user = None
+            winner_id = None
+            if nomination.current_winner_id:
+                # Deduct budget from winner
+                participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=nomination.current_winner_id
+                ).first()
+                if participant:
+                    participant.budget_remaining -= nomination.current_bid
+                    db.session.commit()
 
-        # Notify all users in the room
-        socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner, 'winner_name': winner.username if winner else None,
-                                           'final_price': nomination.current_bid}, room=str(room_id), include_self=True)
+                winner_user = User.query.get(nomination.current_winner_id)  # Fetch the actual user
+                winner_id = nomination.current_winner_id
+
+            # Notify all users in the room
+            socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner_id, 'winner_name': winner_user.username if winner_user else None, 'final_price': nomination.current_bid
+            }, room=str(room_id))
 
 
 def start_timer(nomination_id, room_id, seconds=30):
@@ -1809,15 +1810,15 @@ def start_timer(nomination_id, room_id, seconds=30):
     nomination_timers[nomination_id] = timer
 
     # Update the DB with the timer end time
-    nomination = DraftNomination.query.get(nomination_id)
-    nomination.timer_end = datetime.utcnow() + timedelta(seconds=seconds)
-    db.session.commit()
+    with app.app_context():
+        nomination = DraftNomination.query.get(nomination_id)
+        nomination.timer_end = datetime.utcnow() + timedelta(seconds=seconds)
+        db.session.commit()
 
-    # Broadcast the new timer end to all clients
-    socketio.emit('timer_update', {
-        'nomination_id': nomination_id,
-        'timer_end': nomination.timer_end.isoformat()
-    }, room=str(room_id), include_self=True)
+        # Broadcast the new timer end to all clients
+        socketio.emit('timer_update', {'nomination_id': nomination_id, 'timer_end': nomination.timer_end.isoformat()
+        }, room=str(room_id))
+
 
 
 # --- HTTP Routes for draft ---
