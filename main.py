@@ -1991,7 +1991,7 @@ def on_nominate(data):
     emit('nomination_started', {
         'nomination_id': nomination.id,
         'team_id': team_id,
-        'team_name': team.name,
+        'team_name': team.team,
         'nominated_by': user_id,
         'current_bid': starting_bid,
         'current_winner': user_id,
