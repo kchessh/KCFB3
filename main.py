@@ -1801,24 +1801,20 @@ def end_nomination(nomination_id, room_id):
 
 def start_timer(nomination_id, room_id, seconds=30):
     """Start or reset the countdown timer."""
-    # Cancel existing timer if present
-    if nomination_id in nomination_timers:
-        nomination_timers[nomination_id].cancel()
-
-    timer = threading.Timer(seconds, end_nomination, args=[nomination_id, room_id])
-    timer.start()
-    nomination_timers[nomination_id] = timer
-
-    # Update the DB with the timer end time
     with app.app_context():
+        if nomination_id in nomination_timers:
+            nomination_timers[nomination_id].cancel()
+
+        timer = threading.Timer(seconds, end_nomination, args=[nomination_id, room_id])
+        timer.start()
+        nomination_timers[nomination_id] = timer
+
+        # Broadcast the timer end to all clients
         nomination = DraftNomination.query.get(nomination_id)
-        nomination.timer_end = datetime.utcnow() + timedelta(seconds=seconds)
-        db.session.commit()
-
-        # Broadcast the new timer end to all clients
-        socketio.emit('timer_update', {'nomination_id': nomination_id, 'timer_end': nomination.timer_end.isoformat()
+        socketio.emit('timer_update', {
+            'nomination_id': nomination_id,
+            'timer_end': nomination.timer_end.isoformat()
         }, room=str(room_id))
-
 
 
 # --- HTTP Routes for draft ---
@@ -1959,39 +1955,46 @@ def on_nominate(data):
     team_id = int(data['team_id'])
     starting_bid = data.get('starting_bid', 1)
     user_id = current_user.id
-    print(f'on_nominate {data=}')
 
-    # Look up the draft room by league_id
     draft_room = DraftRoom.query.filter_by(league_id=league_id).first()
-    print(f'on_nominate {draft_room=}')
     if not draft_room:
         emit('error', {'message': 'Draft room not found.'})
         return
 
     room_id = draft_room.id
 
-    # Validate no active nomination exists
     existing = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
-    print(f'on_nominate {existing=}')
     if existing:
         emit('error', {'message': 'A nomination is already in progress.'})
         return
 
-    # Create new nomination
-    nomination = DraftNomination(draft_room_id=room_id, nominated_team_id=team_id, nominated_by_user_id=user_id, current_bid=starting_bid, current_winner_id=user_id, status='active')
-    print(f'on_nominate {nomination=}')
+    # Calculate timer_end here directly
+    timer_end = datetime.utcnow() + timedelta(seconds=30)
+
+    # Create new nomination with timer_end already set
+    nomination = DraftNomination(
+        draft_room_id=room_id,
+        nominated_team_id=team_id,
+        nominated_by_user_id=user_id,
+        current_bid=starting_bid,
+        current_winner_id=user_id,
+        status='active',
+        timer_end=timer_end  # Set it here
+    )
     db.session.add(nomination)
     db.session.commit()
 
-    print('starting timer')
     start_timer(nomination.id, room_id, seconds=30)
-    # Refresh nomination from DB to get the updated timer_end
-    db.session.refresh(nomination)
-    print('started timer')
 
-    emit('nomination_started', {'nomination_id': nomination.id, 'team_id': team_id, 'nominated_by': user_id, 'current_bid': starting_bid, 'current_winner': user_id, 'timer_end': nomination.timer_end.isoformat()
+    emit('nomination_started', {
+        'nomination_id': nomination.id,
+        'team_id': team_id,
+        'nominated_by': user_id,
+        'current_bid': starting_bid,
+        'current_winner': user_id,
+        'timer_end': nomination.timer_end.isoformat()  # Will never be None now
     }, room=str(room_id), include_self=True)
-    print('emitted')
+
 
 
 @socketio.on('place_bid')
