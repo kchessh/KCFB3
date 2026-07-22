@@ -1878,7 +1878,7 @@ def draft_room(league_id):
     all_football_teams = Football_Teams.query.all()
     available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
-    print(f'{available_teams=}')
+    # print(f'{available_teams=}')
     print(f'{current_winner_name=}')
     print(f'{nominated_team_name=}')
 
@@ -1955,8 +1955,8 @@ def on_nominate(data):
     team_id = int(data['team_id'])
     starting_bid = data.get('starting_bid', 1)
     user_id = current_user.id
-    team = Football_Teams.query.get(id=team_id)
-    winner = User.query.get(user_id)
+    team = Football_Teams.query.filter_by(id=team_id).first()
+    winner = User.query.filter_by(id=user_id).first()
 
     draft_room = DraftRoom.query.filter_by(league_id=league_id).first()
     if not draft_room:
