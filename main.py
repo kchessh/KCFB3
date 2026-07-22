@@ -1942,11 +1942,11 @@ def on_join(data):
         emit('error', {'message': 'You are not a participant in this draft.'})
         return
 
-    join_room(str(room_id))
+    join_room(str(room.id))
     participant.is_connected = True
     db.session.commit()
 
-    emit('user_joined', {'user_id': user_id}, room=str(room_id), include_self=True)
+    emit('user_joined', {'user_id': user_id}, room=str(room.id), include_self=True)
 
 
 @socketio.on('nominate_team')
