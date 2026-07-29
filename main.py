@@ -1793,9 +1793,11 @@ def end_nomination(nomination_id, room_id):
 
                 winner_user = User.query.get(nomination.current_winner_id)  # Fetch the actual user
                 winner_id = nomination.current_winner_id
+                team_name = Football_Teams.query.filter_by(id=nomination.nominated_team_id).first().team
 
             # Notify all users in the room
-            socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner_id, 'winner_name': winner_user.username if winner_user else None, 'final_price': nomination.current_bid
+            socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner_id,
+                                              'winner_name': winner_user.username if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name
             }, room=str(room_id))
 
 
