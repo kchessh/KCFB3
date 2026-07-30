@@ -1895,7 +1895,7 @@ def draft_room(league_id):
         list_of_all_nominated_teams_names.append(Football_Teams.query.filter_by(id=nomination.nominated_team_id).first().team)
         list_of_people_who_nominated_teams.append(User.query.filter_by(id=nomination.nominated_by_user_id).first().name)
         list_of_sales_prices.append(nomination.current_bid)
-        list_of_created_at_times.append(nomination.created_at.strftime('%#I:%M:%S %p'))
+        list_of_created_at_times.append(nomination.created_at)
         if nomination.status == "sold":
             list_of_people_who_won_nominated_teams.append(User.query.filter_by(id=nomination.current_winner_id).first().name)
         else:
