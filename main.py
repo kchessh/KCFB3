@@ -1854,10 +1854,6 @@ def draft_room(league_id):
         timer_end_iso = None
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
-    print(f'{participants=}')
-    for single_participant in participants:
-        print(f'{single_participant.id=}, {single_participant.draft_room_id=}, {single_participant.user_id=}, {single_participant.is_commissioner=}, {single_participant.user=}')
-
     all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
     teams_to_remove = []
     for table in all_player_weekly_info_tables:
@@ -1882,9 +1878,6 @@ def draft_room(league_id):
     all_football_teams = Football_Teams.query.all()
     available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
-    # print(f'{available_teams=}')
-    print(f'{current_winner_name=}')
-    print(f'{nominated_team_name=}')
 
     all_nominations = DraftNomination.query.all()
     nomination_dict = {}

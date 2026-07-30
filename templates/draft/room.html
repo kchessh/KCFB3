@@ -122,6 +122,7 @@
   {% block scripts %}
     {{ super() }}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/draft.js') }}"></script>
     <script>
         // Pass Jinja variables to JS
         const ROOM_ID = {{ room.league_id }};
@@ -135,7 +136,6 @@
           document.getElementById('timer-display').textContent = '--';
         }
     </script>
-    <script src="{{ url_for('static', filename='js/draft.js') }}"></script>
   {% endblock %}
 </body>
 </html>
