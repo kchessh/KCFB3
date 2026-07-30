@@ -108,7 +108,7 @@
             <h4>Bid Log</h4>
             {% for nominated_teams_names, people_who_nominated_teams, people_who_won_nominated_teams, sales_prices, created_times in nomination_dict %}
               {% if people_who_won_nominated_teams is not none %}
-                {{ [created_times] }}✅ {{ nominated_teams_names }} sold to {{ people_who_won_nominated_teams }} for ${{ sales_prices }}!<br>
+                [{{ created_times }}]✅ {{ nominated_teams_names }} sold to {{ people_who_won_nominated_teams }} for ${{ sales_prices }}!<br>
               {% else %}
                 🏷️ {{ nominated_teams_names }} nominated by {{ people_who_nominated_teams }} for ${{ sales_prices }}. Team is currently at auction!
               {% endif %}
