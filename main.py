@@ -1797,7 +1797,8 @@ def end_nomination(nomination_id, room_id):
 
             # Notify all users in the room
             socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner_id,
-                                              'winner_name': winner_user.username if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name
+                                              'winner_name': winner_user.username if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name,
+                                              'timestamp': datetime.utcnow().isoformat() + 'Z'
             }, room=str(room_id))
 
 
@@ -1969,7 +1970,7 @@ def on_join(data):
     participant.is_connected = True
     db.session.commit()
 
-    emit('user_joined', {'user_id': user_id}, room=str(room.id), include_self=True)
+    emit('user_joined', {'user_id': user_id, 'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room.id), include_self=True)
 
 
 @socketio.on('nominate_team')
@@ -2019,7 +2020,8 @@ def on_nominate(data):
         'current_bid': starting_bid,
         'current_winner': user_id,
         'current_winner_name': winner.username,
-        'timer_end': nomination.timer_end.isoformat()  # Will never be None now
+        'timer_end': nomination.timer_end.isoformat() + 'Z',
+        'timestamp': datetime.utcnow().isoformat() + 'Z'
     }, room=str(room_id), include_self=True)
 
 
@@ -2065,7 +2067,8 @@ def on_bid(data):
     # Reset timer on new bid
     start_timer(nomination_id, room_id, seconds=15)
 
-    emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id, 'username': current_user.username}, room=str(room_id), include_self=True)
+    emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id, 'username': current_user.username,
+                        'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room_id), include_self=True)
 
 @socketio.on('disconnect')
 def on_disconnect():

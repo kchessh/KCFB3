@@ -20,14 +20,14 @@ socket.on('nomination_started', (data) => {
     document.getElementById('current-winner').textContent = `Leader: ${data.current_winner_name}`;
     document.getElementById('bid-controls').style.display = 'block';
 
-    addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`);
+    addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`, data.timestamp);
     startCountdown(data.timer_end);
 });
 
 socket.on('bid_placed', (data) => {
     document.getElementById('current-bid').textContent = `Current Bid: $${data.amount}`;
     document.getElementById('current-winner').textContent = `Leader: ${data.username}`;
-    addLogEntry(`💰 ${data.username} bid $${data.amount}`);
+    addLogEntry(`💰 ${data.username} bid $${data.amount}`, data.timestamp);
 });
 
 socket.on('timer_update', (data) => {
@@ -50,7 +50,7 @@ socket.on('nomination_sold', (data) => {
     document.getElementById('current-team').textContent = msg;
     document.getElementById('current-bid').textContent = '-';
     document.getElementById('current-winner').textContent = '-';
-    addLogEntry(msg);
+    addLogEntry(msg, data.timestamp);
 
     // Update winner's displayed budget
     updateBudgetDisplay(data.winner_id, data.final_price);
@@ -156,9 +156,15 @@ function startCountdown(timerEndISO) {
     }, 500);
 }
 
-function addLogEntry(message) {
+function addLogEntry(message, timestamp = null) {
     const list = document.getElementById('log-list');
     const li = document.createElement('li');
+    const time = timestamp ? new Date(timestamp) : new Date();
+    const formattedTime = time.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
     li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
     list.prepend(li); // newest on top
 }
