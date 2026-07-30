@@ -1900,7 +1900,7 @@ def draft_room(league_id):
             list_of_people_who_won_nominated_teams.append(User.query.filter_by(id=nomination.current_winner_id).first().name)
         else:
             list_of_people_who_won_nominated_teams.append(None)
-    formatted_times = [datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f').strftime('%I:%M:%S %p') for ts in list_of_created_at_times]
+    formatted_times = [ts.strftime('%#I:%M:%S %p') for ts in list_of_created_at_times]
 
     nomination_dict['nominated_teams_names'] = list_of_all_nominated_teams_names
     nomination_dict['people_who_nominated_teams'] = list_of_people_who_nominated_teams
