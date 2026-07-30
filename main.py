@@ -1895,17 +1895,18 @@ def draft_room(league_id):
         list_of_all_nominated_teams_names.append(Football_Teams.query.filter_by(id=nomination.nominated_team_id).first().team)
         list_of_people_who_nominated_teams.append(User.query.filter_by(id=nomination.nominated_by_user_id).first().name)
         list_of_sales_prices.append(nomination.current_bid)
-        list_of_created_at_times.append(nomination.created_at.strftime('%I:%M:%S %p'))
+        list_of_created_at_times.append(nomination.created_at.strftime('%#I:%M:%S %p'))
         if nomination.status == "sold":
             list_of_people_who_won_nominated_teams.append(User.query.filter_by(id=nomination.current_winner_id).first().name)
         else:
             list_of_people_who_won_nominated_teams.append(None)
+    formatted_times = [datetime.strftime('%#I:%M:%S %p') for datetime in list_of_created_at_times]
 
     nomination_dict['nominated_teams_names'] = list_of_all_nominated_teams_names
     nomination_dict['people_who_nominated_teams'] = list_of_people_who_nominated_teams
     nomination_dict['people_who_won_nominated_teams'] = list_of_people_who_won_nominated_teams
     nomination_dict['sales_prices'] = list_of_sales_prices
-    nomination_dict['created_times'] = list_of_created_at_times
+    nomination_dict['created_times'] = formatted_times
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
                            current_winner_name=current_winner_name, nominated_team_name=nominated_team_name,
