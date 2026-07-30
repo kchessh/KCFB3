@@ -106,6 +106,13 @@
         <!-- Bid History Log -->
         <div id="bid-log">
             <h4>Bid Log</h4>
+            {% for nominated_teams_names, people_who_nominated_teams, people_who_won_nominated_teams, sales_prices in nomination_dict %}
+              {% if people_who_nominated_teams is not none %}
+                `✅ {{ nominated_teams_names }} sold to {{ people_who_won_nominated_teams }} for ${{ sales_prices }}!`
+              {% else %}
+                `🏷️ {{ nominated_teams_names }} nominated by {{ people_who_nominated_teams }} for ${{ sales_prices }}. Team is currently at auction!`
+              {% endif %}
+            {% endfor %}
             <ul id="log-list"></ul>
         </div>
 
