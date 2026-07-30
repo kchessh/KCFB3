@@ -1847,9 +1847,11 @@ def draft_room(league_id):
     if active_nomination:
         current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
         nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
+        timer_end_iso = active_nomination.timer_end.isoformat()
     else:
         current_winner_name = None
         nominated_team_name = None
+        timer_end_iso = None
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
     print(f'{participants=}')
@@ -1900,7 +1902,7 @@ def draft_room(league_id):
             list_of_people_who_won_nominated_teams.append(User.query.filter_by(id=nomination.current_winner_id).first().name)
         else:
             list_of_people_who_won_nominated_teams.append(None)
-    formatted_times = [ts.strftime('%#I:%M:%S %p') for ts in list_of_created_at_times]
+    formatted_times = [ts.strftime('%#I:%M:%S') for ts in list_of_created_at_times]
 
     nomination_dict['nominated_teams_names'] = list_of_all_nominated_teams_names
     nomination_dict['people_who_nominated_teams'] = list_of_people_who_nominated_teams
@@ -1909,7 +1911,7 @@ def draft_room(league_id):
     nomination_dict['created_times'] = formatted_times
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
-                           current_winner_name=current_winner_name, nominated_team_name=nominated_team_name,
+                           current_winner_name=current_winner_name, nominated_team_name=nominated_team_name, timer_end_iso=timer_end_iso,
                            nomination_dict=zip(nomination_dict['nominated_teams_names'], nomination_dict['people_who_nominated_teams'],
                                                nomination_dict['people_who_won_nominated_teams'], nomination_dict['sales_prices'], nomination_dict['created_times']))
 

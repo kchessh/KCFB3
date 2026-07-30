@@ -127,6 +127,13 @@
         const ROOM_ID = {{ room.league_id }};
         const USER_ID = {{ current_user.id }};
         const CURRENT_NOMINATION = {{ active_nomination.id if active_nomination else 'null' }};
+
+        const timerEndISO = {{ timer_end_iso | tojson }};
+        if (timerEndISO) {
+          startCountdown(timerEndISO);
+        } else {
+          document.getElementById('timer-display').textContent = '--';
+        }
     </script>
     <script src="{{ url_for('static', filename='js/draft.js') }}"></script>
   {% endblock %}
