@@ -1856,7 +1856,7 @@ def draft_room(league_id):
         # find the most recent nomination so everyone can see the last team that was won
         all_nominations = DraftNomination.query.all()
         try:
-            most_recent_nomination = max(all_nominations, key=lambda t: datetime.strptime(t.timer_end, "%Y-%m-%d %H:%M:%S.%f"))
+            most_recent_nomination = max(all_nominations, key=lambda t: t.timer_end)
             most_recent_nomination_name = User.query.filter_by(id=most_recent_nomination.current_winner_id).first().name
             most_recent_nomination_team = Football_Teams.query.filter_by(id=most_recent_nomination.nominated_team_id).first().team
             print(f'{most_recent_nomination_name=}')
