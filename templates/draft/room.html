@@ -25,16 +25,16 @@
             </div>
             <div id="current-bid">
               {% if active_nomination %}
-                ${{ active_nomination.current_bid }}
+                Current Bid: ${{ active_nomination.current_bid }}
               {% else %}
-                  -
+                Waiting for Next Nomination
               {% endif %}
             </div>
             <div id="current-winner">
               {% if active_nomination %}
-                {{ current_winner_name }}
+                Leader: {{ current_winner_name }}
               {% else %}
-                  -
+                Waiting for Next Nomination
               {% endif %}
             </div>
             <div id="timer-display">--</div>
@@ -131,7 +131,7 @@
     </script>
 
     <script src="{{ url_for('static', filename='js/draft.js') }}"></script>
-    
+
     <script>
       if (timerEndISO) {
         startCountdown(timerEndISO);
