@@ -191,4 +191,10 @@ function setBidControlsEnabled(enabled) {
 
     // Optional: visually grey it out when disabled
     bidControls.style.opacity = enabled ? '1' : '0.5';
+
+    // Reset bid text box to 1 once a team is won
+    if (!enabled) {
+        const bidInput = document.getElementById('bid-input');
+        if (bidInput) bidInput.value = 1;
+    }
 }
