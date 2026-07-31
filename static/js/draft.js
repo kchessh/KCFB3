@@ -20,14 +20,14 @@ socket.on('nomination_started', (data) => {
     document.getElementById('current-winner').textContent = `Leader: ${data.current_winner_name}`;
     document.getElementById('bid-controls').style.display = 'block';
 
-    addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`, data.timestamp);
+    addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`);
     startCountdown(data.timer_end);
 });
 
 socket.on('bid_placed', (data) => {
     document.getElementById('current-bid').textContent = `Current Bid: $${data.amount}`;
     document.getElementById('current-winner').textContent = `Leader: ${data.username}`;
-    addLogEntry(`💰 ${data.username} bid $${data.amount}`, data.timestamp);
+    addLogEntry(`💰 ${data.username} bid $${data.amount}`);
 });
 
 socket.on('timer_update', (data) => {
@@ -50,7 +50,7 @@ socket.on('nomination_sold', (data) => {
     document.getElementById('current-team').textContent = msg;
     document.getElementById('current-bid').textContent = '-';
     document.getElementById('current-winner').textContent = '-';
-    addLogEntry(msg, data.timestamp);
+    addLogEntry(msg);
 
     // Update winner's displayed budget
     updateBudgetDisplay(data.winner_id, data.final_price);
@@ -104,16 +104,6 @@ function selectTeam(id, name) {
     const selectedRow = document.querySelector(`.team-row[data-id="${id}"]`);
     if (selectedRow) selectedRow.classList.add('selected');
 
-    const teamSelectEl = document.getElementById('team-select');
-    if (teamSelectEl) teamSelectEl.value = id;
-
-    const nameDisplayEl = document.getElementById('selected-team-name');
-    if (nameDisplayEl) {
-        nameDisplayEl.textContent = name;
-    } else {
-        console.warn('Element #selected-team-name not found in DOM.');
-    }
-
     // Update hidden input and display
     document.getElementById('team-select').value = id;
     document.getElementById('selected-team-name').textContent = name;
@@ -166,15 +156,9 @@ function startCountdown(timerEndISO) {
     }, 500);
 }
 
-function addLogEntry(message, timestamp = null) {
+function addLogEntry(message) {
     const list = document.getElementById('log-list');
     const li = document.createElement('li');
-    const time = timestamp ? new Date(timestamp) : new Date();
-    const formattedTime = time.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
     li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
     list.prepend(li); // newest on top
 }
