@@ -129,12 +129,24 @@
         const CURRENT_NOMINATION = {{ active_nomination.id if active_nomination else 'null' }};
         const timerEndISO = {{ timer_end_iso | tojson }};
     </script>
+
     <script src="{{ url_for('static', filename='js/draft.js') }}"></script>
+    
     <script>
       if (timerEndISO) {
         startCountdown(timerEndISO);
       } else {
         document.getElementById('timer-display').textContent = '--';
+      }
+    </script>
+
+    <script>
+      if (timerEndISO) {
+        startCountdown(timerEndISO);
+        setBidControlsEnabled(true);
+      } else {
+        document.getElementById('timer-display').textContent = '--';
+        setBidControlsEnabled(false);
       }
     </script>
   {% endblock %}

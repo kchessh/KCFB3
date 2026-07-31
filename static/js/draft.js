@@ -18,7 +18,7 @@ socket.on('nomination_started', (data) => {
     document.getElementById('current-team').textContent = data.team_name;
     document.getElementById('current-bid').textContent = `Current Bid: $${data.current_bid}`;
     document.getElementById('current-winner').textContent = `Leader: ${data.current_winner_name}`;
-    document.getElementById('bid-controls').style.display = 'block';
+    setBidControlsEnabled(true);
 
     addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`);
     startCountdown(data.timer_end);
@@ -41,7 +41,7 @@ socket.on('nomination_sold', (data) => {
     clearInterval(countdownInterval);
     document.getElementById('timer-display').textContent = 'SOLD!';
     document.getElementById('timer-display').style.color = 'inherit'; //reset color on sold
-    document.getElementById('bid-controls').style.display = 'none';
+    setBidControlsEnabled(false);
 
     const msg = data.winner_id
         ? `✅ ${data.team_name} sold to ${data.winner_name} for $${data.final_price}!`
@@ -178,4 +178,17 @@ function updateBudgetDisplay(userId, amountSpent) {
             el.textContent = el.textContent.replace(/\$\d+/, `$${newBudget}`);
         }
     }
+}
+
+function setBidControlsEnabled(enabled) {
+    const bidControls = document.getElementById('bid-controls');
+    if (!bidControls) return;
+
+    // Disable/enable every input and button inside bid-controls
+    bidControls.querySelectorAll('input, button').forEach(el => {
+        el.disabled = !enabled;
+    });
+
+    // Optional: visually grey it out when disabled
+    bidControls.style.opacity = enabled ? '1' : '0.5';
 }
