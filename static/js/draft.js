@@ -104,6 +104,16 @@ function selectTeam(id, name) {
     const selectedRow = document.querySelector(`.team-row[data-id="${id}"]`);
     if (selectedRow) selectedRow.classList.add('selected');
 
+    const teamSelectEl = document.getElementById('team-select');
+    if (teamSelectEl) teamSelectEl.value = id;
+
+    const nameDisplayEl = document.getElementById('selected-team-name');
+    if (nameDisplayEl) {
+        nameDisplayEl.textContent = name;
+    } else {
+        console.warn('Element #selected-team-name not found in DOM.');
+    }
+
     // Update hidden input and display
     document.getElementById('team-select').value = id;
     document.getElementById('selected-team-name').textContent = name;
