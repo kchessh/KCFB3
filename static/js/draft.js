@@ -145,7 +145,7 @@ function resetDraft() {
 // ─── Helpers ──────────────────────────────────────────────────
 function startCountdown(timerEndISO) {
     clearInterval(countdownInterval);
-    const timerEnd = new Date(timerEndISO + 'Z'); // Ensure UTC parsing
+    const timerEnd = new Date(timerEndISO); // Ensure UTC parsing
 
     countdownInterval = setInterval(() => {
         const now = new Date();

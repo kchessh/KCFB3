@@ -1816,7 +1816,7 @@ def start_timer(nomination_id, room_id, seconds=30):
         nomination = DraftNomination.query.get(nomination_id)
         socketio.emit('timer_update', {
             'nomination_id': nomination_id,
-            'timer_end': nomination.timer_end.isoformat()
+            'timer_end': nomination.timer_end.isoformat() + 'Z'
         }, room=str(room_id))
 
 
@@ -1848,7 +1848,7 @@ def draft_room(league_id):
     if active_nomination:
         current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
         nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
-        timer_end_iso = active_nomination.timer_end.isoformat()
+        timer_end_iso = active_nomination.timer_end.isoformat() + 'Z'
     else:
         current_winner_name = None
         nominated_team_name = None
