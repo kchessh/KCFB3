@@ -1853,6 +1853,17 @@ def draft_room(league_id):
         current_winner_name = None
         nominated_team_name = None
         timer_end_iso = None
+        # find the most recent nomination so everyone can see the last team that was won
+        all_nominations = DraftNomination.query.all()
+        try:
+            most_recent_nomination = max(all_nominations, key=lambda t: datetime.strptime(t.timer_end, "%Y-%m-%d %H:%M:%S.%f"))
+            most_recent_nomination_name = User.query.filter_by(id=most_recent_nomination.current_winner_id).first().name
+            most_recent_nomination_team = Football_Teams.query.filter_by(id=most_recent_nomination.nominated_team_id).first().team
+            print(f'{most_recent_nomination_name=}')
+        except ValueError:
+            print('no nominations yet')
+            most_recent_nomination_name = None
+            most_recent_nomination_team = None
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
     all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
@@ -1906,6 +1917,7 @@ def draft_room(league_id):
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
                            current_winner_name=current_winner_name, nominated_team_name=nominated_team_name, timer_end_iso=timer_end_iso,
+                           most_recent_nomination_name=most_recent_nomination_name, most_recent_nomination_team=most_recent_nomination_team,
                            nomination_dict=zip(nomination_dict['nominated_teams_names'], nomination_dict['people_who_nominated_teams'],
                                                nomination_dict['people_who_won_nominated_teams'], nomination_dict['sales_prices'], nomination_dict['created_times']))
 

@@ -27,14 +27,14 @@
               {% if active_nomination %}
                 Current Bid: ${{ active_nomination.current_bid }}
               {% else %}
-                Waiting for Next Nomination
+                Previous Team: {% most_recent_nomination_team %}
               {% endif %}
             </div>
             <div id="current-winner">
               {% if active_nomination %}
                 Leader: {{ current_winner_name }}
               {% else %}
-                Waiting for Next Nomination
+                Previous Winner: {% most_recent_nomination_name %}
               {% endif %}
             </div>
             <div id="timer-display">--</div>
