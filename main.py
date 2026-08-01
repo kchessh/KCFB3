@@ -390,7 +390,11 @@ def page_not_found(e):
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    # pass in all of the user's leagues so they can go to them directly from this page
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
+    return render_template("index.html", leagues=leagues)
 
 
 def redirect_dest(fallback):
