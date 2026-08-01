@@ -1898,6 +1898,7 @@ def draft_room(league_id):
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
 
     all_nominations = DraftNomination.query.all()
+    all_nominations = sorted(all_nominations, key=all_nominations.created_at, reverse=False)
     nomination_dict = {}
     list_of_all_nominated_teams_names = []
     list_of_people_who_nominated_teams = []
@@ -1922,11 +1923,6 @@ def draft_room(league_id):
     nomination_dict['created_times'] = formatted_times
 
     # pass in all of the user's leagues so they can go to them directly from this page
-    user_list_of_leagues = [league.league_id for league in
-                            List_of_leagues_update1.query.filter_by(user_id=current_user.id)]
-    user_list_of_league_members = {}
-    league_managers_dict = {}
-    counter = 0
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
                     leagues]
