@@ -122,6 +122,7 @@
 
 #bid-log {
   max-height: 66.67vh;
+  max-height: 66.67dvh; /* goes to dvh if it's supported */
   overflow-y: scroll;
   border: 1px solid #ddd;
   border-radius: 4px;
