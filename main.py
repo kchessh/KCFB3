@@ -1797,7 +1797,7 @@ def end_nomination(nomination_id, room_id):
 
             # Notify all users in the room
             socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner_id,
-                                              'winner_name': winner_user.username if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name,
+                                              'winner_name': winner_user.name if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name,
                                               'timestamp': datetime.utcnow().isoformat() + 'Z'
             }, room=str(room_id))
 
