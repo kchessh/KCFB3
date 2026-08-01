@@ -166,7 +166,7 @@ function addLogEntry(message) {
     const list = document.getElementById('log-list');
     const li = document.createElement('li');
     li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-    list.push(li); // newest on bottom
+    list.prepend(li); // newest on bottom
 }
 
 function updateBudgetDisplay(userId, amountSpent) {
