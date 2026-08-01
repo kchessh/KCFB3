@@ -121,7 +121,7 @@
 }
 
 #bid-log {
-  max-height: 300px;
+  max-height: 66.67vh;
   overflow-y: scroll;
   border: 1px solid #ddd;
   border-radius: 4px;
