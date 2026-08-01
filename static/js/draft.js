@@ -167,6 +167,10 @@ function addLogEntry(message) {
     const li = document.createElement('li');
     li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
     list.append(li); // newest on bottom
+
+    // Auto-scroll the container to the bottom
+    const bidLog = document.getElementById('bid-log'); // or 'bid-log-container' if you use the wrapper
+    bidLog.scrollBottom = bidLog.scrollHeight;
 }
 
 function updateBudgetDisplay(userId, amountSpent) {
