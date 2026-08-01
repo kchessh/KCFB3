@@ -48,8 +48,8 @@ socket.on('nomination_sold', (data) => {
         : `❌ No bids — nomination cancelled.`;
 
     document.getElementById('current-team').textContent = msg;
-    document.getElementById('current-bid').textContent = '-';
-    document.getElementById('current-winner').textContent = '-';
+    document.getElementById('current-bid').textContent = `Previous winner: ` + {data.winner_name};
+    document.getElementById('current-winner').textContent = 'Previous team' + {data.team_name};
     addLogEntry(msg);
 
     // Update winner's displayed budget
