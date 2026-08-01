@@ -121,10 +121,11 @@
 }
 
 #bid-log {
-    max-height: 66.67dvh;      /* adjust to whatever height you want */
-    overflow-y: auto;
-    border: 1px solid #ccc;  /* optional, just to visually contain it */
-    padding: 10px;
+  max-height: 300px;
+  overflow-y: scroll;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
 }
 
 .participant.connected::before { content: '🟢 '; }
