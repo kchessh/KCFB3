@@ -1863,10 +1863,10 @@ def draft_room(league_id):
             most_recent_nomination_team = Football_Teams.query.filter_by(id=most_recent_nomination.nominated_team_id).first().team
             print(f'{most_recent_nomination_name=}')
     except ValueError:
-        most_recent_nomination_name = None
-        most_recent_nomination_team = None
-        current_winner_name = None
-        nominated_team_name = None
+        most_recent_nomination_name = "Draft has not started yet"
+        most_recent_nomination_team = "Draft has not started yet"
+        current_winner_name = "Draft has not started yet"
+        nominated_team_name = "Draft has not started yet"
         timer_end_iso = None
         print('no nominations yet')
 
