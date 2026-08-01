@@ -1897,7 +1897,7 @@ def draft_room(league_id):
     available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
 
-    all_nominations = DraftNomination.query.filter_by(draft_room_id=room.id).order_by(DraftNomination.created_at.desc()).all()
+    all_nominations = DraftNomination.query.filter_by(draft_room_id=room.id).order_by(DraftNomination.created_at.asc()).all()
     nomination_dict = {}
     list_of_all_nominated_teams_names = []
     list_of_people_who_nominated_teams = []
