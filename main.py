@@ -1773,8 +1773,12 @@ def expected_vs_actual_graphs():
 
     # Pass all team data to the template for JS to use
     teams_json = json.dumps(wins_dict)
+    leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
+    leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
+                    leagues]
 
-    return render_template('expected_vs_actual_graphs.html', chart_json=chart_json, teams_json=teams_json, team_names=list(wins_dict.keys()), wins_dict=wins_dict)
+    return render_template('expected_vs_actual_graphs.html', chart_json=chart_json, teams_json=teams_json, team_names=list(wins_dict.keys()), wins_dict=wins_dict,
+                           leagues_list=leagues_list)
 
 
 def end_nomination(nomination_id, room_id):
