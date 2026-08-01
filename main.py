@@ -1848,24 +1848,28 @@ def draft_room(league_id):
     active_nomination = DraftNomination.query.filter_by(draft_room_id=room.id, status='active').first()
     try:
         most_recent_nomination = max(all_nominations, key=lambda t: t.timer_end)
+        if active_nomination:
+            current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
+            nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
+            timer_end_iso = active_nomination.timer_end.isoformat() + 'Z'
+            most_recent_nomination_name = User.query.filter_by(id=active_nomination.nominated_team_id).first().name
+            most_recent_nomination_team = nominated_team_name
+        else:
+            current_winner_name = None
+            nominated_team_name = None
+            timer_end_iso = None
+            # find the most recent nomination so everyone can see the last team that was won
+            most_recent_nomination_name = User.query.filter_by(id=most_recent_nomination.current_winner_id).first().name
+            most_recent_nomination_team = Football_Teams.query.filter_by(id=most_recent_nomination.nominated_team_id).first().team
+            print(f'{most_recent_nomination_name=}')
     except ValueError:
         most_recent_nomination_name = None
         most_recent_nomination_team = None
-        print('no nominations yet')
-    if active_nomination:
-        current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
-        nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
-        timer_end_iso = active_nomination.timer_end.isoformat() + 'Z'
-        most_recent_nomination_name = User.query.filter_by(id=active_nomination.nominated_team_id).first().name
-        most_recent_nomination_team = nominated_team_name
-    else:
         current_winner_name = None
         nominated_team_name = None
         timer_end_iso = None
-        # find the most recent nomination so everyone can see the last team that was won
-        most_recent_nomination_name = User.query.filter_by(id=most_recent_nomination.current_winner_id).first().name
-        most_recent_nomination_team = Football_Teams.query.filter_by(id=most_recent_nomination.nominated_team_id).first().team
-        print(f'{most_recent_nomination_name=}')
+        print('no nominations yet')
+
 
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
     all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
