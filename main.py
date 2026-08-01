@@ -394,7 +394,7 @@ def home():
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
                     leagues]
-    return render_template("index.html", leagues=leagues)
+    return render_template("index.html", leagues_list=leagues_list)
 
 
 def redirect_dest(fallback):
