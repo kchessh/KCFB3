@@ -39,13 +39,6 @@ socketio = SocketIO(
 nomination_timers = {}  # nomination_id: threading.Timer
 
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
-# Old SQLite DB
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-# New
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://username:password@localhost/db_name'
-# if test:
-#     import no_push
-#     app.config['SQLALCHEMY_DATABASE_URI'] = no_push.my_sql_config
 # Heroku SQL
 load_dotenv()
 
@@ -289,6 +282,10 @@ class DraftParticipant(db.Model):
     is_commissioner = db.Column(db.Boolean, default=False)
     is_connected = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref='draft_participants')
+
+    @property
+    def person_name(self):
+        return self.user.name if self.user else None
 
 
 class UserForm(FlaskForm):
@@ -1806,8 +1803,7 @@ def end_nomination(nomination_id, room_id):
             # Notify all users in the room
             socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner_id,
                                               'winner_name': winner_user.name if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name,
-                                              'timestamp': datetime.utcnow().isoformat() + 'Z'
-            }, room=str(room_id))
+                                              'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room_id))
 
 
 def start_timer(nomination_id, room_id, seconds=30):
