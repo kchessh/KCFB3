@@ -23,6 +23,7 @@ import json
 import plotly.io as pio
 import threading
 import os
+import helper_functions
 
 test = True
 app = Flask(__name__)
@@ -354,24 +355,6 @@ csv with a list of 0s and 1s (1s representing a win, 0s representing a loss or n
 
 
 
-# new_teams = []
-# with open("Teams.txt", encoding='ISO-8859-1') as file:
-#     text = file.read()
-#     teams = text.split(",")
-#     for team in teams:
-#         new_team = team.replace("&", "%26")
-#         new_teams.append(new_team)
-#
-# teams_dict = {team: [] for team in teams}
-#
-# if get_upcoming_games:
-#     my_functions.upcoming_games_master(teams_dict=teams_dict, year=year)
-# data = pandas.read_csv("This_weeks_games.csv", encoding='latin-1')
-# team_games = data.to_dict()
-# final_team_games = my_functions.convert_dict_to_simple_dict(team_games)
-#
-# if get_data:
-#     my_functions.save_data(league_number=1, new_teams=new_teams, year=year, teams_dict=teams_dict)
 
 # Invalid URL
 @app.errorhandler(404)
@@ -457,7 +440,7 @@ def logout():
 def add_user():
     form = UserForm()
     name = None
-    passwords = my_functions.get_password_list()
+    passwords = helper_functions.get_password_list()
     passwords2 = [(str(word), word) for word in passwords]
     form.password.choices = passwords2
     form.password_confirm.choices = passwords2
@@ -492,7 +475,7 @@ def add_user():
 def update(id):
     form = UserForm()
     name_to_update = User.query.get(id)
-    passwords = my_functions.get_password_list()
+    passwords = helper_functions.get_password_list()
     passwords2 = [(str(word), word) for word in passwords]
     form.password.choices = passwords2
     form.password_confirm.choices = passwords2
@@ -719,7 +702,7 @@ def league_dashboard(league_id):
 
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                            if member.league_id == league_id]
-    week, postseason = my_functions.determine_week_number()
+    week, postseason = helper_functions.determine_week_number()
 
     # Gets all teams that the user can't pickup due to being owned by the user or another user
     ineligible_teams = []
@@ -1336,7 +1319,7 @@ def UserDashboard():
         teams = text.split(",")
 
     "Determine current week and previous week to calculate standings and previous standings"
-    week, postseason = my_functions.determine_week_number()
+    week, postseason = helper_functions.determine_week_number()
     if week == 1:
         previous_week = 1
     else:
@@ -1378,11 +1361,11 @@ def UserDashboard():
 	for each team (rank, points, last result, player, and conference)
 	"""
     current_week_score_dict = dict(
-        sorted(my_functions.determine_scores(points_dict=current_week_points_dict, league_number=league_number).items(),
+        sorted(helper_functions.determine_scores(points_dict=current_week_points_dict, league_number=league_number).items(),
                key=lambda kv: kv[1], reverse=True))
     previous_week_score_dict = dict(
         sorted(
-            my_functions.determine_scores(points_dict=previous_week_points_dict, league_number=league_number).items(),
+            helper_functions.determine_scores(points_dict=previous_week_points_dict, league_number=league_number).items(),
             key=lambda kv: kv[1], reverse=True))
     team_score_dict_sorted = dict(sorted(team_score_dict.items(), key=lambda kv: kv[1], reverse=True))
     team_data_dict = {team: {"points": ""} for team in team_score_dict_sorted}
@@ -1417,11 +1400,11 @@ def UserDashboard():
 
     data = pandas.read_csv(f"Leagues/League{league_number}.csv", encoding='latin-1')
     player_teams_initial = data.to_dict()
-    player_teams_final = my_functions.convert_dict_to_simple_dict(player_teams_initial)
+    player_teams_final = helper_functions.convert_dict_to_simple_dict(player_teams_initial)
 
     data = pandas.read_csv(f"This_Weeks_Games/League{league_number}.csv", encoding='latin-1')
     team_games = data.to_dict()
-    upcoming_team_games = my_functions.convert_dict_to_simple_dict(team_games)
+    upcoming_team_games = helper_functions.convert_dict_to_simple_dict(team_games)
 
     """
 	Variables used: week_num is the week number to be used by the html to calculate the standings.
