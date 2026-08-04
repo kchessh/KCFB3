@@ -1759,6 +1759,19 @@ def expected_vs_actual_graphs():
     except AttributeError:
         leagues_list = []
 
+    try:
+        # Add analysis to db if the user visiting is not me
+        if current_user.id != 13:
+            num_of_visits = Analysis.query.filter(Analysis.endpoint == "create_league").first().num_of_visits
+            db.session.query(Analysis).filter(Analysis.endpoint == "create_league").update(
+                {"num_of_visits": num_of_visits + 1})
+            db.session.commit()
+    except AttributeError:
+        num_of_visits = Analysis.query.filter(Analysis.endpoint == "create_league").first().num_of_visits
+        db.session.query(Analysis).filter(Analysis.endpoint == "create_league").update(
+            {"num_of_visits": num_of_visits + 1})
+        db.session.commit()
+
     return render_template('expected_vs_actual_graphs.html', chart_json=chart_json, teams_json=teams_json, team_names=list(wins_dict.keys()), wins_dict=wins_dict,
                            leagues_list=leagues_list)
 

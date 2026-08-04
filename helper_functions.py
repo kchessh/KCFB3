@@ -67,6 +67,7 @@ def determine_scores(points_dict, league_number):
 
     return score_dict
 
+
 """
 This function will delete the initial key that Panda makes with the row numbers (Unnamed). It also simplifies it so
 that the key (person) will only have a list as the value rather than a list of dictionaries
