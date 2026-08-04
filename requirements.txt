@@ -36,7 +36,7 @@ python-dotenv==1.2.2
 requests==2.34.2
 setuptools==83.0.0
 SQLAlchemy==2.0.51
-tqdm==4.64.1
+tqdm==4.70.0
 typing_extensions==4.15.0
 urllib3==2.7.0
 webdriver-manager==4.1.2
