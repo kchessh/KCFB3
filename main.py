@@ -3,7 +3,6 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_wtf import FlaskForm
 import pandas
 from datetime import datetime, timedelta
-import my_functions
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, EmailField, IntegerField, \
     SelectField
 from wtforms.validators import DataRequired, EqualTo, Length, InputRequired
