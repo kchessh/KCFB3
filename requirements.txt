@@ -33,7 +33,7 @@ psycopg2-binary==2.9.12
 pycparser==3.0
 PyMySQL==1.2.0
 python-dotenv==0.21.0
-requests==2.28.1
+requests==2.34.2
 setuptools==82.0.1
 SQLAlchemy==2.0.51
 tqdm==4.64.1
