@@ -15,10 +15,8 @@
     <p class="card-text">
       <strong>Name: </strong>{{ current_user.name }}<br/>
       <strong>Username: </strong>{{ current_user.username }}<br/>
-      <strong>User Id: </strong>{{ current_user.id }}<br/>
       <strong>Email: </strong>{{ current_user.email }}<br/>
       <strong>Date Joined: </strong>{{ current_user.date_added }}<br/>
-      <strong>Hashed Password: </strong>{{ current_user.password_hash }}<br/>
       {% if current_user.id == 13 %}
         <a href="{{ url_for('MasterDashboard') }}" class="btn btn-secondary btn-small">Master Dashboard</a>
       {% endif %}
