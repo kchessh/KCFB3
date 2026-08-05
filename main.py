@@ -1765,24 +1765,24 @@ def expected_vs_actual_graphs():
     try:
         # Add analysis to db if the user visiting is not me
         if current_user.id != 13:
-            num_of_visits = Analysis.query.filter(Analysis.endpoint == "expected_vs_actual").first().num_of_visits
-            if num_of_visits is None:
+            try:
+                num_of_visits = Analysis.query.filter(Analysis.endpoint == "expected_vs_actual").first().num_of_visits
+                db.session.query(Analysis).filter(Analysis.endpoint == "expected_vs_actual").update(
+                    {"num_of_visits": num_of_visits + 1})
+            except AttributeError:
                 # occurs when there is no table already made
                 num_of_visits = Analysis(num_of_visits=1, league=None, endpoint="expected_vs_actual")
                 db.session.add(num_of_visits)
-            else:
-                db.session.query(Analysis).filter(Analysis.endpoint == "expected_vs_actual").update(
-                    {"num_of_visits": num_of_visits + 1})
             db.session.commit()
     except AttributeError:
-        num_of_visits = Analysis.query.filter(Analysis.endpoint == "expected_vs_actual_2").first().num_of_visits
-        if num_of_visits is None:
+        try:
+            num_of_visits = Analysis.query.filter(Analysis.endpoint == "expected_vs_actual_2").first().num_of_visits
+            db.session.query(Analysis).filter(Analysis.endpoint == "expected_vs_actual_2").update(
+                    {"num_of_visits": num_of_visits + 1})
+        except AttributeError:
             # occurs when there is no table already made
             num_of_visits = Analysis(num_of_visits=1, league=None, endpoint="expected_vs_actual_2")
             db.session.add(num_of_visits)
-        else:
-            db.session.query(Analysis).filter(Analysis.endpoint == "expected_vs_actual_2").update(
-                {"num_of_visits": num_of_visits + 1})
         db.session.commit()
 
 
