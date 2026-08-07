@@ -23,6 +23,7 @@ Login
 
 	<form method="POST">
 		{{ form.hidden_tag() }}
+    <input type="hidden" name="next" value="{{ next }}">
 
 		{{ form.email.label(class="form-label") }}
 

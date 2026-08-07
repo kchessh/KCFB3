@@ -14,6 +14,7 @@ from sqlalchemy import select, delete, update, inspect
 from flask_migrate import Migrate
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+from urllib.parse import urlparse, urljoin
 import time
 import random
 import MySQLdb
@@ -367,6 +368,7 @@ def page_not_found(e):
 def page_not_found(e):
     return render_template("500.html"), 500
 
+
 @app.route("/")
 def home():
     # pass in all of the user's leagues so they can go to them directly from this page
@@ -379,35 +381,42 @@ def home():
     return render_template("index.html", leagues_list=leagues_list)
 
 
-def redirect_dest(fallback):
-    dest_url = request.args.get('next')
-    print(dest_url)
-    if not dest_url:
-        dest_url = url_for(fallback)
-    return redirect(dest_url)
-
-
 @login_manager.unauthorized_handler
 def handle_needs_login():
     flash("You have to be logged in to access this page.")
     next = url_for(request.endpoint,**request.view_args)
     return redirect(url_for('login', next=next))
 
+
+def is_safe_url(target):
+    """Ensure the redirect target is a relative URL on our own site."""
+    if not target:
+        return False
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    next_url = request.form.get("next")
+
+    # Grab 'next' from query string (GET, e.g. Flask-Login redirect)
+    # or from form data (POST, if your template passes it as a hidden field)
+    next_url = request.form.get("next") or request.args.get("next")
+
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user:
             if user.locked_account == True:
                 flash("Account is locked. Please talk to Ken to have it reset")
-                return render_template("login.html", form=form)
+                return render_template("login.html", form=form, next=next_url)
             elif check_password_hash(user.password_hash, form.password.data):
                 login_user(user)
                 db.session.query(User).filter(User.id == user.id).update({"failed_login_attempts": 0})
                 db.session.commit()
-                if next_url:
+
+                if next_url and is_safe_url(next_url):
                     return redirect(next_url)
                 else:
                     return redirect(url_for('UserDashboard'))
@@ -425,10 +434,12 @@ def login():
                     flash("That login combination is incorrect")
                 db.session.commit()
                 print(user.failed_login_attempts)
-                return render_template("login.html", form=form)
+                return render_template("login.html", form=form, next=next_url)
         else:
             flash("That email isn't registered in the system")
-    return render_template("login.html", form=form)
+
+    return render_template("login.html", form=form, next=next_url)
+
 
 
 @app.route('/logout', methods=['GET', 'POST'])
@@ -598,7 +609,8 @@ def delete_league(id):
 
 
 @app.route("/join_league/league_id=<int:league_id>", methods=['GET', 'POST'])
-@login_manager.unauthorized_handler
+# @login_manager.unauthorized_handler
+@login_required
 def join_league(league_id):
     # Add analysis to db if the user is not me
     num_of_visits = Analysis.query.filter(Analysis.endpoint == "join_league").first().num_of_visits
@@ -700,8 +712,6 @@ def league_dashboard(league_id):
     league_scores_with_names_initial = sorted(league_scores_with_names_list, key=lambda kv: kv[8], reverse=True)
     league_scores_with_names = sorted(league_scores_with_names_initial, key=lambda kv: kv[1], reverse=True)
     print(f'league_scores_with_names: {league_scores_with_names}')
-    # except AttributeError:
-    #     league_scores_with_names = []
 
     league_member_ids = [User.query.filter_by(id=member.member).first().id for member in league_members
                            if member.league_id == league_id]
@@ -1784,8 +1794,6 @@ def expected_vs_actual_graphs():
             num_of_visits = Analysis(num_of_visits=1, league=None, endpoint="expected_vs_actual_2")
             db.session.add(num_of_visits)
         db.session.commit()
-
-
 
     return render_template('expected_vs_actual_graphs.html', chart_json=chart_json, teams_json=teams_json, team_names=list(wins_dict.keys()), wins_dict=wins_dict,
                            leagues_list=leagues_list)
