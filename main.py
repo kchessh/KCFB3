@@ -403,7 +403,7 @@ def login():
 
     # Grab 'next' from query string (GET, e.g. Flask-Login redirect)
     # or from form data (POST, if your template passes it as a hidden field)
-    next_url = request.form.get("next") or request.args.get("next")
+    next_url = request.form.get("next") or request.args.get("next") or ""
 
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
