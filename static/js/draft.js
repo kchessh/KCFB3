@@ -52,8 +52,8 @@ socket.on('nomination_sold', (data) => {
     document.getElementById('current-winner').textContent = `Previous team: ${data.team_name}`;
     addLogEntry(msg);
 
-    // Update winner's displayed budget
     updateBudgetDisplay(data.winner_id, data.final_price);
+    updateAvailableTeams(data.team_id);
 });
 
 socket.on('user_joined', (data) => {
@@ -200,5 +200,26 @@ function setBidControlsEnabled(enabled) {
     if (!enabled) {
         const bidInput = document.getElementById('bid-input');
         if (bidInput) bidInput.value = 1;
+    }
+}
+
+function updateAvailableTeams(teamWonId) {
+    if (!teamWonId) return;
+
+    const teamRow = document.querySelector('.team-row[data-id="' + teamWonId + '"]');
+    if (teamRow) {
+      teamRow.remove();
+    }
+
+    const teamOption = document.querySelector('#team-select option[value="' + teamWonId + '"]');
+    if (teamOption) {
+      teamOption.remove();
+    }
+
+    const teamSelectEl = document.getElementById('team-select');
+    const nameDisplayEl = document.getElementById('selected-team-name');
+    if (teamSelectEl && teamSelectEl.value === String(teamWonId)) {
+      teamSelectEl.value = '';
+      if (nameDisplayEl) nameDisplayEl.textContent = '';
     }
 }
