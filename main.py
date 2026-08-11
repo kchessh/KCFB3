@@ -1913,6 +1913,7 @@ def draft_room(league_id):
         print('no nominations yet')
 
 
+    print(f'{league_id=}')
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
     all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
     teams_to_remove = []
@@ -1934,10 +1935,12 @@ def draft_room(league_id):
         team_4 = Football_Teams.query.filter_by(team=team_4_name).first()
         if team_4 is not None:
             teams_to_remove.append(team_4.id)
+    print(f'{teams_to_remove=}')
 
     all_football_teams = Football_Teams.query.all()
     available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
+    print(f'{available_teams=}')
 
     all_nominations = DraftNomination.query.filter_by(draft_room_id=room.id).order_by(DraftNomination.created_at.asc()).all()
     nomination_dict = {}
