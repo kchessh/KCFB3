@@ -1986,6 +1986,7 @@ def draft_room(league_id):
 @draft_bp.route('/draft/<int:league_id>/reset', methods=['POST'])
 @login_required
 def reset_draft(league_id):
+    print('entering reset_draft function')
     room = DraftRoom.query.filter_by(league_id=league_id).first_or_404()
 
     # Verify the current user is a commissioner
@@ -2048,6 +2049,7 @@ def reset_draft(league_id):
         return jsonify({'success': True})
 
     except Exception as e:
+        print('caught exception in reset_draft')
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
