@@ -2024,6 +2024,7 @@ def reset_draft(league_id):
             team4 = player_info.team_4
             print(f'{player.member=}')
             print(f'{player_info.user_id=}')
+            print(f'{player_info.league=}')
             print(f'{team1=}')
             print(f'{team2=}')
             print(f'{team3=}')
