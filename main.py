@@ -1821,16 +1821,17 @@ def end_nomination(nomination_id, room_id):
                 team_name = Football_Teams.query.filter_by(id=nomination.nominated_team_id).first().team
 
                 # Update winner's teams to include this team
-                player_team_info = Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).first()
+                league_id = DraftRoom.query.filter_by(id=room_id).league_id
+                player_team_info = Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).first()
                 if player_team_info.team_1 is None:
-                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_1': nomination.nominated_team_id})
+                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_1': nomination.nominated_team_id})
                 elif player_team_info.team_2 is None:
-                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_2': nomination.nominated_team_id})
+                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_2': nomination.nominated_team_id})
                 elif player_team_info.team_3 is None:
-                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_3': nomination.nominated_team_id})
+                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_3': nomination.nominated_team_id})
                 elif player_team_info.team_4 is None:
-                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_4': nomination.nominated_team_id})
-                    DraftParticipant.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'done_nominating': True})
+                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_4': nomination.nominated_team_id})
+                    DraftParticipant.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'done_nominating': True})
                     print(f'{User.query.filter_by(user_id=nomination.current_winner_id).name} is done nominating')
                 else:
                     print('looks like someone was able to bid (and win) a team when they already had 4 teams')
