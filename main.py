@@ -2014,6 +2014,7 @@ def reset_draft(league_id):
 
         # Reset committed teams to the database
         # IF ANY LEAGUE DRAFTS AFTER WEEK 1, THIS WON'T WORK SINCE EVERYTHING IS QUERYING WEEK 1
+        print(f'{league_id=}')
         all_players_in_league = League_members_update1.query.filter_by(league_id=league_id).all()
         for player in all_players_in_league:
             player_info = Player_weekly_info.query.filter_by(user_id=player.member, week=1).first()
@@ -2022,12 +2023,16 @@ def reset_draft(league_id):
             team3 = player_info.team_3
             team4 = player_info.team_4
             if team1 is not None:
+                print('reset team1')
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_1=player_info.team_1).update({'team_1': None})
             if team2 is not None:
+                print('reset team2')
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_2=player_info.team_2).update({'team_2': None})
             if team3 is not None:
+                print('reset team3')
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_3=player_info.team_3).update({'team_3': None})
             if team4 is not None:
+                print('reset team4')
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_4=player_info.team_4).update({'team_4': None})
 
         all_draft_participant_objects = DraftParticipant.query.filter_by(draft_room_id=league_id).all()
