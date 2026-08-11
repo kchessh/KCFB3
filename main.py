@@ -1822,7 +1822,6 @@ def end_nomination(nomination_id, room_id):
 
                 # Update winner's teams to include this team
                 player_team_info = Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).first()
-                player_done_nominating = False
                 if player_team_info.team_1 is None:
                     Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_1': nomination.nominated_team_id})
                 elif player_team_info.team_2 is None:
@@ -1831,7 +1830,8 @@ def end_nomination(nomination_id, room_id):
                     Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_3': nomination.nominated_team_id})
                 elif player_team_info.team_4 is None:
                     Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_4': nomination.nominated_team_id})
-                    player_done_nominating = True
+                    DraftParticipant.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'done_nominating': True})
+                    print(f'{User.query.filter_by(user_id=nomination.current_winner_id).name} is done nominating')
                 else:
                     print('looks like someone was able to bid (and win) a team when they already had 4 teams')
 
@@ -2020,6 +2020,11 @@ def reset_draft(league_id):
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_3=player_info.team_3).update({'team_3': None})
             if team4 is not None:
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_4=player_info.team_4).update({'team_4': None})
+
+        all_draft_participant_objects = DraftParticipant.query.filter_by(draft_room_id=league_id).all()
+        for participant_object in all_draft_participant_objects:
+            if participant_object.done_nominating is True:
+                DraftParticipant.query.filter_by(id=participant_object.id).update({'done_nominating': False})
 
         # Reset draft room status
         room.status = 'waiting'
