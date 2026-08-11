@@ -1823,13 +1823,18 @@ def end_nomination(nomination_id, room_id):
                 # Update winner's teams to include this team
                 league_id = DraftRoom.query.filter_by(id=room_id).first().league_id
                 player_team_info = Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).first()
+                print(f'{league_id=}')
                 if player_team_info.team_1 is None:
                     Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_1': nomination.nominated_team_id})
+                    print('updating team1')
                 elif player_team_info.team_2 is None:
                     Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_2': nomination.nominated_team_id})
+                    print('updating team2')
                 elif player_team_info.team_3 is None:
                     Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_3': nomination.nominated_team_id})
+                    print('updating team3')
                 elif player_team_info.team_4 is None:
+                    print('updating team4')
                     Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_4': nomination.nominated_team_id})
                     DraftParticipant.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'done_nominating': True})
                     print(f'{User.query.filter_by(user_id=nomination.current_winner_id).name} is done nominating')
