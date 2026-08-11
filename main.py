@@ -1986,7 +1986,6 @@ def draft_room(league_id):
 @draft_bp.route('/draft/<int:league_id>/reset', methods=['POST'])
 @login_required
 def reset_draft(league_id):
-    print('entering reset_draft function')
     room = DraftRoom.query.filter_by(league_id=league_id).first_or_404()
 
     # Verify the current user is a commissioner
@@ -2023,6 +2022,10 @@ def reset_draft(league_id):
             team2 = player_info.team_2
             team3 = player_info.team_3
             team4 = player_info.team_4
+            print(f'{team1=}')
+            print(f'{team2=}')
+            print(f'{team3=}')
+            print(f'{team4=}')
             if team1 is not None:
                 print('reset team1')
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_1=player_info.team_1).update({'team_1': None})
