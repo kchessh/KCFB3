@@ -282,6 +282,7 @@ class DraftParticipant(db.Model):
     budget_remaining = db.Column(db.Integer, default=100)
     is_commissioner = db.Column(db.Boolean, default=False)
     is_connected = db.Column(db.Boolean, default=False)
+    done_nominating = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref='draft_participants')
 
     @property
@@ -1805,14 +1806,12 @@ def end_nomination(nomination_id, room_id):
         nomination = DraftNomination.query.get(nomination_id)
         if nomination and nomination.status == 'active':
             nomination.status = 'sold'
-            db.session.commit()
 
             winner_user = None
             winner_id = None
             if nomination.current_winner_id:
                 # Deduct budget from winner
-                participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=nomination.current_winner_id
-                ).first()
+                participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=nomination.current_winner_id).first()
                 if participant:
                     participant.budget_remaining -= nomination.current_bid
                     db.session.commit()
@@ -1820,6 +1819,24 @@ def end_nomination(nomination_id, room_id):
                 winner_user = User.query.get(nomination.current_winner_id)  # Fetch the actual user
                 winner_id = nomination.current_winner_id
                 team_name = Football_Teams.query.filter_by(id=nomination.nominated_team_id).first().team
+
+                # Update winner's teams to include this team
+                player_team_info = Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).first()
+                player_done_nominating = False
+                if player_team_info.team_1 is None:
+                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_1': nomination.nominated_team_id})
+                elif player_team_info.team_2 is None:
+                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_2': nomination.nominated_team_id})
+                elif player_team_info.team_3 is None:
+                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_3': nomination.nominated_team_id})
+                elif player_team_info.team_4 is None:
+                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=room_id).update({'team_4': nomination.nominated_team_id})
+                    player_done_nominating = True
+                else:
+                    print('looks like someone was able to bid (and win) a team when they already had 4 teams')
+
+
+            db.session.commit()
 
             # Notify all users in the room
             socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'winner_id': winner_id,
@@ -1985,6 +2002,24 @@ def reset_draft(league_id):
         DraftParticipant.query.filter_by(draft_room_id=room.id).update({
             'budget_remaining': 100
         })
+
+        # Reset committed teams to the database
+        # IF ANY LEAGUE DRAFTS AFTER WEEK 1, THIS WON'T WORK SINCE EVERYTHING IS QUERYING WEEK 1
+        all_players_in_league = League_members_update1.query.filter_by(league_id=league_id).all()
+        for player in all_players_in_league:
+            player_info = Player_weekly_info.query.filter_by(user_id=player.member, week=1).first()
+            team1 = player_info.team_1
+            team2 = player_info.team_2
+            team3 = player_info.team_3
+            team4 = player_info.team_4
+            if team1 is not None:
+                Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_1=player_info.team_1).update({'team_1': None})
+            if team2 is not None:
+                Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_2=player_info.team_2).update({'team_2': None})
+            if team3 is not None:
+                Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_3=player_info.team_3).update({'team_3': None})
+            if team4 is not None:
+                Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_4=player_info.team_4).update({'team_4': None})
 
         # Reset draft room status
         room.status = 'waiting'
