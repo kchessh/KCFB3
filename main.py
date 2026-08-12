@@ -2015,7 +2015,7 @@ def reset_draft(league_id):
         # Reset committed teams to the database
         # IF ANY LEAGUE DRAFTS AFTER WEEK 1, THIS WON'T WORK SINCE EVERYTHING IS QUERYING WEEK 1
         print(f'{league_id=}')
-        all_players_in_league = League_members_update1.query.filter_by(league_id=league_id).all()
+        all_players_in_league = League_members_update1.query.filter_by(league_id=league_id).populate_existing().all()
         for player in all_players_in_league:
             player_info = Player_weekly_info.query.filter_by(user_id=player.member, week=1).first()
             team1 = player_info.team_1
