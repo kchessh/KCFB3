@@ -11,12 +11,20 @@
     padding: 20px;
 }
 
+#participants-panel {
+    grid-area: participants;
+}
+
 #nomination-panel {
     grid-area: nomination;
 }
 
 #nominate-panel {
     grid-area: nominate;
+}
+
+#bid-log {
+    grid-area: log;
 }
 
 #nominate-header {
