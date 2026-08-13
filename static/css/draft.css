@@ -137,8 +137,46 @@
   margin-bottom: 10px;
 }
 
-.participant.connected::before { content: '🟢 '; }
-.participant:not(.connected)::before { content: '🔴 '; }
+#participants-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.participant {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.participant.connected {
+    border-color: #4caf50;
+}
+
+.participant-name::before {
+    content: '🔴 ';
+}
+
+.participant.connected .participant-name::before {
+    content: '🟢 ';
+}
+
+.participant-name {
+    font-weight: 600;
+}
+
+.participant-budget {
+    font-size: 0.85em;
+    color: #666;
+}
 
 #log-list {
     max-height: 300px;
