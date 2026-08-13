@@ -1900,7 +1900,6 @@ def draft_room(league_id):
     try:
         most_recent_nomination = max(all_nominations, key=lambda t: t.timer_end)
         if active_nomination:
-            print(f'{active_nomination.id=}')
             current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
             nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
             timer_end_iso = active_nomination.timer_end.isoformat() + 'Z'
@@ -1915,10 +1914,10 @@ def draft_room(league_id):
             most_recent_nomination_team = Football_Teams.query.filter_by(id=most_recent_nomination.nominated_team_id).first().team
             print(f'{most_recent_nomination_name=}')
     except ValueError:
-        most_recent_nomination_name = "Draft has not started yet"
-        most_recent_nomination_team = "Draft has not started yet"
-        current_winner_name = "Draft has not started yet"
-        nominated_team_name = "Draft has not started yet"
+        most_recent_nomination_name = "TBD"
+        most_recent_nomination_team = "TBD"
+        current_winner_name = "TBD"
+        nominated_team_name = "TBD"
         timer_end_iso = None
         print('no nominations yet')
 
