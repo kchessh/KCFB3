@@ -355,7 +355,10 @@ in. Teams_dict is then made to pass into the save_to_spreadsheet function. A dic
 csv with a list of 0s and 1s (1s representing a win, 0s representing a loss or no game played)
 """
 
-
+"""
+4 letter display for every team
+"""
+four_letter_display_dict = {}
 
 
 # Invalid URL

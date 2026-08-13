@@ -53,6 +53,25 @@
             </div>
         </div>
 
+        <!-- Participants / Budget Tracker -->
+        <div id="participants-panel">
+            <h4>Participants</h4>
+            <ul id="participants-list">
+                {% for p in participants %}
+                <li id="user-{{ p.user_id }}" class="participant {% if p.is_connected %}connected{% endif %}">
+                    {{ p.user.username }} — ${{ p.budget_remaining }} remaining
+                </li>
+                {% endfor %}
+            </ul>
+
+            <!-- Only visible to the commissioner -->
+            {% set current_participant = participants | selectattr('user_id', 'equalto', current_user.id) | first %}
+            {% if current_participant and current_participant.is_commissioner %}
+                <button id="reset-draft-btn" onclick="resetDraft()">🔄 Reset Draft</button>
+            {% endif %}
+
+        </div>
+
         <!-- Nomination Controls (for your turn) -->
         <div id="nominate-panel">
             <div id="nominate-header">
@@ -82,26 +101,6 @@
             </div>
 
             <input type="hidden" id="team-select" value="">
-        </div>
-
-
-        <!-- Participants / Budget Tracker -->
-        <div id="participants-panel">
-            <h4>Participants</h4>
-            <ul id="participants-list">
-                {% for p in participants %}
-                <li id="user-{{ p.user_id }}" class="participant {% if p.is_connected %}connected{% endif %}">
-                    {{ p.user.username }} — ${{ p.budget_remaining }} remaining
-                </li>
-                {% endfor %}
-            </ul>
-
-            <!-- Only visible to the commissioner -->
-            {% set current_participant = participants | selectattr('user_id', 'equalto', current_user.id) | first %}
-            {% if current_participant and current_participant.is_commissioner %}
-                <button id="reset-draft-btn" onclick="resetDraft()">🔄 Reset Draft</button>
-            {% endif %}
-
         </div>
 
 
