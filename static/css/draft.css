@@ -23,6 +23,26 @@
     grid-area: nominate;
 }
 
+#nomination-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+#nomination-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#bid-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+}
+
 #bid-log {
     grid-area: log;
 }

@@ -15,31 +15,34 @@
   {% block content %}
     <div id="draft-container">
 
-        <!-- Active Nomination Panel -->
-        <div id="nomination-panel">
-            <h2>Current Nomination</h2>
-            <div id="current-team">
-              {% if active_nomination %}
-                {{ nominated_team_name }}
-              {% else %}
-                  Waiting for nomination...
-              {% endif %}
+      <!-- Active Nomination Panel -->
+      <div id="nomination-panel">
+        <h2>Current Nomination</h2>
+        <div id="nomination-content">
+            <div id="nomination-info">
+                <div id="current-team">
+                  {% if active_nomination %}
+                    {{ nominated_team_name }}
+                  {% else %}
+                      Waiting for nomination...
+                  {% endif %}
+                </div>
+                <div id="current-bid">
+                  {% if active_nomination %}
+                    Current Bid: ${{ active_nomination.current_bid }}
+                  {% else %}
+                    Previous Team: {{ most_recent_nomination_team }}
+                  {% endif %}
+                </div>
+                <div id="current-winner">
+                  {% if active_nomination %}
+                    Leader: {{ current_winner_name }}
+                  {% else %}
+                    Previous Winner: {{ most_recent_nomination_name }}
+                  {% endif %}
+                </div>
+                <div id="timer-display">--</div>
             </div>
-            <div id="current-bid">
-              {% if active_nomination %}
-                Current Bid: ${{ active_nomination.current_bid }}
-              {% else %}
-                Previous Team: {{ most_recent_nomination_team }}
-              {% endif %}
-            </div>
-            <div id="current-winner">
-              {% if active_nomination %}
-                Leader: {{ current_winner_name }}
-              {% else %}
-                Previous Winner: {{ most_recent_nomination_name }}
-              {% endif %}
-            </div>
-            <div id="timer-display">--</div>
 
             <!-- Bid Controls -->
             <div id="bid-controls">
@@ -52,6 +55,7 @@
                 <button onclick="quickBid(0)">Reset</button>
             </div>
         </div>
+      </div>
 
         <!-- Participants / Budget Tracker -->
         <div id="participants-panel">
