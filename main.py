@@ -1895,11 +1895,12 @@ def draft_room(league_id):
         participant.is_commissioner = is_commissioner
     db.session.commit()
 
-    all_nominations = DraftNomination.query.all()
+    all_nominations = DraftNomination.query.filter_by(draft_room_id=room.id).all()
     active_nomination = DraftNomination.query.filter_by(draft_room_id=room.id, status='active').first()
     try:
         most_recent_nomination = max(all_nominations, key=lambda t: t.timer_end)
         if active_nomination:
+            print(f'{active_nomination.id=}')
             current_winner_name = User.query.filter_by(id=active_nomination.current_winner_id).first().name
             nominated_team_name = Football_Teams.query.filter_by(id=active_nomination.nominated_team_id).first().team
             timer_end_iso = active_nomination.timer_end.isoformat() + 'Z'
@@ -1944,12 +1945,10 @@ def draft_room(league_id):
         team_4 = Football_Teams.query.filter_by(team=team_4_name).first()
         if team_4 is not None:
             teams_to_remove.append(team_4.id)
-    print(f'{teams_to_remove=}')
 
     all_football_teams = Football_Teams.query.all()
     available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
-    print(f'{available_teams=}')
 
     all_nominations = DraftNomination.query.filter_by(draft_room_id=room.id).order_by(DraftNomination.created_at.asc()).all()
     nomination_dict = {}
@@ -2005,6 +2004,7 @@ def reset_draft(league_id):
         # Delete all bids
         nominations = DraftNomination.query.filter_by(draft_room_id=room.id).all()
         for nomination in nominations:
+            print('')
             DraftBid.query.filter_by(nomination_id=nomination.id).delete()
 
         # Delete all nominations
@@ -2049,6 +2049,7 @@ def reset_draft(league_id):
         for participant_object in all_draft_participant_objects:
             if participant_object.done_nominating is True:
                 DraftParticipant.query.filter_by(id=participant_object.id).update({'done_nominating': False})
+
 
         # Reset draft room status
         room.status = 'waiting'
