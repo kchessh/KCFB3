@@ -2,10 +2,10 @@
 #draft-container {
     display: grid;
     grid-template-areas:
-        "nomination nomination nomination"
-        "participants participants participants"
-        "nominate nominate log";
-    grid-template-columns: 300px 1fr 1fr;
+        "nomination nomination"
+        "participants participants"
+        "nominate log";
+    grid-template-columns: 1fr 1fr;
     grid-template-rows: auto auto 1fr;
     gap: 20px;
     padding: 20px;
