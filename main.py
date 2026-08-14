@@ -1984,6 +1984,24 @@ def draft_room(league_id):
         ).all()
     }
 
+    team_ids = set()
+    for w in weekly_info.values():
+        team_ids.update(
+            tid for tid in [w.team_1, w.team_2, w.team_3, w.team_4] if tid is not None
+        )
+
+    team_names = {
+        t.id: t.team
+        for t in Football_Teams.query.filter(Football_Teams.id.in_(team_ids)).all()
+    }
+
+    participant_teams = {}
+    for user_id, w in weekly_info.items():
+        ids = [w.team_1, w.team_2, w.team_3, w.team_4]
+        participant_teams[user_id] = [
+            team_names[tid] for tid in ids if tid is not None and tid in team_names
+        ]
+
     # pass in all of the user's leagues so they can go to them directly from this page
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
@@ -1991,7 +2009,7 @@ def draft_room(league_id):
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
                            current_winner_name=current_winner_name, nominated_team_name=nominated_team_name, timer_end_iso=timer_end_iso,
-                           most_recent_nomination_name=most_recent_nomination_name, most_recent_nomination_team=most_recent_nomination_team, leagues_list=leagues_list, weekly_info=weekly_info,
+                           most_recent_nomination_name=most_recent_nomination_name, most_recent_nomination_team=most_recent_nomination_team, leagues_list=leagues_list, participant_teams=participant_teams,
                            nomination_dict=zip(nomination_dict['nominated_teams_names'], nomination_dict['people_who_nominated_teams'],
                                                nomination_dict['people_who_won_nominated_teams'], nomination_dict['sales_prices'], nomination_dict['created_times']))
 
