@@ -1973,6 +1973,17 @@ def draft_room(league_id):
     nomination_dict['sales_prices'] = list_of_sales_prices
     nomination_dict['created_times'] = formatted_times
 
+    # setting current_week to 1 for now to get things running. eventually this will need to get current_week correctly
+    current_week = 1
+    weekly_info = {
+        w.user_id: w
+        for w in Player_weekly_info.query.filter(
+            Player_weekly_info.league == draft_room.league_id,
+            Player_weekly_info.week == current_week,
+            Player_weekly_info.user_id.in_([p.user_id for p in participants]),
+        ).all()
+    }
+
     # pass in all of the user's leagues so they can go to them directly from this page
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
     leagues_list = [(League.query.filter_by(id=item.league).first().league_name, item.league) for item in
@@ -1980,7 +1991,7 @@ def draft_room(league_id):
 
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
                            current_winner_name=current_winner_name, nominated_team_name=nominated_team_name, timer_end_iso=timer_end_iso,
-                           most_recent_nomination_name=most_recent_nomination_name, most_recent_nomination_team=most_recent_nomination_team, leagues_list=leagues_list,
+                           most_recent_nomination_name=most_recent_nomination_name, most_recent_nomination_team=most_recent_nomination_team, leagues_list=leagues_list, weekly_info=weekly_info,
                            nomination_dict=zip(nomination_dict['nominated_teams_names'], nomination_dict['people_who_nominated_teams'],
                                                nomination_dict['people_who_won_nominated_teams'], nomination_dict['sales_prices'], nomination_dict['created_times']))
 
