@@ -2004,7 +2004,7 @@ def draft_room(league_id):
     for user_id, w in weekly_info.items():
         ids = [w.team_1, w.team_2, w.team_3, w.team_4]
         participant_teams[user_id] = [
-            team_names[tid] for tid in ids if tid is not None and tid in team_names
+            team_names[int(tid)] for tid in ids if tid is not None and tid in team_names
         ]
         print(f'{participant_teams=}')
 
