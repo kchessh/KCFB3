@@ -1984,6 +1984,12 @@ def draft_room(league_id):
         ).all()
     }
 
+    def to_int(tid):
+        try:
+            return int(tid)
+        except (TypeError, ValueError):
+            return None
+
     team_ids = set()
     for w in weekly_info.values():
         print(f'{w.team_1=}')
@@ -1991,7 +1997,7 @@ def draft_room(league_id):
         print(f'{w.team_3=}')
         print(f'{w.team_4=}')
         team_ids.update(
-            tid for tid in [w.team_1, w.team_2, w.team_3, w.team_4] if tid is not None
+            tid for tid in [to_int(w.team_1), to_int(w.team_2), to_int(w.team_3), to_int(w.team_4)] if tid is not None
         )
 
     team_names = {
