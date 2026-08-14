@@ -1986,6 +1986,10 @@ def draft_room(league_id):
 
     team_ids = set()
     for w in weekly_info.values():
+        print(f'{w.team_1=}')
+        print(f'{w.team_2=}')
+        print(f'{w.team_3=}')
+        print(f'{w.team_4=}')
         team_ids.update(
             tid for tid in [w.team_1, w.team_2, w.team_3, w.team_4] if tid is not None
         )
@@ -2001,6 +2005,7 @@ def draft_room(league_id):
         participant_teams[user_id] = [
             team_names[tid] for tid in ids if tid is not None and tid in team_names
         ]
+        print(f'{participant_teams=}')
 
     # pass in all of the user's leagues so they can go to them directly from this page
     leagues = List_of_leagues_update1.query.filter_by(user_id=current_user.id)
