@@ -1998,6 +1998,7 @@ def draft_room(league_id):
         t.id: t.team
         for t in Football_Teams.query.filter(Football_Teams.id.in_(team_ids)).all()
     }
+    print(f'{team_names=}')
 
     participant_teams = {}
     for user_id, w in weekly_info.items():
