@@ -1978,7 +1978,7 @@ def draft_room(league_id):
     weekly_info = {
         w.user_id: w
         for w in Player_weekly_info.query.filter(
-            Player_weekly_info.league == draft_room.league_id,
+            Player_weekly_info.league == league_id,
             Player_weekly_info.week == current_week,
             Player_weekly_info.user_id.in_([p.user_id for p in participants]),
         ).all()
