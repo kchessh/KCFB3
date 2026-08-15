@@ -1932,11 +1932,16 @@ def draft_room(league_id):
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
     all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
     teams_to_remove = []
+    print(f'{all_player_weekly_info_tables=}')
     for table in all_player_weekly_info_tables:
         team_1_name = table.team_1
         team_2_name = table.team_2
         team_3_name = table.team_3
         team_4_name = table.team_4
+        print(f'{team_1_name=}')
+        print(f'{team_2_name=}')
+        print(f'{team_3_name=}')
+        print(f'{team_4_name=}')
 
         team_1 = Football_Teams.query.filter_by(team=team_1_name).first()
         if team_1 is not None:
