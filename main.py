@@ -1943,18 +1943,31 @@ def draft_room(league_id):
         print(f'{team_3_name=}')
         print(f'{team_4_name=}')
 
-        team_1 = Football_Teams.query.filter_by(id=int(team_1_name)).first()
-        if team_1 is not None:
-            teams_to_remove.append(team_1.id)
-        team_2 = Football_Teams.query.filter_by(id=int(team_2_name)).first()
-        if team_2 is not None:
-            teams_to_remove.append(team_2.id)
-        team_3 = Football_Teams.query.filter_by(id=int(team_3_name)).first()
-        if team_3 is not None:
-            teams_to_remove.append(team_3.id)
-        team_4 = Football_Teams.query.filter_by(id=int(team_4_name)).first()
-        if team_4 is not None:
-            teams_to_remove.append(team_4.id)
+        try:
+            team_1 = Football_Teams.query.filter_by(id=int(team_1_name)).first()
+            if team_1 is not None:
+                teams_to_remove.append(team_1.id)
+        except TypeError:
+            # occurs when there is no team because Nonetype object is being passed in
+            pass
+        try:
+            team_2 = Football_Teams.query.filter_by(id=int(team_2_name)).first()
+            if team_2 is not None:
+                teams_to_remove.append(team_2.id)
+        except TypeError:
+            pass
+        try:
+            team_3 = Football_Teams.query.filter_by(id=int(team_3_name)).first()
+            if team_3 is not None:
+                teams_to_remove.append(team_3.id)
+        except TypeError:
+            pass
+        try:
+            team_4 = Football_Teams.query.filter_by(id=int(team_4_name)).first()
+            if team_4 is not None:
+                teams_to_remove.append(team_4.id)
+        except TypeError:
+            pass
 
     all_football_teams = Football_Teams.query.all()
     print(f'{teams_to_remove=}')
