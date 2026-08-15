@@ -1851,6 +1851,8 @@ def end_nomination(nomination_id, room_id):
 
 
             db.session.commit()
+            print(f'{winner_id=}')
+            print(f'{team_slot=}')
 
             # Notify all users in the room
             socketio.emit('nomination_sold', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'team_slot': team_slot, 'winner_id': winner_id,
