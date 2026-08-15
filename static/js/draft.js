@@ -54,6 +54,13 @@ socket.on('nomination_sold', (data) => {
 
     updateBudgetDisplay(data.winner_id, data.final_price);
     updateAvailableTeams(data.team_id);
+
+    if (data.winner_id && data.team_slot) {
+        const slotEl = document.getElementById(`user-${data.winner_id}-team-${data.team_slot}`);
+        if (slotEl) {
+            slotEl.textContent = `Team ${data.team_slot}: ${data.team_name}`;
+        }
+    }
 });
 
 socket.on('user_joined', (data) => {

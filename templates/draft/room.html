@@ -67,7 +67,8 @@
                   <span class="participant-teams">
                       {% set teams = participant_teams.get(p.user_id, [None, None, None, None]) %}
                       {% for team in teams %}
-                          <div class="team-slot">Team {{ loop.index }}: {{ team if team else "—" }}</div>
+                          <div class="team-slot" id="user-{{ p.user_id }}-team-{{ loop.index }}">
+                            Team {{ loop.index }}: {{ team if team else "—" }}</div>
                       {% endfor %}
                   </span>
                 </li>
