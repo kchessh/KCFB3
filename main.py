@@ -1943,16 +1943,16 @@ def draft_room(league_id):
         print(f'{team_3_name=}')
         print(f'{team_4_name=}')
 
-        team_1 = Football_Teams.query.filter_by(team=team_1_name).first()
+        team_1 = Football_Teams.query.filter_by(id=int(team_1_name)).first()
         if team_1 is not None:
             teams_to_remove.append(team_1.id)
-        team_2 = Football_Teams.query.filter_by(team=team_2_name).first()
+        team_2 = Football_Teams.query.filter_by(id=int(team_2_name)).first()
         if team_2 is not None:
             teams_to_remove.append(team_2.id)
-        team_3 = Football_Teams.query.filter_by(team=team_3_name).first()
+        team_3 = Football_Teams.query.filter_by(id=int(team_3_name)).first()
         if team_3 is not None:
             teams_to_remove.append(team_3.id)
-        team_4 = Football_Teams.query.filter_by(team=team_4_name).first()
+        team_4 = Football_Teams.query.filter_by(id=int(team_4_name)).first()
         if team_4 is not None:
             teams_to_remove.append(team_4.id)
 
