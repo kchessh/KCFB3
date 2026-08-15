@@ -1849,7 +1849,6 @@ def end_nomination(nomination_id, room_id):
                 else:
                     print('looks like someone was able to bid (and win) a team when they already had 4 teams')
 
-
             db.session.commit()
             print(f'{winner_id=}')
             print(f'{team_slot=}')
@@ -1953,6 +1952,7 @@ def draft_room(league_id):
             teams_to_remove.append(team_4.id)
 
     all_football_teams = Football_Teams.query.all()
+    print(f'{teams_to_remove=}')
     available_teams = [{"name": football_team.team, "id": football_team.id} for football_team in all_football_teams if football_team.id not in teams_to_remove]
     available_teams = sorted(available_teams, key=lambda team: team["name"].lower())
 
