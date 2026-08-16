@@ -36,7 +36,7 @@ socket.on('timer_update', (data) => {
     }
 });
 
-socket.on('nomination_sold', (data) => {
+socket.on('bidding_ended', (data) => {
     console.log('nomination_sold payload:', data);
     currentNominationId = null;
     clearInterval(countdownInterval);
