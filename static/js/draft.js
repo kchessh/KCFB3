@@ -183,12 +183,12 @@ function addLogEntry(message) {
 }
 
 function updateBudgetDisplay(userId, amountSpent) {
-    const el = document.getElementById(`user-${userId}`);
-    if (el) {
-        const match = el.textContent.match(/\$(\d+)/);
+    const nameEl = document.querySelector(`#user-${userId} .participant-name`);
+    if (nameEl) {
+        const match = nameEl.textContent.match(/\$(\d+)/);
         if (match) {
             const newBudget = parseInt(match[1]) - amountSpent;
-            el.textContent = el.textContent.replace(/\$\d+/, `$${newBudget}`);
+            nameEl.textContent = nameEl.textContent.replace(/\$\d+/, `$${newBudget}`);
         }
     }
 }
