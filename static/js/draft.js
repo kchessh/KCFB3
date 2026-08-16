@@ -37,6 +37,7 @@ socket.on('timer_update', (data) => {
 });
 
 socket.on('nomination_sold', (data) => {
+    console.log('nomination_sold payload:', data);
     currentNominationId = null;
     clearInterval(countdownInterval);
     document.getElementById('timer-display').textContent = 'SOLD!';
