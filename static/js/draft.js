@@ -37,7 +37,6 @@ socket.on('timer_update', (data) => {
 });
 
 socket.on('nomination_sold', (data) => {
-    console.log('nomination_sold payload:', data);
     currentNominationId = null;
     clearInterval(countdownInterval);
     document.getElementById('timer-display').textContent = 'SOLD!';
@@ -58,6 +57,7 @@ socket.on('nomination_sold', (data) => {
 
     if (data.winner_id && data.team_slot) {
         const slotEl = document.getElementById(`user-${data.winner_id}-team-${data.team_slot}`);
+        console.log('looking for:', `user-${data.winner_id}-team-${data.team_slot}`, '-> found:', slotEl);
         if (slotEl) {
             slotEl.textContent = `Team ${data.team_slot}: ${data.team_name}`;
         }
