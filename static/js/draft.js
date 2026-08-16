@@ -72,19 +72,17 @@ socket.on('nomination_started', (data) => {
     document.getElementById('timer-display').style.color = 'inherit';
 
     document.getElementById('current-team').textContent = data.team_name;
-    document.getElementById('current-bid').textContent = `Current Bid: $${data.starting_bid}`;
-    document.getElementById('current-winner').textContent = data.nominated_by
-        ? `Nominated by: ${data.nominated_by}`
-        : 'Leader: —';
+    document.getElementById('current-bid').textContent = `Current Bid: $${data.current_bid}`;
+    document.getElementById('current-winner').textContent = `Leader: ${data.current_winner_name}`;
 
-    addLogEntry(`📢 ${data.team_name} nominated by ${data.nominated_by}`);
+    addLogEntry(`📢 ${data.team_name} nominated by ${data.nominated_by_name}`);
 
     setBidControlsEnabled(true);
     document.getElementById('bid-input').value = '';
 
     clearInterval(countdownInterval);
     if (data.timer_end) {
-        startNominationCountdown(data.timer_end);
+        startBiddingCountdown(data.timer_end);
     }
 });
 
