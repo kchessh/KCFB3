@@ -253,6 +253,7 @@ class DraftRoom(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False, unique=True)
     status = db.Column(db.String(20), default='waiting')  # waiting, active, complete
+    nomination_deadline = db.Column(db.DateTime, nullable=True)
 
 
 class DraftNomination(db.Model):
@@ -1858,6 +1859,36 @@ def bidding_ended(nomination_id, room_id):
                                               'winner_name': winner_user.name if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name,
                                               'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room_id))
 
+            room = DraftRoom.query.get(room_id)
+            nomination_deadline = datetime.utcnow() + timedelta(seconds=60)
+            room.nomination_deadline = nomination_deadline
+            db.session.commit()
+
+            socketio.emit('nomination_window_started', {
+                'timer_end': nomination_deadline.isoformat() + 'Z'
+            }, room=str(room_id))
+
+
+def team_nominated(nomination_id, room_id):
+    """Called when a new team is nominated — starts a fresh bidding round."""
+    with app.app_context():
+        nomination = DraftNomination.query.get(nomination_id)
+        if nomination is None:
+            return
+
+        team = Football_Teams.query.get(nomination.nominated_team_id)
+        nominated_by_user = User.query.get(nomination.nominated_by_user_id)
+
+        socketio.emit('team_nominated', {
+            'nomination_id': nomination.id,
+            'team_id': nomination.nominated_team_id,
+            'team_name': team.team if team else None,
+            'starting_bid': nomination.current_bid,
+            'nominated_by': nominated_by_user.name if nominated_by_user else None,
+            'timer_end': nomination.timer_end.isoformat() + 'Z' if nomination.timer_end else None,
+            'timestamp': datetime.utcnow().isoformat() + 'Z'
+        }, room=str(room_id))
+
 
 def start_timer(nomination_id, room_id, seconds=30):
     """Start or reset the countdown timer."""
@@ -2177,10 +2208,8 @@ def on_nominate(data):
         emit('error', {'message': 'A nomination is already in progress.'})
         return
 
-    # Calculate timer_end here directly
     timer_end = datetime.utcnow() + timedelta(seconds=30)
 
-    # Create new nomination with timer_end already set
     nomination = DraftNomination(
         draft_room_id=room_id,
         nominated_team_id=team_id,
@@ -2188,9 +2217,12 @@ def on_nominate(data):
         current_bid=starting_bid,
         current_winner_id=user_id,
         status='active',
-        timer_end=timer_end  # Set it here
+        timer_end=timer_end
     )
     db.session.add(nomination)
+
+    # A nomination just happened, so clear any pending nomination-window deadline
+    draft_room.nomination_deadline = None
     db.session.commit()
 
     start_timer(nomination.id, room_id, seconds=30)
@@ -2200,9 +2232,10 @@ def on_nominate(data):
         'team_id': team_id,
         'team_name': team.team,
         'nominated_by': user_id,
+        'nominated_by_name': winner.name,
         'current_bid': starting_bid,
         'current_winner': user_id,
-        'current_winner_name': winner.username,
+        'current_winner_name': winner.name,
         'timer_end': nomination.timer_end.isoformat() + 'Z',
         'timestamp': datetime.utcnow().isoformat() + 'Z'
     }, room=str(room_id), include_self=True)

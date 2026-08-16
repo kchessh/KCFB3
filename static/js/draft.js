@@ -37,7 +37,7 @@ socket.on('timer_update', (data) => {
 });
 
 socket.on('bidding_ended', (data) => {
-    console.log('nomination_sold payload:', data);
+    console.log('bidding_ended payload:', data);
     currentNominationId = null;
     clearInterval(countdownInterval);
     document.getElementById('timer-display').textContent = 'SOLD!';
@@ -62,6 +62,38 @@ socket.on('bidding_ended', (data) => {
         if (slotEl) {
             slotEl.textContent = `Team ${data.team_slot}: ${data.team_name}`;
         }
+    }
+});
+
+socket.on('nomination_started', (data) => {
+    console.log('nomination_started payload:', data);
+    currentNominationId = data.nomination_id;
+
+    document.getElementById('timer-display').style.color = 'inherit';
+
+    document.getElementById('current-team').textContent = data.team_name;
+    document.getElementById('current-bid').textContent = `Current Bid: $${data.starting_bid}`;
+    document.getElementById('current-winner').textContent = data.nominated_by
+        ? `Nominated by: ${data.nominated_by}`
+        : 'Leader: —';
+
+    addLogEntry(`📢 ${data.team_name} nominated by ${data.nominated_by}`);
+
+    setBidControlsEnabled(true);
+    document.getElementById('bid-input').value = '';
+
+    clearInterval(countdownInterval);
+    if (data.timer_end) {
+        startNominationCountdown(data.timer_end);
+    }
+});
+
+socket.on('nomination_window_started', (data) => {
+    console.log('nomination_window_started payload:', data);
+    document.getElementById('current-team').textContent = 'Waiting for nomination...';
+    setBidControlsEnabled(false);
+    if (data.timer_end) {
+        startNominationCountdown(data.timer_end);
     }
 });
 
@@ -167,6 +199,40 @@ function startCountdown(timerEndISO) {
             document.getElementById('timer-display').style.color = 'inherit';
         }
 
+        if (secondsLeft <= 0) clearInterval(countdownInterval);
+    }, 500);
+}
+
+// Countdown for "waiting for someone to nominate a team" (60s, no anti-snipe extension)
+function startNominationCountdown(timerEndISO) {
+    clearInterval(countdownInterval);
+    const timerEnd = new Date(timerEndISO);
+    countdownInterval = setInterval(() => {
+        const now = new Date();
+        const secondsLeft = Math.max(0, Math.floor((timerEnd - now) / 1000));
+        document.getElementById('timer-display').textContent = `⏱ ${secondsLeft}s`;
+        document.getElementById('timer-display').style.color =
+            secondsLeft <= 5 ? 'red' : 'inherit';
+        if (secondsLeft <= 0) clearInterval(countdownInterval);
+    }, 500);
+}
+
+// Countdown for active bidding (anti-snipe: refreshes to 7s if it drops below 7s)
+function startBiddingCountdown(timerEndISO) {
+    clearInterval(countdownInterval);
+    let timerEnd = new Date(timerEndISO);
+    countdownInterval = setInterval(() => {
+        const now = new Date();
+        let secondsLeft = Math.max(0, Math.floor((timerEnd - now) / 1000));
+
+        if (secondsLeft < 7 && secondsLeft > 0) {
+            timerEnd = new Date(now.getTime() + 7000);
+            secondsLeft = 7;
+        }
+
+        document.getElementById('timer-display').textContent = `⏱ ${secondsLeft}s`;
+        document.getElementById('timer-display').style.color =
+            secondsLeft <= 5 ? 'red' : 'inherit';
         if (secondsLeft <= 0) clearInterval(countdownInterval);
     }, 500);
 }
