@@ -2026,7 +2026,7 @@ def draft_room(league_id):
     is_commissioner = (league.league_manager == current_user.id)
 
     # Ensure every league member has a DraftParticipant row, not just current_user
-    league_member_rows = List_of_leagues_update1.query.filter_by(league_id=league_id).all()
+    league_member_rows = League_members_update1.query.filter_by(league_id=league_id).all()
     league_member_user_ids = {row.user_id for row in league_member_rows}
 
     existing_participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
