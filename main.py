@@ -256,6 +256,9 @@ class DraftRoom(db.Model):
     nomination_deadline = db.Column(db.DateTime, nullable=True)
     current_nominator_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     nomination_direction = db.Column(db.Integer, default=1)  # 1 or -1, drives snake order
+    is_paused = db.Column(db.Boolean, default=False)
+    paused_remaining_seconds = db.Column(db.Integer, nullable=True)  # bidding/nomination time left when paused
+    paused_context = db.Column(db.String(20), nullable=True)  # 'bidding' or 'nomination', so resume knows which timer to restart
 
 
 class DraftNomination(db.Model):
@@ -1973,6 +1976,74 @@ def start_timer(nomination_id, room_id, seconds=30):
         }, room=str(room_id))
 
 
+@socketio.on('toggle_pause')
+def on_toggle_pause(data):
+    league_id = data['league_id']
+    draft_room = DraftRoom.query.filter_by(league_id=league_id).first()
+    if not draft_room:
+        emit('error', {'message': 'Draft room not found.'})
+        return
+
+    participant = DraftParticipant.query.filter_by(draft_room_id=draft_room.id, user_id=current_user.id).first()
+    if not participant or not participant.is_commissioner:
+        emit('error', {'message': 'Only the commissioner can pause the draft.'})
+        return
+
+    room_id = draft_room.id
+
+    if not draft_room.is_paused:
+        # --- PAUSING ---
+        active_nomination = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
+
+        if active_nomination:
+            remaining = max(0, int((active_nomination.timer_end - datetime.utcnow()).total_seconds()))
+            draft_room.paused_context = 'bidding'
+            draft_room.paused_remaining_seconds = remaining
+            if active_nomination.id in nomination_timers:
+                nomination_timers[active_nomination.id].cancel()
+                del nomination_timers[active_nomination.id]
+        elif draft_room.nomination_deadline:
+            remaining = max(0, int((draft_room.nomination_deadline - datetime.utcnow()).total_seconds()))
+            draft_room.paused_context = 'nomination'
+            draft_room.paused_remaining_seconds = remaining
+            if room_id in nomination_window_timers:
+                nomination_window_timers[room_id].cancel()
+                del nomination_window_timers[room_id]
+        else:
+            draft_room.paused_context = None
+            draft_room.paused_remaining_seconds = None
+
+        draft_room.is_paused = True
+        db.session.commit()
+
+        socketio.emit('draft_paused', {}, room=str(room_id))
+    else:
+        # --- RESUMING ---
+        draft_room.is_paused = False
+        remaining = draft_room.paused_remaining_seconds or 0
+        context = draft_room.paused_context
+        draft_room.paused_remaining_seconds = None
+        draft_room.paused_context = None
+        db.session.commit()
+
+        if context == 'bidding':
+            active_nomination = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
+            if active_nomination:
+                active_nomination.timer_end = datetime.utcnow() + timedelta(seconds=remaining)
+                db.session.commit()
+                start_timer(active_nomination.id, room_id, seconds=remaining)
+                socketio.emit('timer_update', {
+                    'nomination_id': active_nomination.id,
+                    'timer_end': active_nomination.timer_end.isoformat() + 'Z'
+                }, room=str(room_id))
+        elif context == 'nomination':
+            start_nomination_window(room_id, seconds=remaining)
+
+        socketio.emit('draft_resumed', {
+            'current_nominator_id': draft_room.current_nominator_user_id
+        }, room=str(room_id))
+
+
 @socketio.on('randomize_order')
 def on_randomize_order(data):
     league_id = data['league_id']
@@ -2340,6 +2411,10 @@ def on_nominate(data):
 
     room_id = draft_room.id
 
+    if draft_room.is_paused:
+        emit('error', {'message': 'The draft is currently paused.'})
+        return
+
     if draft_room.current_nominator_user_id and draft_room.current_nominator_user_id != user_id:
         emit('error', {'message': "It's not your turn to nominate."})
         return
@@ -2398,7 +2473,11 @@ def on_bid(data):
     if room is None:
         print('room is none')
         return
-    room_id = room.id  # the actual DraftRoom primary key — use this for sockets/timers from here on
+    room_id = room.id
+
+    if room.is_paused:
+        emit('error', {'message': 'The draft is currently paused.'}, include_self=True)
+        return
 
     nomination = DraftNomination.query.get(nomination_id)
     participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()

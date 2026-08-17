@@ -21,7 +21,7 @@ socket.on('nomination_started', (data) => {
     setBidControlsEnabled(true);
 
     addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`);
-    startCountdown(data.timer_end);
+    startBiddingCountdown(data.timer_end);
 });
 
 socket.on('bid_placed', (data) => {
@@ -32,7 +32,7 @@ socket.on('bid_placed', (data) => {
 
 socket.on('timer_update', (data) => {
     if (data.nomination_id === currentNominationId) {
-        startCountdown(data.timer_end);
+        startBiddingCountdown(data.timer_end);
     }
 });
 
@@ -135,6 +135,47 @@ socket.on('order_randomized', (data) => {
     updateNominateButton(data.current_nominator_id);
 });
 
+socket.on('draft_paused', () => {
+    console.log('draft_paused');
+    clearInterval(countdownInterval);
+    document.getElementById('timer-display').textContent = '⏸ Paused';
+    document.getElementById('timer-display').style.color = 'inherit';
+    setBidControlsEnabled(false);
+
+    const nominateBtn = document.getElementById('nominate-btn');
+    if (nominateBtn) {
+        nominateBtn.disabled = true;
+        nominateBtn.dataset.pausedOverride = 'true'; // remember this was disabled by pause, not by turn order
+        nominateBtn.textContent = 'Draft paused';
+    }
+
+    const pauseBtn = document.getElementById('pause-draft-btn');
+    if (pauseBtn) {
+        pauseBtn.textContent = '▶ Resume Draft';
+        pauseBtn.classList.add('paused');
+    }
+});
+
+socket.on('draft_resumed', () => {
+    console.log('draft_resumed');
+    const pauseBtn = document.getElementById('pause-draft-btn');
+    if (pauseBtn) {
+        pauseBtn.textContent = '⏸ Pause Draft';
+        pauseBtn.classList.remove('paused');
+    }
+
+    const nominateBtn = document.getElementById('nominate-btn');
+    if (nominateBtn && nominateBtn.dataset.pausedOverride === 'true') {
+        delete nominateBtn.dataset.pausedOverride;
+        // Restore correct state based on whose turn it actually is,
+        // rather than assuming this user can nominate
+        updateNominateButton(data.current_nominator_id);
+    }
+
+    // The backend will follow this up with a timer_update or nomination_window_started
+    // event carrying the correct timer_end, which restarts the visible countdown.
+});
+
 function highlightCurrentNominator(userId) {
     document.querySelectorAll('.participant').forEach(el => el.classList.remove('current-nominator'));
     const activeCard = document.getElementById(`user-${userId}`);
@@ -149,6 +190,10 @@ socket.on('nomination_window_started', (data) => {
     updateNominateButton(data.current_nominator_id);
     if (data.timer_end) startNominationCountdown(data.timer_end);
 });
+
+function togglePause() {
+    socket.emit('toggle_pause', { league_id: ROOM_ID });
+}
 
 socket.on('nominator_skipped', (data) => {
     console.log('nominator_skipped payload:', data);

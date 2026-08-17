@@ -218,6 +218,20 @@
     transition: background 0.2s ease;
 }
 
+#pause-draft-btn {
+    background: #616161;
+    color: white;
+}
+#pause-draft-btn:hover {
+    background: #757575;
+}
+#pause-draft-btn.paused {
+    background: #ef6c00;
+}
+#pause-draft-btn.paused:hover {
+    background: #f57c00;
+}
+
 #nominate-controls button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
