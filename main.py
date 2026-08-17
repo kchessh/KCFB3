@@ -2025,12 +2025,26 @@ def draft_room(league_id):
     league = League.query.filter_by(id=league_id).first()
     is_commissioner = (league.league_manager == current_user.id)
 
+    # Ensure every league member has a DraftParticipant row, not just current_user
+    league_member_rows = List_of_leagues_update1.query.filter_by(league_id=league_id).all()
+    league_member_user_ids = {row.user_id for row in league_member_rows}
+
+    existing_participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
+    existing_user_ids = {p.user_id for p in existing_participants}
+
+    missing_user_ids = league_member_user_ids - existing_user_ids
+    for uid in missing_user_ids:
+        db.session.add(DraftParticipant(
+            draft_room_id=room.id,
+            user_id=uid,
+            is_commissioner=(uid == league.league_manager)
+        ))
+
+    # Make sure current user's commissioner flag is accurate even if they already existed
     participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=current_user.id).first()
-    if participant is None:
-        participant = DraftParticipant(draft_room_id=room.id, user_id=current_user.id, is_commissioner=is_commissioner)
-        db.session.add(participant)
-    else:
+    if participant is not None:
         participant.is_commissioner = is_commissioner
+
     db.session.commit()
 
     all_nominations = DraftNomination.query.filter_by(draft_room_id=room.id).all()
@@ -2059,9 +2073,10 @@ def draft_room(league_id):
         timer_end_iso = None
         print('no nominations yet')
 
-
     print(f'{league_id=}')
+    # Re-fetch participants now that any missing ones have been created
     participants = DraftParticipant.query.filter_by(draft_room_id=room.id).all()
+
     all_player_weekly_info_tables = Player_weekly_info.query.filter_by(league=league_id).all()
     teams_to_remove = []
     print(f'{all_player_weekly_info_tables=}')
@@ -2080,7 +2095,6 @@ def draft_room(league_id):
             if team_1 is not None:
                 teams_to_remove.append(team_1.id)
         except TypeError:
-            # occurs when there is no team because Nonetype object is being passed in
             pass
 
         try:
@@ -2273,9 +2287,9 @@ def on_join(data):
     room = DraftRoom.query.filter_by(league_id=room_id).first()
     if room is None:
         print('room is none')
+        return
 
-    participant = DraftParticipant.query.filter_by(draft_room_id=room.id,user_id=user_id).first()
-    # print(f'on_join{participant=}')
+    participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=user_id).first()
 
     if not participant:
         emit('error', {'message': 'You are not a participant in this draft.'})
@@ -2285,7 +2299,10 @@ def on_join(data):
     participant.is_connected = True
     db.session.commit()
 
-    emit('user_joined', {'user_id': user_id, 'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room.id), include_self=True)
+    emit('user_joined', {
+        'user_id': user_id,
+        'timestamp': datetime.utcnow().isoformat() + 'Z'
+    }, room=str(room.id), include_self=True)
 
 
 @socketio.on('rejoin_nomination')

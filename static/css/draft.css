@@ -203,6 +203,21 @@
     box-shadow: 0 0 0 2px #f9a825 inset;
 }
 
+#commissioner-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+#commissioner-controls button {
+    flex: 1;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
 #nominate-controls button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -254,8 +269,6 @@
 }
 
 #reset-draft-btn {
-    margin-top: 16px;
-    width: 100%;
     padding: 8px 14px;
     background: #c62828;
     color: white;
@@ -267,4 +280,12 @@
 
 #reset-draft-btn:hover {
     background: #e53935;
+}
+
+#randomize-order-btn {
+    background: #2e7d32;
+    color: white;
+}
+#randomize-order-btn:hover {
+    background: #388e3c;
 }
