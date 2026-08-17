@@ -1964,12 +1964,18 @@ def start_timer(nomination_id, room_id, seconds=30):
         if nomination_id in nomination_timers:
             nomination_timers[nomination_id].cancel()
 
+        nomination = DraftNomination.query.get(nomination_id)
+        if nomination is None:
+            return
+
+        nomination.timer_end = datetime.utcnow() + timedelta(seconds=seconds)
+        db.session.commit()
+
         timer = threading.Timer(seconds, bidding_ended, args=[nomination_id, room_id])
         timer.start()
         nomination_timers[nomination_id] = timer
 
         # Broadcast the timer end to all clients
-        nomination = DraftNomination.query.get(nomination_id)
         socketio.emit('timer_update', {
             'nomination_id': nomination_id,
             'timer_end': nomination.timer_end.isoformat() + 'Z'
@@ -2029,13 +2035,7 @@ def on_toggle_pause(data):
         if context == 'bidding':
             active_nomination = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
             if active_nomination:
-                active_nomination.timer_end = datetime.utcnow() + timedelta(seconds=remaining)
-                db.session.commit()
                 start_timer(active_nomination.id, room_id, seconds=remaining)
-                socketio.emit('timer_update', {
-                    'nomination_id': active_nomination.id,
-                    'timer_end': active_nomination.timer_end.isoformat() + 'Z'
-                }, room=str(room_id))
         elif context == 'nomination':
             start_nomination_window(room_id, seconds=remaining)
 
@@ -2424,8 +2424,6 @@ def on_nominate(data):
         emit('error', {'message': 'A nomination is already in progress.'})
         return
 
-    timer_end = datetime.utcnow() + timedelta(seconds=30)
-
     nomination = DraftNomination(
         draft_room_id=room_id,
         nominated_team_id=team_id,
@@ -2433,7 +2431,7 @@ def on_nominate(data):
         current_bid=starting_bid,
         current_winner_id=user_id,
         status='active',
-        timer_end=timer_end
+        timer_end=datetime.utcnow() + timedelta(seconds=30)  # placeholder; start_timer sets the real value below
     )
     db.session.add(nomination)
 
