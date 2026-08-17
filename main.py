@@ -2389,17 +2389,19 @@ def on_nominate(data):
 @socketio.on('place_bid')
 def on_bid(data):
     print(f'on_bid {data=}')
-    room_id = data['room_id']
+    league_id = data['room_id']
     nomination_id = data['nomination_id']
     bid_amount = int(data['amount'])
     user_id = current_user.id
-    # print(f'{room_id=}')
-    room = DraftRoom.query.filter_by(league_id=room_id).first()
+
+    room = DraftRoom.query.filter_by(league_id=league_id).first()
     if room is None:
         print('room is none')
+        return
+    room_id = room.id  # the actual DraftRoom primary key — use this for sockets/timers from here on
 
     nomination = DraftNomination.query.get(nomination_id)
-    participant = DraftParticipant.query.filter_by(draft_room_id=room.id, user_id=user_id).first()
+    participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()
 
     # --- Validation ---
     if not nomination or nomination.status != 'active':
@@ -2422,10 +2424,7 @@ def on_bid(data):
     # Update nomination
     nomination.current_bid = bid_amount
     nomination.current_winner_id = user_id
-
-    # Bidding counts as participating — clear their skip flag if it was set
     participant.skipped_nomination = False
-
     db.session.commit()
 
     # Reset timer on new bid
