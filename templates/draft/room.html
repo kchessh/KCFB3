@@ -79,19 +79,21 @@
             {% set current_participant = participants | selectattr('user_id', 'equalto', current_user.id) | first %}
             {% if current_participant and current_participant.is_commissioner %}
                 <button id="reset-draft-btn" onclick="resetDraft()">🔄 Reset Draft</button>
+                <button id="randomize-order-btn" onclick="randomizeOrder()">🔀 Randomize Nomination Order</button>
             {% endif %}
 
         </div>
 
         <!-- Nomination Controls (for your turn) -->
         <div id="nominate-panel">
-            <div id="nominate-header">
-                <h4>Nominate a Team</h4>
-                <div id="nominate-controls">
-                  <input type="number" id="starting-bid" value="1" min="1">
-                  <button onclick="nominateTeam()">Nominate</button>
-                </div>
+          <div id="nominate-header">
+            <h4>Nominate a Team</h4>
+            <div id="nominate-controls">
+              <input type="number" id="starting-bid" value="1" min="1">
+              <button id="nominate-btn" onclick="nominateTeam()">Nominate</button>
             </div>
+          </div>
+          <button id="rejoin-nomination-btn" onclick="rejoinNomination()" style="display:none;">🙋 Rejoin Nomination Order</button>
 
             <!-- Team Table -->
             <div id="team-table-wrapper">

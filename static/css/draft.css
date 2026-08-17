@@ -198,6 +198,16 @@
     color: #666;
 }
 
+.participant.current-nominator {
+    border-color: #f9a825;
+    box-shadow: 0 0 0 2px #f9a825 inset;
+}
+
+#nominate-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 #log-list {
     max-height: 300px;
     overflow-y: auto;

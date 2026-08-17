@@ -104,6 +104,66 @@ socket.on('error', (data) => {
     alert(`⚠️ ${data.message}`);
 });
 
+function randomizeOrder() {
+    socket.emit('randomize_order', { league_id: ROOM_ID });
+}
+
+function rejoinNomination() {
+    socket.emit('rejoin_nomination', { league_id: ROOM_ID });
+}
+
+function updateNominateButton(currentNominatorId) {
+    const btn = document.getElementById('nominate-btn');
+    if (!btn) return;
+    if (currentNominatorId === USER_ID) {
+        btn.disabled = false;
+        btn.textContent = 'Nominate';
+    } else {
+        btn.disabled = true;
+        btn.textContent = 'Waiting for your turn...';
+    }
+}
+
+socket.on('order_randomized', (data) => {
+    console.log('order_randomized payload:', data);
+    const list = document.getElementById('participants-list');
+    data.order.forEach(entry => {
+        const card = document.getElementById(`user-${entry.user_id}`);
+        if (card) list.appendChild(card);
+    });
+    highlightCurrentNominator(data.current_nominator_id);
+    updateNominateButton(data.current_nominator_id);
+});
+
+function highlightCurrentNominator(userId) {
+    document.querySelectorAll('.participant').forEach(el => el.classList.remove('current-nominator'));
+    const activeCard = document.getElementById(`user-${userId}`);
+    if (activeCard) activeCard.classList.add('current-nominator');
+}
+
+socket.on('nomination_window_started', (data) => {
+    console.log('nomination_window_started payload:', data);
+    document.getElementById('current-team').textContent = 'Waiting for nomination...';
+    setBidControlsEnabled(false);
+    highlightCurrentNominator(data.current_nominator_id);
+    updateNominateButton(data.current_nominator_id);
+    if (data.timer_end) startNominationCountdown(data.timer_end);
+});
+
+socket.on('nominator_skipped', (data) => {
+    console.log('nominator_skipped payload:', data);
+    addLogEntry(`⏭ ${data.name} was skipped for not nominating in time.`);
+    if (data.user_id === USER_ID) {
+        document.getElementById('rejoin-nomination-btn').style.display = 'inline-block';
+    }
+});
+
+socket.on('rejoined_nomination', (data) => {
+    if (data.user_id === USER_ID) {
+        document.getElementById('rejoin-nomination-btn').style.display = 'none';
+    }
+});
+
 // ─── User Actions ─────────────────────────────────────────────
 function nominateTeam() {
     const teamId = document.getElementById('team-select').value;
@@ -178,6 +238,18 @@ function resetDraft() {
         console.error("Reset failed:", err);
         alert("Something went wrong.");
     });
+}
+
+function randomizeOrder() {
+    socket.emit('randomize_order', { league_id: ROOM_ID });
+}
+
+function highlightCurrentNominator(userId) {
+    document.querySelectorAll('.participant').forEach(el => el.classList.remove('current-nominator'));
+    const activeCard = document.getElementById(`user-${userId}`);
+    if (activeCard) {
+        activeCard.classList.add('current-nominator');
+    }
 }
 
 

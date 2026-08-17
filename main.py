@@ -254,6 +254,8 @@ class DraftRoom(db.Model):
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False, unique=True)
     status = db.Column(db.String(20), default='waiting')  # waiting, active, complete
     nomination_deadline = db.Column(db.DateTime, nullable=True)
+    current_nominator_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    nomination_direction = db.Column(db.Integer, default=1)  # 1 or -1, drives snake order
 
 
 class DraftNomination(db.Model):
@@ -285,6 +287,8 @@ class DraftParticipant(db.Model):
     is_connected = db.Column(db.Boolean, default=False)
     done_nominating = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref='draft_participants')
+    nomination_position = db.Column(db.Integer, nullable=True)
+    skipped_nomination = db.Column(db.Boolean, default=False)
 
     @property
     def person_name(self):
@@ -350,16 +354,86 @@ class UpdateFaab(FlaskForm):
 with app.app_context():
     db.create_all()
 
-"""
-This loop replaces all teams that have an '&' in their name to '%26' because the API won't find it if an '&' is passed
-in. Teams_dict is then made to pass into the save_to_spreadsheet function. A dictionary is made so it can be saved to a
-csv with a list of 0s and 1s (1s representing a win, 0s representing a loss or no game played)
-"""
 
 """
 4 letter display for every team
 """
 four_letter_display_dict = {}
+
+def advance_nominator(draft_room):
+    participants = DraftParticipant.query.filter_by(draft_room_id=draft_room.id).order_by(DraftParticipant.nomination_position).all()
+    if not participants or draft_room.current_nominator_user_id is None:
+        return
+
+    n = len(participants)
+    index = next((i for i, p in enumerate(participants) if p.user_id == draft_room.current_nominator_user_id), None)
+    if index is None:
+        return
+
+    direction = draft_room.nomination_direction or 1
+
+    for _ in range(n * 2 + 2):  # safety bound against infinite loop if everyone is skipped
+        next_index = index + direction
+        if next_index < 0 or next_index >= n:
+            direction *= -1
+            next_index = index  # bounce: same person nominates again (classic snake behavior)
+        index = next_index
+        if not participants[index].skipped_nomination:
+            break
+    else:
+        draft_room.current_nominator_user_id = None
+        draft_room.nomination_direction = direction
+        db.session.commit()
+        return
+
+    draft_room.current_nominator_user_id = participants[index].user_id
+    draft_room.nomination_direction = direction
+    db.session.commit()
+
+nomination_window_timers = {}
+
+def start_nomination_window(room_id, seconds=60):
+    with app.app_context():
+        if room_id in nomination_window_timers:
+            nomination_window_timers[room_id].cancel()
+
+        draft_room = DraftRoom.query.get(room_id)
+        if not draft_room or not draft_room.current_nominator_user_id:
+            return
+
+        deadline = datetime.utcnow() + timedelta(seconds=seconds)
+        draft_room.nomination_deadline = deadline
+        db.session.commit()
+
+        timer = threading.Timer(seconds, nomination_window_expired, args=[room_id])
+        timer.start()
+        nomination_window_timers[room_id] = timer
+
+        socketio.emit('nomination_window_started', {
+            'timer_end': deadline.isoformat() + 'Z',
+            'current_nominator_id': draft_room.current_nominator_user_id
+        }, room=str(room_id))
+
+
+def nomination_window_expired(room_id):
+    with app.app_context():
+        draft_room = DraftRoom.query.get(room_id)
+        if not draft_room or not draft_room.current_nominator_user_id or draft_room.nomination_deadline is None:
+            return  # someone already nominated in time, window was already cleared
+
+        skipped = DraftParticipant.query.filter_by(
+            draft_room_id=room_id, user_id=draft_room.current_nominator_user_id
+        ).first()
+        if skipped:
+            skipped.skipped_nomination = True
+            db.session.commit()
+            socketio.emit('nominator_skipped', {
+                'user_id': skipped.user_id,
+                'name': skipped.user.name
+            }, room=str(room_id))
+
+        advance_nominator(draft_room)
+        start_nomination_window(room_id, seconds=60)
 
 
 # Invalid URL
@@ -828,12 +902,6 @@ def league_dashboard(league_id):
                            leagues_list=leagues_list, executed_waivers=executed_waivers, your_waiver_history=your_waiver_history_list,
                            postseason=postseason, playoff_teams=playoff_teams)
 
-
-# @app.route("/team_schedule/team_id=<int:team_id>", methods=['GET', 'POST'])
-# @login_required
-# def league_dashboard(team_id):
-#
-#     return render_template("team_schedule.html")
 
 @app.route("/add_team/league=<int:league_id>", methods=['GET', 'POST'])
 @login_required
@@ -1859,14 +1927,11 @@ def bidding_ended(nomination_id, room_id):
                                               'winner_name': winner_user.name if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name,
                                               'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room_id))
 
-            room = DraftRoom.query.get(room_id)
-            nomination_deadline = datetime.utcnow() + timedelta(seconds=60)
-            room.nomination_deadline = nomination_deadline
+            # Advance to the next nominator and open the next nomination window
+            draft_room = DraftRoom.query.get(room_id)
+            advance_nominator(draft_room)
+            start_nomination_window(room_id, seconds=60)
             db.session.commit()
-
-            socketio.emit('nomination_window_started', {
-                'timer_end': nomination_deadline.isoformat() + 'Z'
-            }, room=str(room_id))
 
 
 def team_nominated(nomination_id, room_id):
@@ -1906,6 +1971,42 @@ def start_timer(nomination_id, room_id, seconds=30):
             'nomination_id': nomination_id,
             'timer_end': nomination.timer_end.isoformat() + 'Z'
         }, room=str(room_id))
+
+
+@socketio.on('randomize_order')
+def on_randomize_order(data):
+    league_id = data['league_id']
+    draft_room = DraftRoom.query.filter_by(league_id=league_id).first()
+    if not draft_room:
+        emit('error', {'message': 'Draft room not found.'})
+        return
+
+    participant = DraftParticipant.query.filter_by(draft_room_id=draft_room.id, user_id=current_user.id).first()
+    if not participant or not participant.is_commissioner:
+        emit('error', {'message': 'Only the commissioner can randomize the order.'})
+        return
+
+    participants = DraftParticipant.query.filter_by(draft_room_id=draft_room.id).all()
+    random.shuffle(participants)
+    for i, p in enumerate(participants, start=1):
+        p.nomination_position = i
+        p.skipped_nomination = False
+
+    draft_room.nomination_direction = 1
+    draft_room.current_nominator_user_id = participants[0].user_id
+    db.session.commit()
+
+    order_payload = [
+        {'user_id': p.user_id, 'name': p.user.name, 'order': p.nomination_position}
+        for p in sorted(participants, key=lambda p: p.nomination_position)
+    ]
+
+    socketio.emit('order_randomized', {
+        'order': order_payload,
+        'current_nominator_id': draft_room.current_nominator_user_id
+    }, room=str(draft_room.id))
+
+    start_nomination_window(draft_room.id, seconds=60)
 
 
 # --- HTTP Routes for draft ---
@@ -2187,6 +2288,25 @@ def on_join(data):
     emit('user_joined', {'user_id': user_id, 'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room.id), include_self=True)
 
 
+@socketio.on('rejoin_nomination')
+def on_rejoin_nomination(data):
+    league_id = data['league_id']
+    draft_room = DraftRoom.query.filter_by(league_id=league_id).first()
+    if not draft_room:
+        emit('error', {'message': 'Draft room not found.'})
+        return
+
+    participant = DraftParticipant.query.filter_by(draft_room_id=draft_room.id, user_id=current_user.id).first()
+    if not participant:
+        emit('error', {'message': 'Participant not found.'})
+        return
+
+    participant.skipped_nomination = False
+    db.session.commit()
+
+    socketio.emit('rejoined_nomination', {'user_id': current_user.id}, room=str(draft_room.id))
+
+
 @socketio.on('nominate_team')
 def on_nominate(data):
     league_id = data['league_id']
@@ -2202,6 +2322,10 @@ def on_nominate(data):
         return
 
     room_id = draft_room.id
+
+    if draft_room.current_nominator_user_id and draft_room.current_nominator_user_id != user_id:
+        emit('error', {'message': "It's not your turn to nominate."})
+        return
 
     existing = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').first()
     if existing:
@@ -2221,8 +2345,11 @@ def on_nominate(data):
     )
     db.session.add(nomination)
 
-    # A nomination just happened, so clear any pending nomination-window deadline
     draft_room.nomination_deadline = None
+    if room_id in nomination_window_timers:
+        nomination_window_timers[room_id].cancel()
+        del nomination_window_timers[room_id]
+
     db.session.commit()
 
     start_timer(nomination.id, room_id, seconds=30)
@@ -2278,6 +2405,10 @@ def on_bid(data):
     # Update nomination
     nomination.current_bid = bid_amount
     nomination.current_winner_id = user_id
+
+    # Bidding counts as participating — clear their skip flag if it was set
+    participant.skipped_nomination = False
+
     db.session.commit()
 
     # Reset timer on new bid
