@@ -1877,64 +1877,67 @@ def expected_vs_actual_graphs():
 
 def bidding_ended(nomination_id, room_id):
     """Called when the timer runs out — finalizes the sale."""
-    with app.app_context():
-        nomination = DraftNomination.query.get(nomination_id)
-        if nomination and nomination.status == 'active':
-            nomination.status = 'sold'
+    try:
+        with app.app_context():
+            nomination = DraftNomination.query.get(nomination_id)
+            if nomination and nomination.status == 'active':
+                nomination.status = 'sold'
 
-            winner_user = None
-            winner_id = None
-            team_slot = None
-            if nomination.current_winner_id:
-                # Deduct budget from winner
-                participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=nomination.current_winner_id).first()
-                if participant:
-                    participant.budget_remaining -= nomination.current_bid
-                    db.session.commit()
+                winner_user = None
+                winner_id = None
+                team_slot = None
+                team_name = None
 
-                winner_user = User.query.get(nomination.current_winner_id)  # Fetch the actual user
-                winner_id = nomination.current_winner_id
-                team_name = Football_Teams.query.filter_by(id=nomination.nominated_team_id).first().team
+                if nomination.current_winner_id:
+                    participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=nomination.current_winner_id).first()
+                    if participant:
+                        participant.budget_remaining -= nomination.current_bid
+                        db.session.commit()
 
-                # Update winner's teams to include this team
-                league_id = DraftRoom.query.filter_by(id=room_id).first().league_id
-                player_team_info = Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).first()
-                print(f'{league_id=}')
-                if player_team_info.team_1 is None:
-                    team_slot = 1
-                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_1': nomination.nominated_team_id})
-                    print('updating team1')
-                elif player_team_info.team_2 is None:
-                    team_slot = 2
-                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_2': nomination.nominated_team_id})
-                    print('updating team2')
-                elif player_team_info.team_3 is None:
-                    team_slot = 3
-                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_3': nomination.nominated_team_id})
-                    print('updating team3')
-                elif player_team_info.team_4 is None:
-                    print('updating team4')
-                    team_slot = 4
-                    Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id).update({'team_4': nomination.nominated_team_id})
-                    DraftParticipant.query.filter_by(user_id=nomination.current_winner_id, draft_room_id=room_id).update({'done_nominating': True})
-                    print(f'{User.query.filter_by(user_id=nomination.current_winner_id).first().name} is done nominating')
-                else:
-                    print('looks like someone was able to bid (and win) a team when they already had 4 teams')
+                    winner_user = User.query.get(nomination.current_winner_id)
+                    winner_id = nomination.current_winner_id
+                    team_name = Football_Teams.query.filter_by(id=nomination.nominated_team_id).first().team
 
-            db.session.commit()
-            print(f'{winner_id=}')
-            print(f'{team_slot=}')
+                    league_id = DraftRoom.query.filter_by(id=room_id).first().league_id
+                    # hardcoded week=1 until multi-week draft support is added
+                    player_team_info = Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id, week=1).first()
 
-            # Notify all users in the room
-            socketio.emit('bidding_ended', {'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'team_slot': team_slot, 'winner_id': winner_id,
-                                              'winner_name': winner_user.name if winner_user else None, 'final_price': nomination.current_bid, 'team_name': team_name,
-                                              'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room_id))
+                    if player_team_info is None:
+                        print(f'ERROR: no Player_weekly_info row found for user {nomination.current_winner_id}, league {league_id}, week 1')
+                    elif player_team_info.team_1 is None:
+                        team_slot = 1
+                        Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id, week=1).update({'team_1': nomination.nominated_team_id})
+                    elif player_team_info.team_2 is None:
+                        team_slot = 2
+                        Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id, week=1).update({'team_2': nomination.nominated_team_id})
+                    elif player_team_info.team_3 is None:
+                        team_slot = 3
+                        Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id, week=1).update({'team_3': nomination.nominated_team_id})
+                    elif player_team_info.team_4 is None:
+                        team_slot = 4
+                        Player_weekly_info.query.filter_by(user_id=nomination.current_winner_id, league=league_id, week=1).update({'team_4': nomination.nominated_team_id})
+                        DraftParticipant.query.filter_by(user_id=nomination.current_winner_id, draft_room_id=room_id).update({'done_nominating': True})
+                    else:
+                        print(f'WARNING: {nomination.current_winner_id} won a 5th team — this should have been blocked earlier.')
 
-            # Advance to the next nominator and open the next nomination window
-            draft_room = DraftRoom.query.get(room_id)
-            advance_nominator(draft_room)
-            start_nomination_window(room_id, seconds=60)
-            db.session.commit()
+                db.session.commit()
+                print(f'{winner_id=}')
+                print(f'{team_slot=}')
+
+                socketio.emit('bidding_ended', {
+                    'nomination_id': nomination_id, 'team_id': nomination.nominated_team_id, 'team_slot': team_slot,
+                    'winner_id': winner_id, 'winner_name': winner_user.name if winner_user else None,
+                    'final_price': nomination.current_bid, 'team_name': team_name,
+                    'timestamp': datetime.utcnow().isoformat() + 'Z'
+                }, room=str(room_id))
+
+                draft_room = DraftRoom.query.get(room_id)
+                advance_nominator(draft_room)
+                start_nomination_window(room_id, seconds=60)
+    except Exception:
+        import traceback
+        print('EXCEPTION in bidding_ended:')
+        traceback.print_exc()
 
 
 def team_nominated(nomination_id, room_id):
@@ -2129,6 +2132,7 @@ def draft_room(league_id):
             timer_end_iso = active_nomination.timer_end.isoformat() + 'Z'
             most_recent_nomination_name = User.query.filter_by(id=active_nomination.nominated_team_id).first().name
             most_recent_nomination_team = nominated_team_name
+            bidding_seconds_remaining = max(0, int((active_nomination.timer_end - datetime.utcnow()).total_seconds()))
         else:
             current_winner_name = None
             nominated_team_name = None
@@ -2136,6 +2140,7 @@ def draft_room(league_id):
             # find the most recent nomination so everyone can see the last team that was won
             most_recent_nomination_name = User.query.filter_by(id=most_recent_nomination.current_winner_id).first().name
             most_recent_nomination_team = Football_Teams.query.filter_by(id=most_recent_nomination.nominated_team_id).first().team
+            bidding_seconds_remaining = None
             print(f'{most_recent_nomination_name=}')
     except ValueError:
         most_recent_nomination_name = "TBD"
@@ -2144,6 +2149,11 @@ def draft_room(league_id):
         nominated_team_name = "TBD"
         timer_end_iso = None
         print('no nominations yet')
+
+    if room.nomination_deadline:
+        nomination_seconds_remaining = max(0, int((room.nomination_deadline - datetime.utcnow()).total_seconds()))
+    else:
+        nomination_seconds_remaining = None
 
     print(f'{league_id=}')
     # Re-fetch participants now that any missing ones have been created
@@ -2269,6 +2279,7 @@ def draft_room(league_id):
     return render_template('draft/room.html', room=room, participant=participant, active_nomination=active_nomination, participants=participants, available_teams=available_teams,
                            current_winner_name=current_winner_name, nominated_team_name=nominated_team_name, timer_end_iso=timer_end_iso,
                            most_recent_nomination_name=most_recent_nomination_name, most_recent_nomination_team=most_recent_nomination_team, leagues_list=leagues_list, participant_teams=participant_teams,
+                           bidding_seconds_remaining=bidding_seconds_remaining, nomination_seconds_remaining=nomination_seconds_remaining,
                            nomination_dict=zip(nomination_dict['nominated_teams_names'], nomination_dict['people_who_nominated_teams'],
                                                nomination_dict['people_who_won_nominated_teams'], nomination_dict['sales_prices'], nomination_dict['created_times']))
 
@@ -2441,6 +2452,19 @@ def on_nominate(data):
         emit('error', {'message': 'A nomination is already in progress.'})
         return
 
+    if draft_room.current_nominator_user_id is None:
+        emit('error', {'message': 'The nomination order has not been set yet.'})
+        return
+
+    if draft_room.current_nominator_user_id != user_id:
+        emit('error', {'message': "It's not your turn to nominate."})
+        return
+
+    current_nominator_participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()
+    if current_nominator_participant and current_nominator_participant.done_nominating:
+        emit('error', {'message': 'You have already drafted all 4 of your teams.'})
+        return
+
     nomination = DraftNomination(
         draft_room_id=room_id,
         nominated_team_id=team_id,
@@ -2496,6 +2520,9 @@ def on_bid(data):
 
     nomination = DraftNomination.query.get(nomination_id)
     participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()
+    if participant.done_nominating:
+        emit('error', {'message': 'You have already drafted all 4 of your teams.'}, include_self=True)
+        return
 
     # --- Validation ---
     if not nomination or nomination.status != 'active':

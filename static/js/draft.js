@@ -41,26 +41,30 @@ socket.on('bidding_ended', (data) => {
     currentNominationId = null;
     clearInterval(countdownInterval);
     document.getElementById('timer-display').textContent = 'SOLD!';
-    document.getElementById('timer-display').style.color = 'inherit'; //reset color on sold
+    document.getElementById('timer-display').style.color = 'inherit';
     setBidControlsEnabled(false);
-
     const msg = data.winner_id
         ? `✅ ${data.team_name} sold to ${data.winner_name} for $${data.final_price}!`
         : `❌ No bids — nomination cancelled.`;
-
     document.getElementById('current-team').textContent = msg;
     document.getElementById('current-bid').textContent = `Previous winner: ${data.winner_name}`;
     document.getElementById('current-winner').textContent = `Previous team: ${data.team_name}`;
     addLogEntry(msg);
-
     updateBudgetDisplay(data.winner_id, data.final_price);
     updateAvailableTeams(data.team_id);
-
     if (data.winner_id && data.team_slot) {
         const slotEl = document.getElementById(`user-${data.winner_id}-team-${data.team_slot}`);
-        console.log('looking for:', `user-${data.winner_id}-team-${data.team_slot}`, '-> found:', slotEl);
         if (slotEl) {
             slotEl.textContent = `Team ${data.team_slot}: ${data.team_name}`;
+        }
+    }
+
+    if (data.winner_id === USER_ID && data.team_slot === 4) {
+        setBidControlsEnabled(false); // ensure it stays locked, not just re-enabled by the next nomination
+        const nominateBtn = document.getElementById('nominate-btn');
+        if (nominateBtn) {
+            nominateBtn.disabled = true;
+            nominateBtn.textContent = 'You have drafted all 4 teams';
         }
     }
 });
