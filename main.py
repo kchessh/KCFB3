@@ -2400,6 +2400,13 @@ def on_rejoin_nomination(data):
 
     socketio.emit('rejoined_nomination', {'user_id': current_user.id}, room=str(draft_room.id))
 
+    # If everyone had been skipped (no active nominator), rejoining should restart the rotation
+    if draft_room.current_nominator_user_id is None and participant.nomination_position is not None:
+        draft_room.current_nominator_user_id = participant.user_id
+        draft_room.nomination_direction = 1
+        db.session.commit()
+        start_nomination_window(draft_room.id, seconds=60)
+
 
 @socketio.on('nominate_team')
 def on_nominate(data):

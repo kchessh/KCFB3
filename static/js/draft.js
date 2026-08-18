@@ -68,20 +68,15 @@ socket.on('bidding_ended', (data) => {
 socket.on('nomination_started', (data) => {
     console.log('nomination_started payload:', data);
     currentNominationId = data.nomination_id;
-
     document.getElementById('timer-display').style.color = 'inherit';
-
     document.getElementById('current-team').textContent = data.team_name;
     document.getElementById('current-bid').textContent = `Current Bid: $${data.current_bid}`;
     document.getElementById('current-winner').textContent = `Leader: ${data.current_winner_name}`;
-
     addLogEntry(`📢 ${data.team_name} nominated by ${data.nominated_by_name}`);
-
     setBidControlsEnabled(true);
     document.getElementById('bid-input').value = '';
-
     clearInterval(countdownInterval);
-    if (data.timer_end) {
+    if (data.seconds_remaining !== undefined) {
         startBiddingCountdown(data.seconds_remaining);
     }
 });
@@ -90,7 +85,9 @@ socket.on('nomination_window_started', (data) => {
     console.log('nomination_window_started payload:', data);
     document.getElementById('current-team').textContent = 'Waiting for nomination...';
     setBidControlsEnabled(false);
-    if (data.timer_end) {
+    highlightCurrentNominator(data.current_nominator_id);
+    updateNominateButton(data.current_nominator_id);
+    if (data.seconds_remaining !== undefined) {
         startNominationCountdown(data.seconds_remaining);
     }
 });
@@ -191,15 +188,6 @@ function highlightCurrentNominator(userId) {
     const activeCard = document.getElementById(`user-${userId}`);
     if (activeCard) activeCard.classList.add('current-nominator');
 }
-
-socket.on('nomination_window_started', (data) => {
-    console.log('nomination_window_started payload:', data);
-    document.getElementById('current-team').textContent = 'Waiting for nomination...';
-    setBidControlsEnabled(false);
-    highlightCurrentNominator(data.current_nominator_id);
-    updateNominateButton(data.current_nominator_id);
-    if (data.timer_end) startNominationCountdown(data.seconds_remaining);
-});
 
 function togglePause() {
     socket.emit('toggle_pause', { league_id: ROOM_ID });
