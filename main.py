@@ -2271,6 +2271,7 @@ def draft_room(league_id):
                            nomination_dict=zip(nomination_dict['nominated_teams_names'], nomination_dict['people_who_nominated_teams'],
                                                nomination_dict['people_who_won_nominated_teams'], nomination_dict['sales_prices'], nomination_dict['created_times']))
 
+
 @draft_bp.route('/draft/<int:league_id>/reset', methods=['POST'])
 @login_required
 def reset_draft(league_id):
@@ -2287,60 +2288,64 @@ def reset_draft(league_id):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
     try:
+        room_id = room.id
+
+        # --- Cancel any live server-side timers tied to this room BEFORE touching the DB ---
+        active_nominations = DraftNomination.query.filter_by(draft_room_id=room_id, status='active').all()
+        for nomination in active_nominations:
+            if nomination.id in nomination_timers:
+                nomination_timers[nomination.id].cancel()
+                del nomination_timers[nomination.id]
+
+        if room_id in nomination_window_timers:
+            nomination_window_timers[room_id].cancel()
+            del nomination_window_timers[room_id]
+
         # Delete all bids
-        nominations = DraftNomination.query.filter_by(draft_room_id=room.id).all()
+        nominations = DraftNomination.query.filter_by(draft_room_id=room_id).all()
         for nomination in nominations:
-            print('')
             DraftBid.query.filter_by(nomination_id=nomination.id).delete()
 
         # Delete all nominations
-        DraftNomination.query.filter_by(draft_room_id=room.id).delete()
+        DraftNomination.query.filter_by(draft_room_id=room_id).delete()
 
-        # Reset all participant budgets
-        DraftParticipant.query.filter_by(draft_room_id=room.id).update({
-            'budget_remaining': 100
+        # Reset all participant budgets, order, and skip flags
+        DraftParticipant.query.filter_by(draft_room_id=room_id).update({
+            'budget_remaining': 100,
+            'done_nominating': False,
+            'nomination_position': None,
+            'skipped_nomination': False,
         })
 
         # Reset committed teams to the database
         # IF ANY LEAGUE DRAFTS AFTER WEEK 1, THIS WON'T WORK SINCE EVERYTHING IS QUERYING WEEK 1
-        print(f'{league_id=}')
         all_players_in_league = League_members_update1.query.filter_by(league_id=league_id).all()
         for player in all_players_in_league:
             player_info = Player_weekly_info.query.filter_by(user_id=player.member, week=1, league=player.league_id).first()
-            team1 = player_info.team_1
-            team2 = player_info.team_2
-            team3 = player_info.team_3
-            team4 = player_info.team_4
-            print(f'{player.member=}')
-            print(f'{player_info.user_id=}')
-            print(f'{player_info.league=}')
-            print(f'{team1=}')
-            print(f'{team2=}')
-            print(f'{team3=}')
-            print(f'{team4=}')
-            if team1 is not None:
-                print('reset team1')
+            if player_info is None:
+                continue
+            if player_info.team_1 is not None:
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_1=player_info.team_1).update({'team_1': None})
-            if team2 is not None:
-                print('reset team2')
+            if player_info.team_2 is not None:
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_2=player_info.team_2).update({'team_2': None})
-            if team3 is not None:
-                print('reset team3')
+            if player_info.team_3 is not None:
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_3=player_info.team_3).update({'team_3': None})
-            if team4 is not None:
-                print('reset team4')
+            if player_info.team_4 is not None:
                 Player_weekly_info.query.filter_by(user_id=player.member, week=1, team_4=player_info.team_4).update({'team_4': None})
 
-        all_draft_participant_objects = DraftParticipant.query.filter_by(draft_room_id=league_id).all()
-        for participant_object in all_draft_participant_objects:
-            if participant_object.done_nominating is True:
-                DraftParticipant.query.filter_by(id=participant_object.id).update({'done_nominating': False})
-
-
-        # Reset draft room status
+        # Reset draft room state entirely
         room.status = 'waiting'
+        room.current_nominator_user_id = None
+        room.nomination_deadline = None
+        room.nomination_direction = 1
+        room.is_paused = False
+        room.paused_remaining_seconds = None
+        room.paused_context = None
 
         db.session.commit()
+
+        # Notify everyone in the room — not just the person who clicked reset
+        socketio.emit('draft_reset', {}, room=str(room_id))
 
         return jsonify({'success': True})
 
@@ -2504,8 +2509,11 @@ def on_bid(data):
     participant.skipped_nomination = False
     db.session.commit()
 
-    # Reset timer on new bid
-    start_timer(nomination_id, room_id, seconds=15)
+    # Anti-snipe: only extend the timer if less than 7 seconds genuinely remain.
+    # Otherwise leave the existing countdown running untouched.
+    remaining = (nomination.timer_end - datetime.utcnow()).total_seconds()
+    if remaining < 7:
+        start_timer(nomination_id, room_id, seconds=7)
 
     emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id, 'username': current_user.username,
                         'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room_id), include_self=True)

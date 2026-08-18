@@ -176,6 +176,11 @@ socket.on('draft_resumed', () => {
     // event carrying the correct timer_end, which restarts the visible countdown.
 });
 
+socket.on('draft_reset', () => {
+    console.log('draft_reset received');
+    location.reload();
+});
+
 function highlightCurrentNominator(userId) {
     document.querySelectorAll('.participant').forEach(el => el.classList.remove('current-nominator'));
     const activeCard = document.getElementById(`user-${userId}`);
@@ -335,16 +340,10 @@ function startNominationCountdown(timerEndISO) {
 // Countdown for active bidding (anti-snipe: refreshes to 7s if it drops below 7s)
 function startBiddingCountdown(timerEndISO) {
     clearInterval(countdownInterval);
-    let timerEnd = new Date(timerEndISO);
+    const timerEnd = new Date(timerEndISO);
     countdownInterval = setInterval(() => {
         const now = new Date();
-        let secondsLeft = Math.max(0, Math.floor((timerEnd - now) / 1000));
-
-        if (secondsLeft < 7 && secondsLeft > 0) {
-            timerEnd = new Date(now.getTime() + 7000);
-            secondsLeft = 7;
-        }
-
+        const secondsLeft = Math.max(0, Math.floor((timerEnd - now) / 1000));
         document.getElementById('timer-display').textContent = `⏱ ${secondsLeft}s`;
         document.getElementById('timer-display').style.color =
             secondsLeft <= 5 ? 'red' : 'inherit';
