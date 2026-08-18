@@ -211,6 +211,23 @@ socket.on('rejoined_nomination', (data) => {
     }
 });
 
+socket.on('draft_complete', () => {
+    console.log('draft_complete received');
+    clearInterval(countdownInterval);
+    document.getElementById('timer-display').textContent = '🏁 Draft Complete';
+    document.getElementById('timer-display').style.color = 'inherit';
+    document.getElementById('current-team').textContent = 'All teams have been drafted!';
+    setBidControlsEnabled(false);
+
+    const nominateBtn = document.getElementById('nominate-btn');
+    if (nominateBtn) {
+        nominateBtn.disabled = true;
+        nominateBtn.textContent = 'Draft complete';
+    }
+
+    document.querySelectorAll('.participant').forEach(el => el.classList.remove('current-nominator'));
+});
+
 // ─── User Actions ─────────────────────────────────────────────
 function nominateTeam() {
     const teamId = document.getElementById('team-select').value;

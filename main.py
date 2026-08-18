@@ -368,6 +368,14 @@ def advance_nominator(draft_room):
     if not participants or draft_room.current_nominator_user_id is None:
         return
 
+    # If everyone has finished drafting, the draft is complete — nothing left to advance to.
+    if all(p.done_nominating for p in participants):
+        draft_room.current_nominator_user_id = None
+        draft_room.status = 'complete'
+        db.session.commit()
+        socketio.emit('draft_complete', {}, room=str(draft_room.id))
+        return
+
     n = len(participants)
     index = next((i for i, p in enumerate(participants) if p.user_id == draft_room.current_nominator_user_id), None)
     if index is None:
@@ -375,13 +383,13 @@ def advance_nominator(draft_room):
 
     direction = draft_room.nomination_direction or 1
 
-    for _ in range(n * 2 + 2):  # safety bound against infinite loop if everyone is skipped
+    for _ in range(n * 2 + 2):
         next_index = index + direction
         if next_index < 0 or next_index >= n:
             direction *= -1
-            next_index = index  # bounce: same person nominates again (classic snake behavior)
+            next_index = index
         index = next_index
-        if not participants[index].skipped_nomination:
+        if not participants[index].skipped_nomination and not participants[index].done_nominating:
             break
     else:
         draft_room.current_nominator_user_id = None
@@ -2068,7 +2076,8 @@ def on_randomize_order(data):
         p.skipped_nomination = False
 
     draft_room.nomination_direction = 1
-    draft_room.current_nominator_user_id = participants[0].user_id
+    first_eligible = next((p for p in participants if not p.done_nominating), None)
+    draft_room.current_nominator_user_id = first_eligible.user_id if first_eligible else None
     db.session.commit()
 
     order_payload = [

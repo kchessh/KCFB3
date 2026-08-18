@@ -198,6 +198,21 @@
             {% endif %}
         });
     </script>
+
+    {% if room.status == 'complete' %}
+      <script>
+          document.addEventListener('DOMContentLoaded', () => {
+              document.getElementById('timer-display').textContent = '🏁 Draft Complete';
+              document.getElementById('current-team').textContent = 'All teams have been drafted!';
+              setBidControlsEnabled(false);
+              const nominateBtn = document.getElementById('nominate-btn');
+              if (nominateBtn) {
+                  nominateBtn.disabled = true;
+                  nominateBtn.textContent = 'Draft complete';
+              }
+          });
+      </script>
+    {% endif %}
   {% endblock %}
 {% endif %}
 </body>
