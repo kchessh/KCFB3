@@ -413,7 +413,7 @@ def start_nomination_window(room_id, seconds=60):
         nomination_window_timers[room_id] = timer
 
         socketio.emit('nomination_window_started', {
-            'timer_end': deadline.isoformat() + 'Z',
+            'seconds_remaining': seconds,
             'current_nominator_id': draft_room.current_nominator_user_id
         }, room=str(room_id))
 
@@ -1975,10 +1975,11 @@ def start_timer(nomination_id, room_id, seconds=30):
         timer.start()
         nomination_timers[nomination_id] = timer
 
-        # Broadcast the timer end to all clients
+        # Broadcast relative seconds remaining, not an absolute timestamp —
+        # avoids any dependency on client/server clocks agreeing.
         socketio.emit('timer_update', {
             'nomination_id': nomination_id,
-            'timer_end': nomination.timer_end.isoformat() + 'Z'
+            'seconds_remaining': seconds
         }, room=str(room_id))
 
 
@@ -2420,7 +2421,11 @@ def on_nominate(data):
         emit('error', {'message': 'The draft is currently paused.'})
         return
 
-    if draft_room.current_nominator_user_id and draft_room.current_nominator_user_id != user_id:
+    if draft_room.current_nominator_user_id is None:
+        emit('error', {'message': 'The nomination order has not been set yet.'})
+        return
+
+    if draft_room.current_nominator_user_id != user_id:
         emit('error', {'message': "It's not your turn to nominate."})
         return
 
@@ -2458,7 +2463,7 @@ def on_nominate(data):
         'current_bid': starting_bid,
         'current_winner': user_id,
         'current_winner_name': winner.name,
-        'timer_end': nomination.timer_end.isoformat() + 'Z',
+        'seconds_remaining': 30,
         'timestamp': datetime.utcnow().isoformat() + 'Z'
     }, room=str(room_id), include_self=True)
 
@@ -2520,12 +2525,15 @@ def on_bid(data):
 
 @socketio.on('disconnect')
 def on_disconnect():
+    if not current_user.is_authenticated:
+        return
     user_id = current_user.id
-    if user_id:
-        participant = DraftParticipant.query.filter_by(user_id=user_id).first()
-        if participant:
-            participant.is_connected = False
-            db.session.commit()
+
+    participants = DraftParticipant.query.filter_by(user_id=user_id, is_connected=True).all()
+    for participant in participants:
+        participant.is_connected = False
+        db.session.commit()
+        socketio.emit('user_left', {'user_id': user_id}, room=str(participant.draft_room_id))
 
 """
 This route shows the dashboard from any given week that the person wants to see. It's the exact same thing as the main

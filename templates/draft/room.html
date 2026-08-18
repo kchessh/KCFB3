@@ -166,6 +166,14 @@
         setBidControlsEnabled(false);
       }
     </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialNominatorId = {{ room.current_nominator_user_id or 'null' }};
+            updateNominateButton(initialNominatorId);
+            highlightCurrentNominator(initialNominatorId);
+        });
+    </script>
   {% endblock %}
 {% endif %}
 </body>

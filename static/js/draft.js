@@ -21,7 +21,7 @@ socket.on('nomination_started', (data) => {
     setBidControlsEnabled(true);
 
     addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`);
-    startBiddingCountdown(data.timer_end);
+    startBiddingCountdown(data.seconds_remaining);
 });
 
 socket.on('bid_placed', (data) => {
@@ -32,7 +32,7 @@ socket.on('bid_placed', (data) => {
 
 socket.on('timer_update', (data) => {
     if (data.nomination_id === currentNominationId) {
-        startBiddingCountdown(data.timer_end);
+        startBiddingCountdown(data.seconds_remaining);
     }
 });
 
@@ -82,7 +82,7 @@ socket.on('nomination_started', (data) => {
 
     clearInterval(countdownInterval);
     if (data.timer_end) {
-        startBiddingCountdown(data.timer_end);
+        startBiddingCountdown(data.seconds_remaining);
     }
 });
 
@@ -91,13 +91,18 @@ socket.on('nomination_window_started', (data) => {
     document.getElementById('current-team').textContent = 'Waiting for nomination...';
     setBidControlsEnabled(false);
     if (data.timer_end) {
-        startNominationCountdown(data.timer_end);
+        startNominationCountdown(data.seconds_remaining);
     }
 });
 
 socket.on('user_joined', (data) => {
     const el = document.getElementById(`user-${data.user_id}`);
     if (el) el.classList.add('connected');
+});
+
+socket.on('user_left', (data) => {
+    const el = document.getElementById(`user-${data.user_id}`);
+    if (el) el.classList.remove('connected');
 });
 
 socket.on('error', (data) => {
@@ -193,7 +198,7 @@ socket.on('nomination_window_started', (data) => {
     setBidControlsEnabled(false);
     highlightCurrentNominator(data.current_nominator_id);
     updateNominateButton(data.current_nominator_id);
-    if (data.timer_end) startNominationCountdown(data.timer_end);
+    if (data.timer_end) startNominationCountdown(data.seconds_remaining);
 });
 
 function togglePause() {
@@ -324,9 +329,9 @@ function startCountdown(timerEndISO) {
 }
 
 // Countdown for "waiting for someone to nominate a team" (60s, no anti-snipe extension)
-function startNominationCountdown(timerEndISO) {
+function startNominationCountdown(secondsRemaining) {
     clearInterval(countdownInterval);
-    const timerEnd = new Date(timerEndISO);
+    const timerEnd = new Date(Date.now() + secondsRemaining * 1000);
     countdownInterval = setInterval(() => {
         const now = new Date();
         const secondsLeft = Math.max(0, Math.floor((timerEnd - now) / 1000));
@@ -338,9 +343,9 @@ function startNominationCountdown(timerEndISO) {
 }
 
 // Countdown for active bidding (anti-snipe: refreshes to 7s if it drops below 7s)
-function startBiddingCountdown(timerEndISO) {
+function startBiddingCountdown(secondsRemaining) {
     clearInterval(countdownInterval);
-    const timerEnd = new Date(timerEndISO);
+    const timerEnd = new Date(Date.now() + secondsRemaining * 1000);
     countdownInterval = setInterval(() => {
         const now = new Date();
         const secondsLeft = Math.max(0, Math.floor((timerEnd - now) / 1000));
