@@ -2148,6 +2148,7 @@ def draft_room(league_id):
         current_winner_name = "TBD"
         nominated_team_name = "TBD"
         timer_end_iso = None
+        bidding_seconds_remaining = None
         print('no nominations yet')
 
     if room.nomination_deadline:
