@@ -180,16 +180,7 @@
             const initialNominatorId = {{ room.current_nominator_user_id or 'null' }};
             updateNominateButton(initialNominatorId);
             highlightCurrentNominator(initialNominatorId);
-
-            const currentUserDoneNominating = {{ 'true' if participant.done_nominating else 'false' }};
-            if (currentUserDoneNominating) {
-                setBidControlsEnabled(false);
-                const nominateBtn = document.getElementById('nominate-btn');
-                if (nominateBtn) {
-                    nominateBtn.disabled = true;
-                    nominateBtn.textContent = 'You have drafted all 4 teams';
-                }
-            }
+            applyDoneNominatingLock();
 
             {% if bidding_seconds_remaining is not none %}
                 startBiddingCountdown({{ bidding_seconds_remaining }});

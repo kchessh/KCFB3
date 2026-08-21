@@ -402,6 +402,7 @@ def advance_nominator(draft_room):
     db.session.commit()
 
 nomination_window_timers = {}
+last_bid_time = {}  # nomination_id -> datetime of most recent accepted bid
 
 def start_nomination_window(room_id, seconds=60):
     with app.app_context():
@@ -2318,6 +2319,7 @@ def reset_draft(league_id):
             if nomination.id in nomination_timers:
                 nomination_timers[nomination.id].cancel()
                 del nomination_timers[nomination.id]
+            last_bid_time.pop(nomination.id, None)  # <-- clear here, per nomination being reset
 
         if room_id in nomination_window_timers:
             nomination_window_timers[room_id].cancel()
@@ -2363,6 +2365,7 @@ def reset_draft(league_id):
         room.is_paused = False
         room.paused_remaining_seconds = None
         room.paused_context = None
+        last_bid_time.clear()
 
         db.session.commit()
 
@@ -2528,6 +2531,10 @@ def on_bid(data):
         emit('error', {'message': 'The draft is currently paused.'}, include_self=True)
         return
 
+    last_time = last_bid_time.get(nomination_id)
+    if last_time and (datetime.utcnow() - last_time).total_seconds() < 1.5:
+        return  # silently ignore — client-side cooldown UI should already be preventing this
+
     nomination = DraftNomination.query.get(nomination_id)
     participant = DraftParticipant.query.filter_by(draft_room_id=room_id, user_id=user_id).first()
     if participant.done_nominating:
@@ -2551,6 +2558,7 @@ def on_bid(data):
     # Record the bid
     bid = DraftBid(nomination_id=nomination_id, user_id=user_id, amount=bid_amount)
     db.session.add(bid)
+    last_bid_time[nomination_id] = datetime.utcnow()
 
     # Update nomination
     nomination.current_bid = bid_amount
@@ -2558,11 +2566,11 @@ def on_bid(data):
     participant.skipped_nomination = False
     db.session.commit()
 
-    # Anti-snipe: only extend the timer if less than 7 seconds genuinely remain.
-    # Otherwise leave the existing countdown running untouched.
+    last_bid_time[nomination_id] = datetime.utcnow()  # <-- record here, after commit
+
     remaining = (nomination.timer_end - datetime.utcnow()).total_seconds()
-    if remaining < 7:
-        start_timer(nomination_id, room_id, seconds=7)
+    if remaining < 9:
+        start_timer(nomination_id, room_id, seconds=9)
 
     emit('bid_placed', {'nomination_id': nomination_id, 'user_id': user_id, 'amount': bid_amount, 'current_winner': user_id, 'username': current_user.username,
                         'timestamp': datetime.utcnow().isoformat() + 'Z'}, room=str(room_id), include_self=True)

@@ -43,6 +43,12 @@
     justify-content: flex-end;
 }
 
+#bid-controls.bid-cooldown {
+    background: #fff3cd;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
 #bid-log {
     grid-area: log;
 }

@@ -5,6 +5,10 @@ let countdownInterval = null;
 let currentNominationId = CURRENT_NOMINATION;
 let currentPage = 1;
 let filteredRows = [];
+let currentBidAmount = 0;
+let currentBidAmount = 0;
+let currentUserDoneNominating = {{ 'true' if participant.done_nominating else 'false' }};
+
 
 // ─── Connection ───────────────────────────────────────────────
 socket.on('connect', () => {
@@ -13,21 +17,22 @@ socket.on('connect', () => {
 });
 
 // ─── Incoming Events ──────────────────────────────────────────
-socket.on('nomination_started', (data) => {
-    currentNominationId = data.nomination_id;
-    document.getElementById('current-team').textContent = data.team_name;
-    document.getElementById('current-bid').textContent = `Current Bid: $${data.current_bid}`;
-    document.getElementById('current-winner').textContent = `Leader: ${data.current_winner_name}`;
-    setBidControlsEnabled(true);
-
-    addLogEntry(`🏷️ ${data.team_name} nominated! Starting at $${data.current_bid}`);
-    startBiddingCountdown(data.seconds_remaining);
-});
-
 socket.on('bid_placed', (data) => {
     document.getElementById('current-bid').textContent = `Current Bid: $${data.amount}`;
     document.getElementById('current-winner').textContent = `Leader: ${data.username}`;
     addLogEntry(`💰 ${data.username} bid $${data.amount}`);
+    currentBidAmount = data.amount;
+
+    const controls = document.getElementById('bid-controls');
+    controls.classList.add('bid-cooldown');
+    controls.querySelectorAll('input, button').forEach(el => el.disabled = true);
+
+    setTimeout(() => {
+        controls.classList.remove('bid-cooldown');
+        if (!currentUserDoneNominating) {
+            controls.querySelectorAll('input, button').forEach(el => el.disabled = false);
+        }
+    }, 1500);
 });
 
 socket.on('timer_update', (data) => {
@@ -59,25 +64,24 @@ socket.on('bidding_ended', (data) => {
         }
     }
 
+    // NEW: if this browser's user just won their 4th team, lock them out permanently
     if (data.winner_id === USER_ID && data.team_slot === 4) {
-        setBidControlsEnabled(false); // ensure it stays locked, not just re-enabled by the next nomination
-        const nominateBtn = document.getElementById('nominate-btn');
-        if (nominateBtn) {
-            nominateBtn.disabled = true;
-            nominateBtn.textContent = 'You have drafted all 4 teams';
-        }
+        currentUserDoneNominating = true;
+        applyDoneNominatingLock();
     }
 });
 
 socket.on('nomination_started', (data) => {
     console.log('nomination_started payload:', data);
     currentNominationId = data.nomination_id;
+    currentBidAmount = data.current_bid;
     document.getElementById('timer-display').style.color = 'inherit';
     document.getElementById('current-team').textContent = data.team_name;
     document.getElementById('current-bid').textContent = `Current Bid: $${data.current_bid}`;
     document.getElementById('current-winner').textContent = `Leader: ${data.current_winner_name}`;
     addLogEntry(`📢 ${data.team_name} nominated by ${data.nominated_by_name}`);
     setBidControlsEnabled(true);
+    applyDoneNominatingLock();
     document.getElementById('bid-input').value = '';
     clearInterval(countdownInterval);
     if (data.seconds_remaining !== undefined) {
@@ -91,6 +95,7 @@ socket.on('nomination_window_started', (data) => {
     setBidControlsEnabled(false);
     highlightCurrentNominator(data.current_nominator_id);
     updateNominateButton(data.current_nominator_id);
+    applyDoneNominatingLock();
     if (data.seconds_remaining !== undefined) {
         startNominationCountdown(data.seconds_remaining);
     }
@@ -133,10 +138,18 @@ function updateNominateButton(currentNominatorId) {
 socket.on('order_randomized', (data) => {
     console.log('order_randomized payload:', data);
     const list = document.getElementById('participants-list');
+
+    const fragment = document.createDocumentFragment();
     data.order.forEach(entry => {
         const card = document.getElementById(`user-${entry.user_id}`);
-        if (card) list.appendChild(card);
+        if (card) {
+            fragment.appendChild(card);
+        } else {
+            console.error('order_randomized: missing card for user', entry.user_id);
+        }
     });
+    list.appendChild(fragment);
+
     highlightCurrentNominator(data.current_nominator_id);
     updateNominateButton(data.current_nominator_id);
 });
@@ -239,10 +252,10 @@ function nominateTeam() {
         starting_bid: startingBid,
         user_id: USER_ID,
     });
+    document.getElementById('starting-bid').value = 1;
 }
 
-function placeBid() {
-    const amount = parseInt(document.getElementById('bid-input').value);
+function submitBid(amount) {
     if (!currentNominationId) return alert('No active nomination.');
     if (!amount || amount < 1) return alert('Enter a valid bid.');
     socket.emit('place_bid', {
@@ -252,11 +265,17 @@ function placeBid() {
     });
 }
 
+function placeBid() {
+    const amount = parseInt(document.getElementById('bid-input').value);
+    submitBid(amount);
+}
 
 function quickBid(increment) {
-    const currentBidText = document.getElementById('current-bid').textContent;
-    const currentBid = parseInt(currentBidText.replace(/\D/g, '')) || 0;
-    document.getElementById('bid-input').value = currentBid + increment;
+    if (increment === 0) {
+        document.getElementById('bid-input').value = '';
+        return;
+    }
+    submitBid(currentBidAmount + increment);
 }
 
 function selectTeam(id, name) {
@@ -369,11 +388,10 @@ function addLogEntry(message) {
     const list = document.getElementById('log-list');
     const li = document.createElement('li');
     li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-    list.append(li); // newest on bottom
+    list.append(li);
 
-    // Auto-scroll the container to the bottom
-    const bidLog = document.getElementById('bid-log'); // or 'bid-log-container' if you use the wrapper
-    bidLog.scrollBottom = bidLog.scrollHeight;
+    const bidLog = document.getElementById('bid-log');
+    bidLog.scrollTop = bidLog.scrollHeight;
 }
 
 function updateBudgetDisplay(userId, amountSpent) {
@@ -424,5 +442,17 @@ function updateAvailableTeams(teamWonId) {
     if (teamSelectEl && teamSelectEl.value === String(teamWonId)) {
       teamSelectEl.value = '';
       if (nameDisplayEl) nameDisplayEl.textContent = '';
+    }
+}
+
+let currentUserDoneNominating = {{ 'true' if participant.done_nominating else 'false' }};
+
+function applyDoneNominatingLock() {
+    if (!currentUserDoneNominating) return;
+    setBidControlsEnabled(false);
+    const nominateBtn = document.getElementById('nominate-btn');
+    if (nominateBtn) {
+        nominateBtn.disabled = true;
+        nominateBtn.textContent = 'You have drafted all 4 teams';
     }
 }
